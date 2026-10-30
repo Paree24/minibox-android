@@ -56,6 +56,7 @@ fun SoundTab(openPresets: () -> Unit) {
 
     Column(Modifier.fillMaxSize()) {
         // preset: ‹ name › and the browser
+        var loadSample: ((Boolean) -> Unit)? = null
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Row(Modifier.weight(1f).height(40.dp).clip(CircleShape).background(C.control), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(40.dp).clickable { Sound.step(-1) }, contentAlignment = Alignment.Center) { Text("‹", color = C.quiet, fontSize = 20.sp) }
@@ -78,16 +79,20 @@ fun SoundTab(openPresets: () -> Unit) {
                         Sound.refresh()
                     }
                 }
-                Spacer(Modifier.width(8.dp))
-                Pill("Sample", height = 40.dp) { slice = false; pick.launch(arrayOf("audio/*")) }
-                if (type == "drumsampler") {
-                    Spacer(Modifier.width(6.dp))
-                    Pill("Slice", height = 40.dp) { slice = true; pick.launch(arrayOf("audio/*")) }
-                }
+                loadSample = { sl -> slice = sl; pick.launch(arrayOf("audio/*")) }
             }
             Spacer(Modifier.width(8.dp))
             Box(Modifier.size(40.dp).clip(CircleShape).background(C.control).clickable(onClick = openPresets), contentAlignment = Alignment.Center) {
                 Text("⋯", color = C.quiet, fontSize = 18.sp, fontWeight = FontWeight.Black)
+            }
+        }
+        // samplers: loading a sample is the first thing to do, so it gets its own full-width buttons
+        loadSample?.let { load ->
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val drums = rack[track].type == "drumsampler"
+                Pill(if (drums) "Load sample on ${ed.selectionNames.getOrElse(selection) { "pad" }}" else "Load sample",
+                    Modifier.weight(1f), on = true, color = color, height = 44.dp) { load(false) }
+                if (drums) Pill("Slice a loop", Modifier.weight(1f), on = true, color = color, height = 44.dp) { load(true) }
             }
         }
         // drum part / FM operator: which one the editor shows
