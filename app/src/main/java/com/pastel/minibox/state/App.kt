@@ -71,6 +71,14 @@ object App {
     val octave = mutableStateOf(IntArray(8) { 0 }.toList())
     val rollBeats = mutableStateOf(0.25f)
 
+    /** The pad notes held right now and the last one played: step input writes them (Seq). */
+    val heldNotes = mutableStateOf(listOf<Int>())
+    val lastNote = mutableIntStateOf(48)
+    fun padPressed(note: Int, down: Boolean) {
+        heldNotes.value = if (down) heldNotes.value + note else heldNotes.value - note
+        if (down) lastNote.intValue = note
+    }
+
     private val fastBuf = FloatArray(24)
 
     fun init() {

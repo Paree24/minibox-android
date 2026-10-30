@@ -199,6 +199,10 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
         else if (k == "glue") p.master.glue = juce::jlimit (0.0f, 1.0f, (float) v);
         return {};
     }
-    return {};
+    bool handled = false;
+    auto r = seqCall (op, a, handled);
+    if (handled) return r;
+    r = soundCall (op, a, handled);
+    return r;
 }
 } // namespace mb::android

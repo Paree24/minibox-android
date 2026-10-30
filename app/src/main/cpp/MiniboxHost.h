@@ -63,6 +63,17 @@ private:
     bool openStream();
     void tuneBuffer();
 
+    juce::var seqCall (const juce::String& op, const juce::var& args, bool& handled);     // SeqApi.cpp
+    juce::var soundCall (const juce::String& op, const juce::var& args, bool& handled);   // SoundApi.cpp
+
+    // undo / redo of sequence edits: a snapshot of the pattern's tracks before each edit (as the desktop)
+    struct PatternSnap { int pattern = 0; std::array<Track, kTracks> tracks; int lengthBars = 1, stepRes = 1; };
+    std::vector<PatternSnap> undoStack, redoStack;
+    PatternSnap capture (int pattern);
+    void restore (const PatternSnap&);
+    void snapshot (int pattern);
+    bool swapUndo (std::vector<PatternSnap>& from, std::vector<PatternSnap>& to);
+
     Engine engine { Engine::Mode::Groovebox };
     MasterFx masterFx { engine };
     std::mutex streamLock;                         // open / close / reconfigure (never the audio thread)

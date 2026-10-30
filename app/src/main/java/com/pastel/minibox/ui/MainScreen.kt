@@ -54,6 +54,8 @@ sealed interface Sheet {
     data object Settings : Sheet
     data class Device(val track: Int) : Sheet
     data class PatternMenu(val pattern: Int) : Sheet
+    data class Step(val step: Int, val lane: Int) : Sheet
+    data object Presets : Sheet
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,6 +79,8 @@ fun MainScreen() {
             when (tab) {
                 Tab.Play -> PlayTab(openScale = { sheet = Sheet.Scale })
                 Tab.Perform -> PerformTab(onPatternMenu = { sheet = Sheet.PatternMenu(it) })
+                Tab.Seq -> SeqTab(openStep = { s, l -> sheet = Sheet.Step(s, l) })
+                Tab.Sound -> SoundTab(openPresets = { sheet = Sheet.Presets })
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(tab.title, color = C.faint, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
@@ -101,6 +105,8 @@ fun MainScreen() {
                     Sheet.Settings -> SettingsSheet()
                     is Sheet.Device -> DevicePickerSheet(current.track) { sheet = null }
                     is Sheet.PatternMenu -> PatternMenuSheet(current.pattern) { sheet = null }
+                    is Sheet.Step -> StepSheet(current.step, current.lane) { sheet = null }
+                    Sheet.Presets -> PresetSheet { sheet = null }
                 }
             }
         }

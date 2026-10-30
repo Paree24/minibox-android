@@ -83,3 +83,11 @@ fun drumsLayout(track: Int, info: TrackInfo, rollBeats: Float): PadView.Layout? 
         subs = Array(16) { if (it >= 8) rate else "" }, rolls = BooleanArray(16) { it >= 8 }, rollBeats = rollBeats,
     )
 }
+
+/** The pads for the selected track as Play shows them (Seq and Sound reuse them in their drawer). */
+fun currentLayout(track: Int, info: com.pastel.minibox.state.TrackInfo, p: ProjectInfo, octave: Int, rollBeats: Float): PadView.Layout? = when {
+    info.empty -> null
+    info.drums -> drumsLayout(track, info, rollBeats)
+    info.play.chordOn && !info.play.arpOn -> chordsLayout(track, info, p, octave)
+    else -> notesLayout(track, info, p, octave)
+}

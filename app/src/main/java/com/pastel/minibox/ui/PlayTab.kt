@@ -102,20 +102,9 @@ fun PlayTab(openScale: () -> Unit) {
             MacroCard(track, Modifier.weight(1f).fillMaxWidth())
             Spacer(Modifier.height(12.dp))
         }
-        val layout = when {
-            info.empty -> null
-            info.drums -> drumsLayout(track, info, rollBeats)
-            info.play.chordOn && !info.play.arpOn -> chordsLayout(track, info, project, octaves[track])
-            else -> notesLayout(track, info, project, octaves[track])
-        }
-        if (layout != null) {
-            AndroidView(factory = { PadView(it) }, update = { it.layout = layout },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
-        } else {
-            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(200.dp), contentAlignment = Alignment.Center) {
-                Text("+", color = C.faint, fontSize = 40.sp)
-            }
-        }
+        if (info.empty) Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(200.dp), contentAlignment = Alignment.Center) {
+            Text("+", color = C.faint, fontSize = 40.sp)
+        } else Pads()
         Spacer(Modifier.height(12.dp))
     }
 }

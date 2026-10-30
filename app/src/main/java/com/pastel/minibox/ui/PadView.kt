@@ -34,6 +34,9 @@ class PadView(context: Context) : View(context) {
             invalidate()
         }
 
+    /** Told about every press and release (after the note): the Seq tab places a held pad's note into steps. */
+    var listener: ((note: Int, down: Boolean) -> Unit)? = null
+
     private val dp = resources.displayMetrics.density
     private val gap = 8 * dp
     private val radius = 14 * dp
@@ -86,6 +89,7 @@ class PadView(context: Context) : View(context) {
             else Native.noteOn(l.track, l.notes[pad], velocityAt(pad, y))
         }
         performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)   // after the note, never before it
+        listener?.invoke(l.notes[pad], true)
     }
 
     private fun release(pointer: Int) {
@@ -94,6 +98,7 @@ class PadView(context: Context) : View(context) {
         if (--lit[pad] == 0) {
             if (l.rolls[pad]) Native.roll(l.track, l.notes[pad], 0f, l.rollBeats, false)
             else Native.noteOff(l.track, l.notes[pad])
+            listener?.invoke(l.notes[pad], false)
         }
     }
 
