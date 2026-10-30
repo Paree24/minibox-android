@@ -37,7 +37,7 @@ public:
     struct Stats
     {
         float sampleRate = 0, framesPerBurst = 0, bufferFrames = 0, latencyMs = -1, xruns = 0;
-        float mmap = 0, exclusive = 0, cpu = 0, lastCallbackFrames = 0, running = 0;
+        float mmap = 0, exclusive = 0, cpu = 0, lastCallbackFrames = 0, running = 0, peak = 0;
     };
     Stats stats();
 

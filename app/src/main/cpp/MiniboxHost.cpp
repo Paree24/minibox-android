@@ -115,6 +115,7 @@ MiniboxHost::Stats MiniboxHost::stats()
     Stats st;
     st.cpu = engine.cpuLoad.load();
     st.lastCallbackFrames = (float) lastFrames.load();
+    st.peak = std::max (engine.master().peakL.load(), engine.master().peakR.load());
     if (stream == nullptr) return st;
     if (bufferBursts == 0) tuneBuffer();   // the UI polls this a few times a second
     st.running = stream->getState() == oboe::StreamState::Started ? 1.0f : 0.0f;

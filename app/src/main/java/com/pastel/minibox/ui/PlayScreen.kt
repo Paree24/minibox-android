@@ -73,11 +73,11 @@ fun PlayScreen() {
     var bursts by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
-        val buf = FloatArray(10)
+        val buf = FloatArray(11)
         while (true) {
             Native.readStats(buf)
             stats = AudioStats.from(buf)
-            delay(250)
+            delay(100)
         }
     }
 
@@ -183,6 +183,12 @@ private fun AudioCard(s: AudioStats, bursts: Int, onBursts: (Int) -> Unit) {
         Text("burst ${s.burst} · callback ${s.callbackFrames} · xruns ${s.xruns} · cpu ${(s.cpu * 100).toInt()}%",
             color = C.faint, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.weight(1f))
+        // output level: shows the pads reach the engine even where nothing can be heard (an emulator, a muted phone)
+        Box(Modifier.fillMaxWidth().height(6.dp).clip(CircleShape).background(C.control)) {
+            val db = 20f * kotlin.math.log10(s.peak.coerceAtLeast(1e-6f))
+            Box(Modifier.fillMaxWidth(((db + 60f) / 60f).coerceIn(0f, 1f)).height(6.dp).clip(CircleShape).background(C.pattern))
+        }
+        Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("Auto", "1×", "2×", "3×", "4×").forEachIndexed { i, label ->
                 val on = i == bursts

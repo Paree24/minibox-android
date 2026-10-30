@@ -56,7 +56,7 @@ void readStats (JNIEnv* env, jclass, jfloatArray out)
 {
     const auto s = MiniboxHost::get().stats();
     const float v[] = { s.sampleRate, s.framesPerBurst, s.bufferFrames, s.latencyMs, s.xruns,
-                        s.mmap, s.exclusive, s.cpu, s.lastCallbackFrames, s.running };
+                        s.mmap, s.exclusive, s.cpu, s.lastCallbackFrames, s.running, s.peak };
     env->SetFloatArrayRegion (out, 0, std::min<jsize> ((jsize) std::size (v), env->GetArrayLength (out)), v);
 }
 

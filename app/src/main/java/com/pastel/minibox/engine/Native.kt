@@ -34,10 +34,10 @@ object Native {
 data class AudioStats(
     val sampleRate: Int = 0, val burst: Int = 0, val bufferFrames: Int = 0, val latencyMs: Float = -1f,
     val xruns: Int = 0, val mmap: Boolean = false, val exclusive: Boolean = false, val cpu: Float = 0f,
-    val callbackFrames: Int = 0, val running: Boolean = false,
+    val callbackFrames: Int = 0, val running: Boolean = false, val peak: Float = 0f,
 ) {
     companion object {
         fun from(v: FloatArray) = AudioStats(
-            v[0].toInt(), v[1].toInt(), v[2].toInt(), v[3], v[4].toInt(), v[5] > 0f, v[6] > 0f, v[7], v[8].toInt(), v[9] > 0f)
+            v[0].toInt(), v[1].toInt(), v[2].toInt(), v[3], v[4].toInt(), v[5] > 0f, v[6] > 0f, v[7], v[8].toInt(), v[9] > 0f, v[10])
     }
 }
