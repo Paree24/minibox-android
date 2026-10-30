@@ -32,7 +32,7 @@ data class Fast(
 
 data class Lane(val note: Int, val name: String)
 data class PlaySettings(val chordOn: Boolean = false, val arpOn: Boolean = false, val arpLatch: Boolean = false,
-                        val arpMode: Int = 0, val arpRate: Int = 6, val arpOct: Int = 0)
+                        val arpMode: Int = 0, val arpRate: Int = 6, val arpOct: Int = 0, val arpGate: Float = 90f, val arpSwing: Float = 0f)
 data class MixerInfo(val level: Float = 0.8f, val pan: Float = 0f, val mute: Boolean = false, val solo: Boolean = false,
                      val sendA: Float = 0f, val sendB: Float = 0f)
 data class TrackInfo(val type: String = "", val name: String = "", val preset: String = "", val mixer: MixerInfo = MixerInfo(),
@@ -164,7 +164,8 @@ object App {
             MixerInfo(mx.getDouble("level").toFloat(), mx.getDouble("pan").toFloat(), mx.getBoolean("mute"),
                 mx.getBoolean("solo"), mx.getDouble("sendA").toFloat(), mx.getDouble("sendB").toFloat()),
             PlaySettings(pl.getBoolean("chordOn"), pl.getBoolean("arpOn"), pl.getBoolean("arpLatch"),
-                pl.getInt("arpMode"), pl.getInt("arpRate"), pl.getInt("arpOct")),
+                pl.getInt("arpMode"), pl.getInt("arpRate"), pl.getInt("arpOct"),
+                pl.getDouble("arpGate").toFloat(), pl.getDouble("arpSwing").toFloat()),
             o.getJSONArray("lanes").objects().map { Lane(it.getInt("note"), it.getString("name")) },
         )
     }

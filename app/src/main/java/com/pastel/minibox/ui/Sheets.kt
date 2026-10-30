@@ -253,3 +253,45 @@ fun ToggleCard(name: String, on: Boolean, modifier: Modifier = Modifier, onChang
         Toggle(on) { onChange(it) }
     }
 }
+
+/** The arpeggiator (Play → Arp): rate (15, straight / dotted / triplet), mode, octaves, gate, swing, latch. */
+@Composable
+fun ArpSheet() {
+    val rack by App.rack
+    val track = App.focusTrack.intValue
+    val pl = rack[track].play
+    val color = C.track(track)
+    fun set(key: String, v: Any) = App.cmd("setPlay", "track" to track, "key" to key, "value" to v)
+    Column {
+        SheetTitle("Arp", "${ARP_RATES[pl.arpRate.coerceIn(0, 14)]} · ${ARP_MODES[pl.arpMode]}")
+        SectionLabel("Rate")
+        Spacer(Modifier.height(6.dp))
+        for (row in 0 until 5) {   // 1/4 … 1/64, each straight, dotted, triplet
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                for (c in 0 until 3) {
+                    val i = row * 3 + c
+                    val on = i == pl.arpRate
+                    Box(Modifier.weight(1f).height(38.dp).clip(RoundedCornerShape(10.dp)).background(if (on) color else C.control)
+                        .clickable { set("arpRate", i) }, contentAlignment = Alignment.Center) {
+                        Text(ARP_RATES[i], color = if (on) C.bg else C.text, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                    }
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+        }
+        Spacer(Modifier.height(6.dp))
+        SectionLabel("Mode")
+        Spacer(Modifier.height(6.dp))
+        Segmented(ARP_MODES, pl.arpMode, color, { set("arpMode", it) }, Modifier.fillMaxWidth(), height = 38.dp)
+        Spacer(Modifier.height(12.dp))
+        SectionLabel("Octaves")
+        Spacer(Modifier.height(6.dp))
+        ChoicePads(listOf("1", "2", "3", "4"), pl.arpOct, color, { set("arpOct", it) }, height = 38.dp)
+        Spacer(Modifier.height(12.dp))
+        BarSlider((pl.arpGate - 10f) / 90f, color, "Gate", "${pl.arpGate.toInt()}%", { set("arpGate", 10f + it * 90f) })
+        Spacer(Modifier.height(8.dp))
+        BarSlider(pl.arpSwing / 60f, color, "Swing", "${pl.arpSwing.toInt()}%", { set("arpSwing", it * 60f) })
+        Spacer(Modifier.height(8.dp))
+        ToggleCard("Latch", pl.arpLatch, Modifier.fillMaxWidth()) { set("arpLatch", it) }
+    }
+}

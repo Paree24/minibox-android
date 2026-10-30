@@ -59,6 +59,7 @@ sealed interface Sheet {
     data class PatternMenu(val pattern: Int) : Sheet
     data class Step(val step: Int, val lane: Int) : Sheet
     data object Presets : Sheet
+    data object Arp : Sheet
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,7 +87,7 @@ fun MainScreen() {
         if (tab != Tab.Mix && tab != Tab.Perform) TrackRow { sheet = Sheet.Device(it) }
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when (tab) {
-                Tab.Play -> PlayTab(openScale = { sheet = Sheet.Scale })
+                Tab.Play -> PlayTab(openScale = { sheet = Sheet.Scale }, openArp = { sheet = Sheet.Arp })
                 Tab.Perform -> PerformTab(onPatternMenu = { sheet = Sheet.PatternMenu(it) })
                 Tab.Seq -> SeqTab(openStep = { s, l -> sheet = Sheet.Step(s, l) })
                 Tab.Sound -> SoundTab(openPresets = { sheet = Sheet.Presets })
@@ -120,6 +121,7 @@ fun MainScreen() {
                     is Sheet.PatternMenu -> PatternMenuSheet(current.pattern) { sheet = null }
                     is Sheet.Step -> StepSheet(current.step, current.lane) { sheet = null }
                     Sheet.Presets -> PresetSheet { sheet = null }
+                    Sheet.Arp -> ArpSheet()
                 }
             }
         }

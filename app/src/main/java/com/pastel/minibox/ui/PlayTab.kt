@@ -29,13 +29,14 @@ import androidx.compose.ui.unit.sp
 import com.pastel.minibox.state.App
 import kotlinx.coroutines.delay
 
-private val ARP_RATES = listOf(3 to "1/8", 6 to "1/16", 9 to "1/32", 5 to "1/8T", 8 to "1/16T")
-private val ARP_MODES = listOf("Up", "Down", "Up-Dn", "Dn-Up", "Rand", "Played")
+/** The arpeggiator's rates, in the engine's order (NoteInput / the desktop's Play drawer). */
+val ARP_RATES = listOf("1/4", "1/4 D", "1/4 T", "1/8", "1/8 D", "1/8 T", "1/16", "1/16 D", "1/16 T", "1/32", "1/32 D", "1/32 T", "1/64", "1/64 D", "1/64 T")
+val ARP_MODES = listOf("Up", "Down", "Up-Dn", "Dn-Up", "Rand", "Played")
 val ROLL_RATES = listOf(1f, 0.5f, 0.25f, 0.125f, 1f / 3f, 1f / 6f)
 
 /** Play (mockups 01–03): mode, scale and octave on top, the 8 macros, the 16 square pads on the nav. */
 @Composable
-fun PlayTab(openScale: () -> Unit) {
+fun PlayTab(openScale: () -> Unit, openArp: () -> Unit) {
     val track = App.focusTrack.intValue
     val rack by App.rack
     val project by App.project
@@ -77,25 +78,9 @@ fun PlayTab(openScale: () -> Unit) {
                     }
                     if (info.play.arpOn) {
                         Spacer(Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            ARP_RATES.forEach { (id, name) ->
-                                Pill(name, Modifier.weight(1f), on = info.play.arpRate == id, color = color) {
-                                    App.cmd("setPlay", "track" to track, "key" to "arpRate", "value" to id)
-                                }
-                            }
-                        }
-                        Spacer(Modifier.height(6.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Pill(ARP_MODES[info.play.arpMode], Modifier.weight(1f), caret = true) {
-                                App.cmd("setPlay", "track" to track, "key" to "arpMode", "value" to (info.play.arpMode + 1) % 6)
-                            }
-                            Pill("${info.play.arpOct + 1} oct", Modifier.weight(1f), caret = true) {
-                                App.cmd("setPlay", "track" to track, "key" to "arpOct", "value" to (info.play.arpOct + 1) % 4)
-                            }
-                            Pill("Latch", Modifier.weight(1f), on = info.play.arpLatch, color = color) {
-                                App.cmd("setPlay", "track" to track, "key" to "arpLatch", "value" to !info.play.arpLatch)
-                            }
-                        }
+                        // one dropdown: the rate, the mode and the octaves; the Arp sheet holds every setting
+                        Pill("Arp  ${ARP_RATES[info.play.arpRate.coerceIn(0, 14)]} · ${ARP_MODES[info.play.arpMode]} · ${info.play.arpOct + 1} oct" +
+                            if (info.play.arpLatch) " · Latch" else "", Modifier.fillMaxWidth(), caret = true, height = 34.dp, onClick = openArp)
                     }
                 }
             }

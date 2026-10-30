@@ -71,6 +71,7 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
             auto pl = obj();
             put (pl, "chordOn", s.play.chordOn); put (pl, "arpOn", s.play.arpOn); put (pl, "arpLatch", s.play.arpLatch);
             put (pl, "arpMode", s.play.arpMode); put (pl, "arpRate", s.play.arpRate); put (pl, "arpOct", s.play.arpOct);
+            put (pl, "arpGate", s.play.arpGate); put (pl, "arpSwing", s.play.arpSwing);
             put (o, "play", pl);
             juce::Array<juce::var> lanes;
             if (d != nullptr)
@@ -176,6 +177,8 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
         if (k == "chordOn") s.chordOn = (bool) v; else if (k == "arpOn") s.arpOn = (bool) v;
         else if (k == "arpLatch") s.arpLatch = (bool) v; else if (k == "arpMode") s.arpMode = std::clamp ((int) v, 0, 5);
         else if (k == "arpRate") s.arpRate = std::clamp ((int) v, 0, 14); else if (k == "arpOct") s.arpOct = std::clamp ((int) v, 0, 3);
+        else if (k == "arpGate") s.arpGate = juce::jlimit (10.0f, 100.0f, (float) v);   // %, as the desktop's Play drawer
+        else if (k == "arpSwing") s.arpSwing = juce::jlimit (0.0f, 60.0f, (float) v);
         return {};
     }
     if (op == "set")
