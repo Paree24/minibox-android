@@ -5,7 +5,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.runtime.rememberUpdatedState
+import kotlin.math.abs
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,7 +57,7 @@ fun MixTab(openTrack: (Int) -> Unit, openEffects: () -> Unit) {
                         Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(12.dp)).border(1.5.dp, C.faint, RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center) { Text("+", color = C.faint, fontSize = 16.sp) }
                     } else {
-                        Fader(info.mixer.level, fast.trackPeaks.getOrElse(t) { 0f }, color, info.mixer.mute, "${t + 1}", { openTrack(t) },
+                        Fader(t, info.mixer.level, fast.trackPeaks.getOrElse(t) { 0f }, color, info.mixer.mute, "${t + 1}", { openTrack(t) },
                             Modifier.weight(1f).fillMaxWidth()) { App.cmd("setMixer", "track" to t, "key" to "level", "value" to it) }
                     }
                     Spacer(Modifier.height(8.dp))
@@ -75,30 +78,53 @@ fun MixTab(openTrack: (Int) -> Unit, openEffects: () -> Unit) {
                 listOf(Triple("Delay", "delayReturn", project.master.delayReturn), Triple("Reverb", "reverbReturn", project.master.reverbReturn),
                     Triple("Glue", "glue", project.master.glue)).forEach { (name, key, v) ->
                     Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        Knob(v, C.pattern, name, "${(v * 100).toInt()}%", { App.cmd("set", "key" to key, "value" to it) }, size = 38.dp)
+                        Knob(v, C.pattern, name, "${(v * 100).toInt()}%", { App.call("set", "key" to key, "value" to it) }, size = 38.dp,
+                            onEnd = { App.refresh() })
                     }
                 }
             }
             Spacer(Modifier.height(8.dp))
             val db = if (fast.masterPeak > 1e-5f) "%.1f dB".format(20 * log10(fast.masterPeak)) else "–"
-            BarSlider(project.master.volume, C.pattern, "Volume", db, { App.cmd("set", "key" to "volume", "value" to it) })
+            BarSlider(project.master.volume, C.pattern, "Volume", db, { App.call("set", "key" to "volume", "value" to it) },
+                onEnd = { App.refresh() })
         }
         Spacer(Modifier.height(12.dp))
     }
 }
 
 @Composable
-private fun Fader(level: Float, peak: Float, color: androidx.compose.ui.graphics.Color, muted: Boolean, badge: String,
+private fun Fader(track: Int, level: Float, peak: Float, color: androidx.compose.ui.graphics.Color, muted: Boolean, badge: String,
                   onBadge: () -> Unit, modifier: Modifier, onLevel: (Float) -> Unit) {
     var drag by remember { mutableFloatStateOf(-1f) }
+    val current by rememberUpdatedState(level)          // the live level, not the one of the first composition
+    val setLevel by rememberUpdatedState(onLevel)
     val shown = if (drag >= 0f) drag else level
     Box(
         modifier.clip(RoundedCornerShape(12.dp)).background(C.control)
             .pointerInput(Unit) {
-                detectVerticalDragGestures(onDragStart = { drag = level }, onDragEnd = { drag = -1f }, onDragCancel = { drag = -1f }) { c, dy ->
-                    c.consume()
-                    drag = (drag - dy / size.height).coerceIn(0f, 1f)
-                    onLevel(drag)
+                // touch anywhere: the fader moves with the finger from where it is (no jump), tap sets the level there
+                awaitEachGesture {
+                    val down = awaitFirstDown()
+                    down.consume()
+                    var v = current
+                    var y = down.position.y
+                    var moved = false
+                    drag = v
+                    while (true) {
+                        val e = awaitPointerEvent()
+                        val c = e.changes.firstOrNull { it.id == down.id } ?: break
+                        if (!c.pressed) break
+                        c.consume()
+                        val dy = c.position.y - y
+                        if (abs(dy) > 2f) moved = true
+                        y = c.position.y
+                        v = (v - dy / size.height).coerceIn(0f, 1f)
+                        drag = v
+                        App.call("setMixer", "track" to track, "key" to "level", "value" to v)
+                    }
+                    if (!moved) v = (1f - down.position.y / size.height).coerceIn(0f, 1f)
+                    drag = -1f
+                    setLevel(v)   // the one write that refreshes the screen
                 }
             },
     ) {
@@ -127,12 +153,12 @@ fun TrackMixSheet(track: Int) {
     Column {
         SheetTitle("Track ${track + 1}", rack[track].name)
         BarSlider((m.pan + 1f) / 2f, color, "Pan", if (kotlin.math.abs(m.pan) < 0.02f) "C" else if (m.pan < 0) "L${(-m.pan * 100).toInt()}" else "R${(m.pan * 100).toInt()}",
-            { App.cmd("setMixer", "track" to track, "key" to "pan", "value" to it * 2f - 1f) })
+            { App.call("setMixer", "track" to track, "key" to "pan", "value" to it * 2f - 1f) }, onEnd = { App.refresh() })
         Spacer(Modifier.height(8.dp))
-        BarSlider(m.sendA, color, "Delay send", "${(m.sendA * 100).toInt()}%", { App.cmd("setMixer", "track" to track, "key" to "sendA", "value" to it) })
+        BarSlider(m.sendA, color, "Delay send", "${(m.sendA * 100).toInt()}%", { App.call("setMixer", "track" to track, "key" to "sendA", "value" to it) }, onEnd = { App.refresh() })
         Spacer(Modifier.height(8.dp))
-        BarSlider(m.sendB, color, "Reverb send", "${(m.sendB * 100).toInt()}%", { App.cmd("setMixer", "track" to track, "key" to "sendB", "value" to it) })
+        BarSlider(m.sendB, color, "Reverb send", "${(m.sendB * 100).toInt()}%", { App.call("setMixer", "track" to track, "key" to "sendB", "value" to it) }, onEnd = { App.refresh() })
         Spacer(Modifier.height(8.dp))
-        BarSlider(m.level, color, "Level", "${(m.level * 100).toInt()}%", { App.cmd("setMixer", "track" to track, "key" to "level", "value" to it) })
+        BarSlider(m.level, color, "Level", "${(m.level * 100).toInt()}%", { App.call("setMixer", "track" to track, "key" to "level", "value" to it) }, onEnd = { App.refresh() })
     }
 }

@@ -50,19 +50,22 @@ import kotlin.math.sin
     Drag up/down anywhere on it; a double-tap goes back to `default` when one is given. */
 @Composable
 fun Knob(value: Float, color: Color, label: String, text: String, onChange: (Float) -> Unit,
-         modifier: Modifier = Modifier, size: Dp = 46.dp, default: Float? = null, bipolar: Boolean = false) {
+         modifier: Modifier = Modifier, size: Dp = 46.dp, default: Float? = null, bipolar: Boolean = false,
+         onEnd: (() -> Unit)? = null) {
     var drag by remember { mutableFloatStateOf(value) }
     var dragging by remember { mutableStateOf(false) }
     val change by rememberUpdatedState(onChange)
+    val end by rememberUpdatedState(onEnd)
+    val current by rememberUpdatedState(value)
     val shown = if (dragging) drag else value
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Canvas(
             Modifier.size(size + 12.dp)
                 .pointerInput(Unit) {
                     detectVerticalDragGestures(
-                        onDragStart = { drag = value; dragging = true },
-                        onDragEnd = { dragging = false },
-                        onDragCancel = { dragging = false },
+                        onDragStart = { drag = current; dragging = true },
+                        onDragEnd = { dragging = false; end?.invoke() },
+                        onDragCancel = { dragging = false; end?.invoke() },
                     ) { ch, dy ->
                         ch.consume()
                         drag = (drag - dy / (size.toPx() * 3.2f)).coerceIn(0f, 1f)
@@ -98,18 +101,28 @@ fun Knob(value: Float, color: Color, label: String, text: String, onChange: (Flo
 /** A whole-width drag bar: the fill is the value (velocity, gate, swing, volume …). */
 @Composable
 fun BarSlider(value: Float, color: Color, name: String, text: String, onChange: (Float) -> Unit,
-              modifier: Modifier = Modifier, height: Dp = 46.dp) {
+              modifier: Modifier = Modifier, height: Dp = 46.dp, onEnd: (() -> Unit)? = null) {
     val change by rememberUpdatedState(onChange)
+    val end by rememberUpdatedState(onEnd)
+    var drag by remember { mutableFloatStateOf(-1f) }   // the finger's value while it moves (the model catches up)
+    val shown = if (drag >= 0f) drag else value
     Box(
         modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(12.dp)).background(C.control)
             .pointerInput(Unit) {
-                detectTapGestures { change((it.x / size.width).coerceIn(0f, 1f)) }
+                detectTapGestures { change((it.x / size.width).coerceIn(0f, 1f)); end?.invoke() }
             }
             .pointerInput(Unit) {
-                detectHorizontalDragGestures { ch, _ -> ch.consume(); change((ch.position.x / size.width).coerceIn(0f, 1f)) }
+                detectHorizontalDragGestures(
+                    onDragEnd = { drag = -1f; end?.invoke() },
+                    onDragCancel = { drag = -1f; end?.invoke() },
+                ) { ch, _ ->
+                    ch.consume()
+                    drag = (ch.position.x / size.width).coerceIn(0f, 1f)
+                    change(drag)
+                }
             },
     ) {
-        Box(Modifier.fillMaxHeight().fillMaxWidth(value.coerceIn(0f, 1f)).background(color.copy(alpha = 0.35f)))
+        Box(Modifier.fillMaxHeight().fillMaxWidth(shown.coerceIn(0f, 1f)).background(color.copy(alpha = 0.35f)))
         Row(Modifier.fillMaxWidth().fillMaxHeight().padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(name, color = C.text, fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
             Text(text, color = C.quiet, fontSize = 13.sp, fontWeight = FontWeight.Bold)
