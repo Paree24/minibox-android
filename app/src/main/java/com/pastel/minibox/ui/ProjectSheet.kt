@@ -49,6 +49,7 @@ import com.pastel.minibox.engine.AudioStats
 import com.pastel.minibox.engine.Midi
 import com.pastel.minibox.engine.Native
 import com.pastel.minibox.engine.Prefs
+import com.pastel.minibox.engine.PublicFiles
 import com.pastel.minibox.state.App
 import com.pastel.minibox.state.objects
 import kotlinx.coroutines.delay
@@ -66,6 +67,14 @@ fun ProjectSheet(done: () -> Unit) {
     var projects by remember { mutableStateOf(listProjects()) }
     var exporting by remember { mutableStateOf(false) }
     var showExport by remember { mutableStateOf(false) }
+    // Save as…: the system picker chooses the name and the folder; the project is written there
+    val saveAs = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
+        if (uri != null) {
+            val tmp = File(context.cacheDir, "exports/saveas.minibox").apply { parentFile?.mkdirs() }
+            val r = JSONObject(App.call("export", "kind" to "minibox", "path" to tmp.absolutePath))
+            toast(context, if (r.optBoolean("ok") && PublicFiles.write(context, tmp, uri)) "Saved" else r.optString("error", "Could not save"))
+        }
+    }
     val import = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             val f = copyIn(context, uri, "import.minibox")
@@ -85,11 +94,21 @@ fun ProjectSheet(done: () -> Unit) {
                 App.call("newProject"); App.refresh(); Prefs.setLastProject(context, null); done()
             }
             ActionPad("Save", Modifier.weight(1f)) {
-                val r = JSONObject(App.call("saveProject", "name" to name.trim()))
-                if (r.optBoolean("ok")) Prefs.setLastProject(context, name.trim())
-                toast(context, if (r.optBoolean("ok")) "Saved" else r.optString("error"))
+                // the app's working copy, then the same file in Documents/Minibox (the Files app shows it there)
+                val n = name.trim()
+                val r = JSONObject(App.call("saveProject", "name" to n))
+                if (r.optBoolean("ok")) {
+                    Prefs.setLastProject(context, n)
+                    val f = File(context.filesDir, "Projects/${n}.minibox")
+                    if (android.os.Build.VERSION.SDK_INT < 29 && context.checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        (context as? android.app.Activity)?.requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), 2)
+                        toast(context, "Saved in the app; allow storage and save again for Documents/Minibox")
+                    } else toast(context, if (PublicFiles.save(context, f, "$n.minibox")) "Saved to ${PublicFiles.FOLDER}" else "Saved in the app")
+                } else toast(context, r.optString("error"))
                 App.refresh(); projects = listProjects()
             }
+            ActionPad("Save as", Modifier.weight(1f)) { saveAs.launch("${name.trim().ifEmpty { "Minibox" }}.minibox") }
             ActionPad("Export", Modifier.weight(1f)) { showExport = !showExport }
             ActionPad("Open file", Modifier.weight(1f)) { import.launch(arrayOf("*/*")) }
         }
