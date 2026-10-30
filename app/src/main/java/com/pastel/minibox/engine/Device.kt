@@ -17,6 +17,10 @@ import androidx.compose.runtime.mutableStateOf
 object Device {
     val bluetooth = mutableStateOf(false)
     val hot = mutableStateOf(false)
+    /** Eco is in force (chosen, or Auto on a low-end or hot phone). */
+    val eco = mutableStateOf(false)
+    var lowEnd = false
+        private set
     private var focus: AudioFocusRequest? = null
 
     fun start(context: Context) {
@@ -31,10 +35,22 @@ object Device {
             override fun onAudioDevicesRemoved(removed: Array<out AudioDeviceInfo>) = check()
         }, Handler(Looper.getMainLooper()))
         check()
+        // low-end: few cores or little memory (PLAN.md §5, phase 8)
+        val mem = android.app.ActivityManager.MemoryInfo().also { context.getSystemService(android.app.ActivityManager::class.java).getMemoryInfo(it) }
+        lowEnd = Runtime.getRuntime().availableProcessors() <= 4 || mem.totalMem < 4L * 1024 * 1024 * 1024 ||
+            context.getSystemService(android.app.ActivityManager::class.java).isLowRamDevice
         if (Build.VERSION.SDK_INT >= 29) {
             val pm = context.getSystemService(PowerManager::class.java)
-            pm.addThermalStatusListener { hot.value = it >= PowerManager.THERMAL_STATUS_MODERATE }
+            pm.addThermalStatusListener { hot.value = it >= PowerManager.THERMAL_STATUS_MODERATE; applyQuality(context) }
         }
+        applyQuality(context)
+    }
+
+    /** Full or Eco in the engine, from the setting: Auto picks Eco on a low-end phone or while it runs hot. */
+    fun applyQuality(context: Context) {
+        val q = Prefs.quality(context)
+        eco.value = q == 1 || (q == 0 && (lowEnd || hot.value))
+        Native.call("set", "{\"key\":\"quality\",\"value\":${if (eco.value) 1 else 0}}")
     }
 
     /** Playing: ask for audio focus; losing it to another app (a call, a video) stops the transport. */

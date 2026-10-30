@@ -36,9 +36,9 @@ private val DRAWN = setOf(VK.Filter, VK.Hpf, VK.Adsr, VK.Decay, VK.Rate4, VK.Mac
 /** A section's visual: a drawing of its parameter values (never computed from audio), as the desktop's. Sections
     whose visual is not drawn on the phone show just their knobs. */
 @Composable
-fun SectionVisual(v: Visual, color: Color, height: Dp = 150.dp) {
+fun SectionVisual(v: Visual, color: Color, modifier: Modifier = Modifier.fillMaxWidth().height(150.dp)) {
     if (v.kind !in DRAWN) return
-    Canvas(Modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(10.dp)).background(C.bg)) {
+    Canvas(modifier.clip(RoundedCornerShape(10.dp)).background(C.bg)) {
         val x = v.values
         fun at(i: Int, d: Float = 0f) = x.getOrElse(i) { d }
         val pad = 10.dp.toPx()

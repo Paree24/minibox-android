@@ -197,6 +197,7 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
         else if (k == "delayReturn") p.master.delayReturn = juce::jlimit (0.0f, 1.0f, (float) v);
         else if (k == "reverbReturn") p.master.reverbReturn = juce::jlimit (0.0f, 1.0f, (float) v);
         else if (k == "glue") p.master.glue = juce::jlimit (0.0f, 1.0f, (float) v);
+        else if (k == "quality") qualitySetting() = (int) v == 1 ? (int) Quality::Eco : (int) Quality::Full;
         return {};
     }
     bool handled = false;

@@ -65,6 +65,10 @@ fun PianoRoll(bar: Int, color: Color) {
     val stepT = seq.stepTicks
     val barTicks = seq.stepsPerBar * stepT
     val barStart = bar * barTicks
+    val keyLabel = remember { android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        this.color = Tokens.BG; textAlign = android.graphics.Paint.Align.RIGHT; typeface = android.graphics.Typeface.DEFAULT_BOLD } }
+    val rulerLabel = remember { android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        this.color = Tokens.FAINT; typeface = android.graphics.Typeface.DEFAULT_BOLD } }
     fun snapTicks() = (SNAPS[snap].second * stepT).roundToInt().coerceAtLeast(1)
     fun snapTo(t: Int) = if (SNAPS[snap].second == 0f) t else (t.toFloat() / snapTicks()).roundToInt() * snapTicks()
 
@@ -85,7 +89,8 @@ fun PianoRoll(bar: Int, color: Color) {
         Spacer(Modifier.height(8.dp))
         Canvas(
             Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(10.dp))
-                .pointerInput(seq, tool, snap, bar, low) {
+                // keyed only on the geometry: scrolling (low), the tool and the snap are read live, so a scroll never restarts the gesture
+                .pointerInput(stepT, barTicks, bar) {
                     val keysW = 40.dp.toPx()
                     val rulerH = 16.dp.toPx()
                     val rowH = 24.dp.toPx()
@@ -189,13 +194,9 @@ fun PianoRoll(bar: Int, color: Color) {
             val rowH = 24.dp.toPx()
             val rows = ((size.height - rulerH) / rowH).toInt().coerceAtLeast(1)
             val tickW = (size.width - keysW) / barTicks
-            val keyLabel = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                this.color = Tokens.BG; textSize = 10.dp.toPx(); textAlign = android.graphics.Paint.Align.RIGHT
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-            }
+            keyLabel.textSize = 10.dp.toPx(); rulerLabel.textSize = 10.dp.toPx()
             for (s in 0 until seq.stepsPerBar step 4)   // the ruler: bar.beat
-                drawContext.canvas.nativeCanvas.drawText("${bar + 1}.${s / 4 + 1}", keysW + s * stepT * tickW + 3.dp.toPx(), 11.dp.toPx(),
-                    android.graphics.Paint(keyLabel).apply { this.color = Tokens.FAINT; textAlign = android.graphics.Paint.Align.LEFT })
+                drawContext.canvas.nativeCanvas.drawText("${bar + 1}.${s / 4 + 1}", keysW + s * stepT * tickW + 3.dp.toPx(), 11.dp.toPx(), rulerLabel)
             drawRect(C.surface, Offset(keysW, rulerH), Size(size.width - keysW, rows * rowH))
             for (r in 0 until rows) {
                 val n = low + rows - 1 - r

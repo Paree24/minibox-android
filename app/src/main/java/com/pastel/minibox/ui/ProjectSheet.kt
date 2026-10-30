@@ -27,7 +27,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -75,7 +74,7 @@ fun ProjectSheet(done: () -> Unit) {
             App.refresh(); done()
         }
     }
-    Column(Modifier.verticalScroll(rememberScrollState())) {
+    Column {
         BasicTextField(name, { name = it }, singleLine = true,
             textStyle = TextStyle(color = C.text, fontSize = 20.sp, fontWeight = FontWeight.Black), cursorBrush = SolidColor(C.text),
             modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp))
@@ -104,41 +103,38 @@ fun ProjectSheet(done: () -> Unit) {
                 }
             }
         }
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(14.dp))
         SectionLabel("Projects")
         Spacer(Modifier.height(6.dp))
-        Column(Modifier.heightIn(max = 220.dp).verticalScroll(rememberScrollState())) {
-            projects.forEach { p ->
-                Row(
-                    Modifier.fillMaxWidth().padding(vertical = 2.dp).clip(RoundedCornerShape(10.dp))
-                        .background(if (p == project.name) C.control else C.surface)
-                        .combinedClickable(
-                            onClick = {
-                                App.autosave(context)
-                                val r = JSONObject(App.call("openProject", "name" to p))
-                                if (r.optBoolean("ok")) Prefs.setLastProject(context, p)
-                                App.refresh(); done()
-                            },
-                            onLongClick = { App.call("deleteProject", "name" to p); projects = listProjects() },
-                        ).padding(horizontal = 12.dp, vertical = 12.dp),
-                ) { Text(p, color = C.text, fontSize = 14.sp, fontWeight = FontWeight.Bold) }
-            }
+        Paged(projects, columns = 2, rows = 2, key = projects.size) { _, p ->
+            Box(
+                Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(10.dp))
+                    .background(if (p == project.name) C.text else C.control)
+                    .combinedClickable(
+                        onClick = {
+                            App.autosave(context)
+                            val r = JSONObject(App.call("openProject", "name" to p))
+                            if (r.optBoolean("ok")) Prefs.setLastProject(context, p)
+                            App.refresh(); done()
+                        },
+                        onLongClick = { App.call("deleteProject", "name" to p); projects = listProjects() },
+                    ).padding(horizontal = 12.dp),
+                contentAlignment = Alignment.CenterStart,
+            ) { Text(p, color = if (p == project.name) C.bg else C.text, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
         }
-        Spacer(Modifier.height(18.dp))
-        LatencyCard()
         Spacer(Modifier.height(14.dp))
+        LatencyCard()
+        Spacer(Modifier.height(10.dp))
+        QualityRow()
+        Spacer(Modifier.height(10.dp))
         val midi by Midi.devices
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(C.control).padding(16.dp)) {
-            SectionLabel("MIDI")
-            Spacer(Modifier.height(8.dp))
-            if (midi.isEmpty()) Text("No controller connected", color = C.faint, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            midi.forEach { d ->
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 3.dp)) {
-                    Box(Modifier.size(8.dp).clip(CircleShape).background(C.track(4)))
-                    Spacer(Modifier.width(10.dp))
-                    Text(d, color = C.text, fontSize = 14.sp, fontWeight = FontWeight.Black)
-                }
-            }
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(C.control).padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            SectionLabel("MIDI", Modifier.width(56.dp))
+            Box(Modifier.size(8.dp).clip(CircleShape).background(if (midi.isEmpty()) C.faint else C.track(4)))
+            Spacer(Modifier.width(10.dp))
+            Text(midi.joinToString().ifEmpty { "No controller" }, color = if (midi.isEmpty()) C.faint else C.text,
+                fontSize = 13.sp, fontWeight = FontWeight.Black, maxLines = 1)
         }
     }
 }
@@ -168,9 +164,8 @@ fun LatencyCard() {
             Spacer(Modifier.width(6.dp))
             Text("ms", color = C.quiet, fontSize = 15.sp, modifier = Modifier.padding(bottom = 8.dp))
         }
-        Text("AAudio · ${if (s.exclusive) "exclusive" else "shared"}${if (s.mmap) " · MMAP" else ""} · ${s.sampleRate / 1000f} kHz · ${s.bufferFrames} frames",
+        Text("${if (s.mmap) "MMAP" else if (s.exclusive) "exclusive" else "shared"} · ${s.sampleRate / 1000f} kHz · ${s.bufferFrames} frames · xruns ${s.xruns} · cpu ${(s.cpu * 100).toInt()}%",
             color = C.quiet, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        Text("burst ${s.burst} · xruns ${s.xruns} · cpu ${(s.cpu * 100).toInt()}%", color = C.faint, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         if (com.pastel.minibox.engine.Device.bluetooth.value)
             Text("Bluetooth output adds 150–250 ms the app cannot remove: use wired or USB audio to play live.",
                 color = C.record, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
@@ -217,12 +212,11 @@ fun MasterFxSheet() {
                 }
             }
             if (picking == i) {
-                Column(Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState()).padding(vertical = 4.dp)) {
-                    choices.forEach { c ->
-                        Text(c, color = C.text, fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                            modifier = Modifier.fillMaxWidth().clickable {
-                                App.call("setMasterFx", "index" to i, "effect" to c); picking = -1; reload()
-                            }.padding(horizontal = 12.dp, vertical = 10.dp))
+                Paged(choices, columns = 3, rows = 4, rowHeight = 40.dp, key = i) { _, c ->
+                    Box(Modifier.fillMaxWidth().height(40.dp).clip(RoundedCornerShape(10.dp)).background(C.control)
+                        .clickable { App.call("setMasterFx", "index" to i, "effect" to c); picking = -1; reload() }
+                        .padding(horizontal = 8.dp), contentAlignment = Alignment.CenterStart) {
+                        Text(c, color = C.text, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                 }
             }
@@ -266,4 +260,23 @@ private fun exportAndShare(context: Context, kind: String, name: String, finishe
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Share $name"))
         }
     }.start()
+}
+
+/** Quality: Auto (Eco on a low-end phone or while it runs hot), Eco (half the voices, one shared reverb, shorter
+    pattern tails, a lighter screen), Full (the instruments as designed). */
+@Composable
+fun QualityRow() {
+    val context = LocalContext.current
+    var q by remember { mutableIntStateOf(Prefs.quality(context)) }
+    val eco by com.pastel.minibox.engine.Device.eco
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(C.control).padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.width(76.dp)) {
+            SectionLabel("Quality")
+            Text(if (eco) "Eco now" else "Full now", color = C.faint, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        }
+        Segmented(listOf("Auto", "Eco", "Full"), q, C.text, {
+            q = it; Prefs.setQuality(context, it); com.pastel.minibox.engine.Device.applyQuality(context)
+        }, Modifier.weight(1f))
+    }
 }

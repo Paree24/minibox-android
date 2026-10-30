@@ -68,7 +68,11 @@ fun MainScreen() {
     var sheet by remember { mutableStateOf<Sheet?>(null) }
     val fast by App.fast
 
-    LaunchedEffect(Unit) { while (true) withFrameNanos { App.poll() } }
+    // the playhead and meters: every frame, or every other one in Eco (the UI leaves the cores to the audio)
+    LaunchedEffect(Unit) {
+        var frame = 0
+        while (true) withFrameNanos { if (!com.pastel.minibox.engine.Device.eco.value || frame++ % 2 == 0) App.poll() }
+    }
     // a pattern switch (or editing another one) changes the devices the screens show
     LaunchedEffect(fast.focusPattern, fast.activePattern) { App.refresh() }
 

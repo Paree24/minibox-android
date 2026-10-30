@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -79,11 +77,24 @@ fun TempoSheet() {
             contentAlignment = Alignment.Center,
         ) { Text("TAP", color = C.pattern, fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp) }
         Spacer(Modifier.height(20.dp))
-        SectionLabel("Time")
+        SectionLabel("Time signature  ${p.beats}/${p.unit}")
         Spacer(Modifier.height(8.dp))
-        val sigs = listOf(3 to 4, 4 to 4, 5 to 4, 6 to 8, 7 to 8)
-        ChoicePads(sigs.map { "${it.first}/${it.second}" }, sigs.indexOf(p.beats to p.unit), C.text,
-            { App.cmd("setTimeSig", "beats" to sigs[it].first, "unit" to sigs[it].second) })
+        for (row in 0 until 2) {   // beats 1–16
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                for (c in 1..8) {
+                    val b = row * 8 + c
+                    val on = b == p.beats
+                    Box(Modifier.weight(1f).height(38.dp).clip(RoundedCornerShape(10.dp)).background(if (on) C.text else C.control)
+                        .clickable { App.cmd("setTimeSig", "beats" to b, "unit" to p.unit) }, contentAlignment = Alignment.Center) {
+                        Text("$b", color = if (on) C.bg else C.quiet, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                    }
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+        }
+        Spacer(Modifier.height(4.dp))
+        ChoicePads(listOf("/4", "/8", "/16"), listOf(4, 8, 16).indexOf(p.unit), C.text,
+            { App.cmd("setTimeSig", "beats" to p.beats, "unit" to listOf(4, 8, 16)[it]) }, height = 38.dp)
         Spacer(Modifier.height(14.dp))
         BarSlider((p.swing - 0.5f) / 0.25f, C.text, "Swing", "${(p.swing * 100).toInt()}%",
             { App.cmd("set", "key" to "swing", "value" to 0.5f + it * 0.25f) })
@@ -171,12 +182,14 @@ fun DevicePickerSheet(track: Int, done: () -> Unit) {
     }
 }
 
-/** The project's key: root and scale (63 scales, as the desktop's Play drawer). */
+/** The project's key: root and scale (63 scales, as the desktop's Play drawer), a page at a time. */
 @Composable
 fun ScaleSheet() {
     val p by App.project
     Column {
         SheetTitle("Scale", "${keyName(p.scaleRoot)} ${p.scaleName}")
+        SectionLabel("Root")
+        Spacer(Modifier.height(6.dp))
         for (row in 0 until 2) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 for (c in 0 until 6) {
@@ -192,13 +205,14 @@ fun ScaleSheet() {
             Spacer(Modifier.height(6.dp))
         }
         Spacer(Modifier.height(10.dp))
-        LazyColumn(Modifier.heightIn(max = 360.dp)) {
-            itemsIndexed(App.scaleNames) { i, name ->
-                val on = i == p.scaleIndex
-                Text(name, color = if (on) C.bg else C.text, fontSize = 14.sp, fontWeight = if (on) FontWeight.Black else FontWeight.Bold,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp).clip(RoundedCornerShape(10.dp))
-                        .background(if (on) C.text else C.bg.copy(alpha = 0f))
-                        .clickable { App.cmd("set", "key" to "scaleIndex", "value" to i) }.padding(horizontal = 12.dp, vertical = 10.dp))
+        SectionLabel("Scale")
+        Spacer(Modifier.height(6.dp))
+        Paged(App.scaleNames, columns = 2, rows = 6, startAt = p.scaleIndex) { i, name ->
+            val on = i == p.scaleIndex
+            Box(Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(10.dp)).background(if (on) C.text else C.control)
+                .clickable { App.cmd("set", "key" to "scaleIndex", "value" to i) }.padding(horizontal = 12.dp),
+                contentAlignment = Alignment.CenterStart) {
+                Text(name, color = if (on) C.bg else C.text, fontSize = 13.sp, fontWeight = if (on) FontWeight.Black else FontWeight.Bold, maxLines = 1)
             }
         }
     }

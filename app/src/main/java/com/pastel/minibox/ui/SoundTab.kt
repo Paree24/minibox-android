@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -114,10 +113,11 @@ fun SoundTab(openPresets: () -> Unit) {
         val sec = ed.sections.getOrNull(tab)
         Column(
             Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp).clip(RoundedCornerShape(16.dp))
-                .background(C.surface).verticalScroll(rememberScrollState()).padding(12.dp),
+                .background(C.surface).padding(12.dp),
         ) {
             if (sec != null) {
-                SectionVisual(sec.visual, color, if (drawer) 90.dp else 150.dp)
+                // the visual takes what the controls leave: nothing scrolls
+                Box(Modifier.weight(1f).fillMaxWidth()) { SectionVisual(sec.visual, color, Modifier.fillMaxSize()) }
                 sec.choice?.let { c ->
                     Spacer(Modifier.height(12.dp))
                     if (c.options.size <= 5) Segmented(c.options, c.selected, color, { Sound.set(c.index, if (c.options.size > 1) it / (c.options.size - 1f) else 0f) },
@@ -169,16 +169,12 @@ fun PresetSheet(done: () -> Unit) {
             families.forEach { f -> Pill(f, on = f == family) { family = f } }
         }
         Spacer(Modifier.height(10.dp))
-        Column(Modifier.height(320.dp).verticalScroll(rememberScrollState())) {
-            all.forEachIndexed { i, p ->
-                val fam = if (p.factory) p.family else "User"
-                if (family != "All" && fam != family) return@forEachIndexed
-                val on = p.name == ed.preset
-                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(if (on) C.text else C.surface)
-                    .clickable { Sound.applyPreset(i) }.padding(horizontal = 12.dp, vertical = 10.dp)) {
-                    Text(p.name, color = if (on) C.bg else C.text, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                    Text(fam, color = if (on) C.bg else C.faint, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                }
+        val shown = all.withIndex().filter { (_, p) -> family == "All" || (if (p.factory) p.family else "User") == family }
+        Paged(shown, columns = 2, rows = 6, startAt = shown.indexOfFirst { it.value.name == ed.preset }, key = family) { _, (i, p) ->
+            val on = p.name == ed.preset
+            Box(Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(10.dp)).background(if (on) C.text else C.control)
+                .clickable { Sound.applyPreset(i) }.padding(horizontal = 10.dp), contentAlignment = Alignment.CenterStart) {
+                Text(p.name, color = if (on) C.bg else C.text, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 2)
             }
         }
         Spacer(Modifier.height(12.dp))

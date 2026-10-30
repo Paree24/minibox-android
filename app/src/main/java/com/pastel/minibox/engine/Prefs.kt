@@ -9,6 +9,9 @@ object Prefs {
     fun setLatencyMode(c: Context, m: Int) = p(c).edit().putInt("latencyMode", m).apply()
     fun lowBursts(c: Context) = p(c).getInt("lowBursts", 1)
     fun setLowBursts(c: Context, b: Int) = p(c).edit().putInt("lowBursts", b).apply()
+    /** 0 Auto (Eco on low-end or hot phones), 1 Eco, 2 Full. */
+    fun quality(c: Context) = p(c).getInt("quality", 0)
+    fun setQuality(c: Context, q: Int) = p(c).edit().putInt("quality", q).apply()
     fun lastProject(c: Context): String? = p(c).getString("lastProject", null)
     fun setLastProject(c: Context, name: String?) = p(c).edit().putString("lastProject", name).apply()
 }
