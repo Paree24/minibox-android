@@ -251,6 +251,7 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
             if (a.hasProperty ("length")) n->length = std::max (1, geti (a, "length"));
             if (a.hasProperty ("note")) n->note = (uint8_t) std::clamp (geti (a, "note"), 0, 127);
             if (a.hasProperty ("velocity")) n->vel = (uint8_t) std::clamp (geti (a, "velocity"), 1, 127);
+            if (a.hasProperty ("flags")) n->flags = (uint8_t) (geti (a, "flags") & (kAccentFlag | kSlideFlag | kTieFlag));   // accent / slide
         }
         return {};
     }

@@ -96,10 +96,6 @@ fun PianoRoll(bar: Int, color: Color) {
                 low = -2 - keep   // re-found when drawn, on the same note, once the rows change
             }
             Spacer(Modifier.weight(1f))
-            if (selected >= 0) {
-                RoundIcon("✕") { Seq.edit("clipDelete", "id" to selected); selected = -1 }
-                Spacer(Modifier.width(6.dp))
-            }
         }
         Spacer(Modifier.height(8.dp))
         Canvas(
@@ -263,6 +259,18 @@ fun PianoRoll(bar: Int, color: Color) {
             }
         }
         Spacer(Modifier.height(8.dp))
+        // the selected note: accent, slide (the Acid glides from it into the next note), delete
+        seq.clip.firstOrNull { it.id == selected }?.let { n ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(noteName(n.note), color = color, fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.width(44.dp))
+                Pill("Accent", on = n.flags and 1 != 0, color = color) { Seq.edit("clipEdit", "id" to n.id, "flags" to (n.flags xor 1)) }
+                Spacer(Modifier.width(6.dp))
+                Pill("Slide", on = n.flags and 2 != 0, color = color) { Seq.edit("clipEdit", "id" to n.id, "flags" to (n.flags xor 2)) }
+                Spacer(Modifier.weight(1f))
+                RoundIcon("✕") { Seq.edit("clipDelete", "id" to n.id); selected = -1 }
+            }
+            Spacer(Modifier.height(6.dp))
+        }
         VelocityLane(bar, barStart, barTicks, color, selected)
     }
 }
