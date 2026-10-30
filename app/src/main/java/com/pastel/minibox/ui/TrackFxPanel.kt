@@ -50,14 +50,14 @@ fun TrackFxPanel(modifier: Modifier = Modifier) {
         }
         Spacer(Modifier.height(10.dp))
         if (picking || s.effect.isEmpty()) {
-            Paged(listOf("") + TrackFx.choices.value, columns = 3, rows = 6, rowHeight = 40.dp, key = sel) { _, name ->
+            Box(Modifier.weight(1f).fillMaxWidth()) { Paged(listOf("") + TrackFx.choices.value, columns = 3, rows = 6, rowHeight = 40.dp, key = sel) { _, name ->
                 val on = name == s.effect
                 Box(Modifier.fillMaxWidth().height(40.dp).clip(RoundedCornerShape(10.dp)).background(if (on) color else C.control)
                     .clickable { TrackFx.setEffect(sel, name); picking = false }.padding(horizontal = 8.dp), contentAlignment = Alignment.CenterStart) {
                     Text(name.ifEmpty { "None" }, color = if (on) C.bg else if (name.isEmpty()) C.faint else C.text, fontSize = 12.sp,
                         fontWeight = FontWeight.Bold, maxLines = 1)
                 }
-            }
+            } }
             return@Column
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
