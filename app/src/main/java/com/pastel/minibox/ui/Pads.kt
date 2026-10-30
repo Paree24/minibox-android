@@ -20,7 +20,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import com.pastel.minibox.state.App
 
 /** The selected track's 16 square pads. */
@@ -32,11 +31,7 @@ fun Pads(modifier: Modifier = Modifier) {
     val octaves by App.octave
     val rollBeats by App.rollBeats
     val layout = currentLayout(track, rack[track], project, octaves[track], rollBeats) ?: return
-    AndroidView(
-        factory = { PadView(it).apply { listener = App::padPressed } },
-        update = { it.layout = layout },
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
-    )
+    PadGrid(layout, App::padPressed, modifier.fillMaxWidth().padding(horizontal = 16.dp))
 }
 
 /** Editors keep the pads folded into this handle; tapping it pulls the 4×4 up (mockups 15–16). */

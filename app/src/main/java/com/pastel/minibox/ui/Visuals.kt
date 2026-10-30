@@ -30,11 +30,14 @@ private object VK {
     const val Reverb = 25
 }
 
-/** A section's visual: a drawing of its parameter values (never computed from audio), as the desktop's. The common
-    kinds are drawn; the rest show their values as bars until they are ported. */
+private val DRAWN = setOf(VK.Filter, VK.Hpf, VK.Adsr, VK.Decay, VK.Rate4, VK.MacroEnv, VK.PitchEnv, VK.Wave, VK.Lfo,
+    VK.Ring, VK.Delay, VK.Drive, VK.Reverb)
+
+/** A section's visual: a drawing of its parameter values (never computed from audio), as the desktop's. Sections
+    whose visual is not drawn on the phone show just their knobs. */
 @Composable
 fun SectionVisual(v: Visual, color: Color, height: Dp = 150.dp) {
-    if (v.kind == 0) return
+    if (v.kind !in DRAWN) return
     Canvas(Modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(10.dp)).background(C.bg)) {
         val x = v.values
         fun at(i: Int, d: Float = 0f) = x.getOrElse(i) { d }

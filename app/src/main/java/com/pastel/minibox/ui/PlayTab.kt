@@ -26,7 +26,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import com.pastel.minibox.state.App
 import kotlinx.coroutines.delay
 
@@ -70,9 +69,11 @@ fun PlayTab(openScale: () -> Unit) {
                             App.cmd("setPlay", "track" to track, "key" to "arpOn", "value" to (m == 2))
                         }, Modifier.weight(1f))
                         Spacer(Modifier.width(8.dp))
-                        Pill("${keyName(project.scaleRoot)} ${project.scaleName}".take(14), caret = true, onClick = openScale)
+                        Pill("${keyName(project.scaleRoot)} ${project.scaleName}".take(10), caret = true, onClick = openScale)
                         Spacer(Modifier.width(8.dp))
-                        OctaveStepper(octaves[track]) { App.setOctave(track, it) }
+                        OctaveButton("Oct −", octaves[track] > -2) { App.setOctave(track, octaves[track] - 1) }
+                        Spacer(Modifier.width(6.dp))
+                        OctaveButton("Oct +", octaves[track] < 3) { App.setOctave(track, octaves[track] + 1) }
                     }
                     if (info.play.arpOn) {
                         Spacer(Modifier.height(8.dp))
@@ -109,12 +110,12 @@ fun PlayTab(openScale: () -> Unit) {
     }
 }
 
+/** One of the two octave buttons beside the scale (the pads' labels show where they are). */
 @Composable
-private fun OctaveStepper(oct: Int, onChange: (Int) -> Unit) {
-    Row(Modifier.height(30.dp).clip(CircleShape).background(C.control), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(30.dp).clickable { onChange(oct - 1) }, contentAlignment = Alignment.Center) { Text("‹", color = C.quiet, fontSize = 16.sp) }
-        Text(if (oct == 0) "0" else if (oct > 0) "+$oct" else "$oct", color = C.text, fontSize = 12.sp, fontWeight = FontWeight.Black)
-        Box(Modifier.size(30.dp).clickable { onChange(oct + 1) }, contentAlignment = Alignment.Center) { Text("›", color = C.quiet, fontSize = 16.sp) }
+private fun OctaveButton(label: String, enabled: Boolean, onClick: () -> Unit) {
+    Box(Modifier.height(34.dp).clip(RoundedCornerShape(10.dp)).background(C.control).clickable(enabled = enabled, onClick = onClick)
+        .padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {
+        Text(label, color = if (enabled) C.text else C.faint, fontSize = 12.sp, fontWeight = FontWeight.Black)
     }
 }
 

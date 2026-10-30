@@ -24,9 +24,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        if (android.os.Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
-            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1)   // the background-playback notification
+        // pad touches as soon as they are read, not batched to the next frame (PLAN.md §3.3); Android 11+
+        if (android.os.Build.VERSION.SDK_INT >= 30) window.decorView.requestUnbufferedDispatch(android.view.InputDevice.SOURCE_CLASS_POINTER)
         setContent {
             if (ready.value) MainScreen() else Box(Modifier.fillMaxSize().background(C.bg))
         }

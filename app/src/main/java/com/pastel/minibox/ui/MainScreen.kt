@@ -135,7 +135,11 @@ private fun TopBar(onTempo: () -> Unit, onRecordMenu: () -> Unit, onPatterns: ()
         ) { Box(Modifier.size(12.dp).clip(CircleShape).background(if (fast.recording) C.bg else C.record)) }
         Spacer(Modifier.width(10.dp))
         val context = androidx.compose.ui.platform.LocalContext.current
-        Box(Modifier.size(44.dp).clickable { com.pastel.minibox.engine.Device.requestFocus(context); App.cmd("play") }, contentAlignment = Alignment.Center) {
+        Box(Modifier.size(44.dp).clickable {
+            askNotificationsOnce(context)   // only for the background-playback notification; denying it is fine
+            com.pastel.minibox.engine.Device.requestFocus(context)
+            App.cmd("play")
+        }, contentAlignment = Alignment.Center) {
             Canvas(Modifier.size(44.dp)) {
                 drawCircle(C.control, size.minDimension / 2 - 3.dp.toPx())
                 drawCircle(C.divider, size.minDimension / 2 - 1.dp.toPx(), style = Stroke(2.5.dp.toPx()))
@@ -265,4 +269,16 @@ private fun NavIcon(t: Tab, c: Color) {
             }, c)
         }
     }
+}
+
+/** The first Play asks once whether Minibox may show its "Playing · Stop" notification while in the background
+    (Android 13+). Background playback works either way; without it there is no Stop outside the app. */
+private fun askNotificationsOnce(context: android.content.Context) {
+    if (android.os.Build.VERSION.SDK_INT < 33) return
+    val prefs = context.getSharedPreferences("minibox", android.content.Context.MODE_PRIVATE)
+    if (prefs.getBoolean("askedNotifications", false)) return
+    prefs.edit().putBoolean("askedNotifications", true).apply()
+    val activity = context as? android.app.Activity ?: return
+    if (activity.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
+        activity.requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1)
 }
