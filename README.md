@@ -4,15 +4,18 @@ The Android port of [Pastel Minibox](../pastel-minibox): the groovebox on a phon
 pads where the keyboard was and low-latency audio. See [PLAN.md](PLAN.md) for the port plan and
 [mockups/](mockups/README.md) for the screens.
 
-> Work in progress: phase 2 of PLAN.md (the latency spike). The app plays the starter rack (Drums, Bassline, Acid,
-> VA) from 4×4 pads and shows the audio path's latency, buffer and underruns.
+> Work in progress: phases 0–2 and 4–7 of PLAN.md are in (see "Status" there). Phase 3 (the test suite on a
+> phone) and phase 8 (quality tiers for low-end phones) are still to do.
 
 ## Layout
 
 - `app/src/main/cpp/`: the native library. `CMakeLists.txt` builds JUCE's non-GUI modules and the shared core
   straight from `../pastel-minibox/Source` (never forked); `MiniboxHost` runs the engine from an Oboe stream;
-  `Bridge.cpp` is the JNI surface (`@CriticalNative` for the pads).
-- `app/src/main/java/com/pastel/minibox/`: Kotlin + Compose UI. `ui/PadView.kt` is the raw-touch pad grid.
+  `Bridge.cpp` is the JNI surface (`@CriticalNative` for the pads, rolls and FX holds); `Api.cpp`, `SeqApi.cpp`,
+  `SoundApi.cpp`, `ProjectApi.cpp` answer the UI's JSON commands and queries; `MidiIn.cpp` reads controllers.
+- `app/src/main/java/com/pastel/minibox/`: Kotlin + Compose UI. `state/` mirrors the engine (`App`, `Seq`, `Sound`);
+  `ui/` has one file per tab and sheet; `ui/PadView.kt` is the raw-touch pad grid; `engine/` wraps the native
+  library, MIDI, the audio device and preferences; `PlaybackService` keeps playing in the background.
 - Factory content (presets, samples) is copied from `../pastel-minibox/Factory` into the APK's assets at build time
   and unpacked into app storage on first run.
 

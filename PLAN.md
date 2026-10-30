@@ -8,6 +8,21 @@ The source is `../pastel-minibox` (JUCE 8, C++20). Mockups are in `mockups/` (se
 
 ---
 
+## Status (2026-10-30)
+
+| Phase | State |
+|---|---|
+| 0 Core prep | Done in pastel-minibox: priority-inheriting audio lock (instead of a full lock-free rewrite), main-thread poster, factory folder override, headless effect registry and editor specs, note repeat (`Engine::setRoll`) |
+| 1 Skeleton | Done |
+| 2 Latency | Done: the user measured good latency on a phone. Latency modes: Low (minimum, self-tuning, remembered), Medium ≤ 30 ms, High ≤ 50 ms, Very high ≤ 80 ms. The in-app tap-to-sound test (§6) is not built |
+| 3 Engine on device | Open: MiniboxTests not yet run on a phone (it links the VST3 host and GUI modules; needs a headless subset) |
+| 4 Play + Perform | Done |
+| 5 Seq + Sound | Done. Visuals ported: filter, HPF, envelopes, pitch envelope, wave, LFO, ring, delay, drive, reverb; the others (algorithm, operators, sample, slices, accent, slide, chorus, voices, arp, bits) show their values as bars |
+| 6 Mix, files, MIDI | Done, except MIDI learn and `.mbmidi` maps, clip controller lanes, sample waveform / zone editing |
+| 7 Platform | Done (background playback, focus, Bluetooth, thermal badge, tablets); accessibility labels to do |
+| 8 Low-end | Open: quality tiers (voice caps, oversampling) need engine work in pastel-minibox |
+| 9 Release | Open |
+
 ## 1. Decisions
 
 | Topic | Decision | Why |
