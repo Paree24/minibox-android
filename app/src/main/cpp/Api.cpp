@@ -4,6 +4,7 @@
 #include "app/presets/PresetBank.h"
 #include "efx/MasterFx.h"
 #include "seq/Scales.h"
+#include "efx/EffectRegistry.h"
 
 namespace mb::android
 {
@@ -17,6 +18,24 @@ bool getb (const juce::var& a, const char* k) { return a.hasProperty (k) && (boo
 
 const char* kTypeIds[] = { "mono", "poly", "acid", "fm", "sampler", "drums", "drumsampler" };
 } // namespace
+
+/** The two parameters a performance effect's XY pad plays (indices into the effect's controls): X then Y. */
+std::pair<int, int> MiniboxHost::performAxes (int pad)
+{
+    static const std::pair<const char*, std::pair<int, int>> axes[] = {
+        { "Stutter", { 0, 9 } },            // Div × Filter
+        { "Glitch", { 0, 2 } },             // Density × Repeat
+        { "Buffer Shuffler", { 0, 1 } },    // Div × Chance
+        { "Slicer", { 0, 7 } },             // Div × Depth
+        { "Bitcrusher", { 1, 0 } },         // Rate × Bits
+        { "Multimode Filter", { 0, 1 } },   // Cutoff × Reso
+        { "Soft Clip Drive", { 0, 3 } },    // Drive × Tone
+        { "Reverse", { 0, 2 } },            // Window × Width
+    };
+    const auto& name = engine.project().performFx[(size_t) std::clamp (pad, 0, kPerformFx - 1)].effect;
+    for (auto& [n, xy] : axes) if (name == n) return xy;
+    return { 0, 1 };
+}
 
 juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
 {
@@ -115,6 +134,31 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
                 list.add (o);
             }
         return list;
+    }
+    if (op == "performXY")   // the 8 performance effects and the two parameters each XY pad plays (Perform)
+    {
+        juce::Array<juce::var> list;
+        for (int i = 0; i < kPerformFx; ++i)
+        {
+            const auto [xi, yi] = performAxes (i);
+            const auto* d = efx::defForId (efx::idForName (p.performFx[(size_t) i].effect));
+            auto o = obj();
+            put (o, "name", juce::String (MasterFx::padName (i)));
+            put (o, "x", xi); put (o, "y", yi);
+            put (o, "xName", d != nullptr ? juce::String (d->p[xi].name) : juce::String());
+            put (o, "yName", d != nullptr ? juce::String (d->p[yi].name) : juce::String());
+            list.add (o);
+        }
+        return list;
+    }
+    if (op == "setPerformXY")   // the finger on an XY pad: the effect's two parameters (0–1 knob positions)
+    {
+        const int pad = std::clamp (geti (a, "pad"), 0, kPerformFx - 1);
+        const auto [xi, yi] = performAxes (pad);
+        auto& fx = p.performFx[(size_t) pad];
+        fx.norm[(size_t) xi] = juce::jlimit (0.0f, 1.0f, (float) getd (a, "x"));
+        fx.norm[(size_t) yi] = juce::jlimit (0.0f, 1.0f, (float) getd (a, "y"));
+        return {};
     }
     if (op == "fxPads")
     {
