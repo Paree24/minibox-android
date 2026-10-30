@@ -22,6 +22,9 @@ object Native {
     @JvmStatic external fun stop()
     @JvmStatic external fun setBufferBursts(bursts: Int)
     @JvmStatic external fun readStats(out: FloatArray)
+    /** A drum device's parts, in lane order: the notes that play them and their names (empty for a synth). */
+    @JvmStatic external fun laneNotes(track: Int): IntArray
+    @JvmStatic external fun laneName(track: Int, lane: Int): String
     @JvmStatic private external fun runPosted(ptr: Long)
 
     private val main = Handler(Looper.getMainLooper())

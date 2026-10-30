@@ -42,7 +42,9 @@ import kotlinx.coroutines.delay
 private data class Slot(val name: String, val drums: Boolean = false, val baseNote: Int = 36)
 
 private val RACK = listOf(Slot("Drums", drums = true), Slot("Bassline"), Slot("Acid"), Slot("VA", baseNote = 48), null, null, null, null)
-private val DRUM_PARTS = listOf("Kick", "Snare", "Clap", "Tom", "C Hat", "O Hat", "Cymbal", "Perc")
+/** Drum pads 0–7 (0 = bottom-left) by General MIDI note: bottom row Kick, Snare | C Hat, O Hat; above it
+    Tom, Clap | Perc, Cymbal. Left thumb on kick and snare, right thumb on the hats and cymbal. */
+private val THUMB_ORDER = intArrayOf(36, 38, 42, 46, 45, 39, 37, 49)
 private val MINOR = intArrayOf(0, 2, 3, 5, 7, 8, 10)
 private val NOTE_NAMES = listOf("C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B")
 
@@ -52,9 +54,18 @@ private fun padLayout(track: Int): PadView.Layout? {
     val slot = RACK[track] ?: return null
     val color = Tokens.TRACK[track]
     if (slot.drums) {
-        // lower 8 hit the parts (Kick bottom-left); the upper 8 become the rolls (phase 4) and hit for now
-        val notes = IntArray(16) { 36 + it % 8 }
-        return PadView.Layout(track, color, notes, Array(16) { DRUM_PARTS[it % 8] }, emptySet())
+        // the device says which note plays each part and its name (Drums and the Drum Sampler order them differently)
+        val lanes = Native.laneNotes(track)
+        if (lanes.isEmpty()) return null
+        // place the parts by their General MIDI note, for two thumbs: kick and snare under the left,
+        // hats and cymbal under the right; parts with other notes fill the places left over
+        val order = THUMB_ORDER.map { gm -> lanes.indexOf(gm) }.toMutableList()
+        val unused = lanes.indices.filter { it !in order }.toMutableList()
+        for (i in order.indices) if (order[i] < 0) order[i] = if (unused.isNotEmpty()) unused.removeAt(0) else i % lanes.size
+        val names = Array(lanes.size) { Native.laneName(track, it) }
+        // lower 8 hit the parts; the upper 8 repeat them in the same columns (the rolls, phase 4; they hit for now)
+        val lane = IntArray(16) { order[it % 8] }
+        return PadView.Layout(track, color, IntArray(16) { lanes[lane[it]] }, Array(16) { names[lane[it]] }, emptySet())
     }
     // in scale (C minor), rows a fourth apart: 3 scale degrees per row
     val notes = IntArray(16) { pad ->

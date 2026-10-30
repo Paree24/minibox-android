@@ -60,6 +60,24 @@ void readStats (JNIEnv* env, jclass, jfloatArray out)
     env->SetFloatArrayRegion (out, 0, std::min<jsize> ((jsize) std::size (v), env->GetArrayLength (out)), v);
 }
 
+/** A drum device's parts: their names and the notes that play them (empty for a synth or an empty slot). */
+jintArray laneNotes (JNIEnv* env, jclass, jint track)
+{
+    auto* d = MiniboxHost::get().getEngine().device (0, track);
+    const int n = d != nullptr ? d->laneCount() : 0;
+    std::vector<jint> notes ((size_t) n);
+    for (int l = 0; l < n; ++l) notes[(size_t) l] = d->laneNote (l);
+    auto arr = env->NewIntArray (n);
+    env->SetIntArrayRegion (arr, 0, n, notes.data());
+    return arr;
+}
+
+jstring laneName (JNIEnv* env, jclass, jint track, jint lane)
+{
+    auto* d = MiniboxHost::get().getEngine().device (0, track);
+    return env->NewStringUTF (d != nullptr ? d->laneName (lane).toRawUTF8() : "");
+}
+
 void runPosted (JNIEnv*, jclass, jlong ptr)
 {
     std::unique_ptr<std::function<void()>> fn (reinterpret_cast<std::function<void()>*> ((intptr_t) ptr));
@@ -89,6 +107,8 @@ Java_com_pastel_minibox_engine_Native_nativeInit (JNIEnv* env, jclass cls, jobje
         { "setBufferBursts", "(I)V", reinterpret_cast<void*> (setBufferBursts) },
         { "readStats", "([F)V", reinterpret_cast<void*> (readStats) },
         { "runPosted", "(J)V", reinterpret_cast<void*> (runPosted) },
+        { "laneNotes", "(I)[I", reinterpret_cast<void*> (laneNotes) },
+        { "laneName", "(II)Ljava/lang/String;", reinterpret_cast<void*> (laneName) },
     };
     if (env->RegisterNatives (cls, methods, (jint) std::size (methods)) != JNI_OK) return JNI_FALSE;
 
