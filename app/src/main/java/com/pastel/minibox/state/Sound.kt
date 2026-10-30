@@ -9,7 +9,8 @@ data class Param(val index: Int, val id: String, val label: String, val value: F
 data class Choice(val index: Int, val options: List<String>, val selected: Int)
 data class Visual(val kind: Int, val variant: Int, val values: List<Float>)
 data class Section(val title: String, val knobs: List<Param>, val choice: Choice?, val toggle: Param?, val visual: Visual)
-data class Editor(val preset: String = "", val sections: List<Section> = emptyList(), val selectionNames: List<String> = emptyList())
+data class Editor(val preset: String = "", val sections: List<Section> = emptyList(), val selectionNames: List<String> = emptyList(),
+                  val engine: Int = -1)
 data class Preset(val name: String, val family: String, val factory: Boolean)
 
 /** The selected track's device editor, built from the desktop's EditorSpecs (cpp/SoundApi.cpp). */
@@ -40,6 +41,7 @@ object Sound {
                 )
             },
             o.getJSONArray("selectionNames").strings(),
+            o.optInt("engine", -1),
         )
     }
 

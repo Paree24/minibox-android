@@ -84,12 +84,18 @@ juce::var MiniboxHost::soundCall (const juce::String& op, const juce::var& a, bo
         auto out = obj();
         put (out, "sections", sections);
         put (out, "preset", d->presetName);
+        put (out, "engine", d->type() == DeviceType::Poly ? (int) d->get ("engine") : -1);   // VA: 0 DCO, 1 VCO
         put (out, "selections", d->type() == DeviceType::FM ? 6 : (d->laneCount() > 0 ? 8 : 0));
         juce::Array<juce::var> selNames;
         for (int l = 0; l < d->laneCount(); ++l) selNames.add (d->laneName (l));
         if (d->type() == DeviceType::FM) for (int op = 1; op <= 6; ++op) selNames.add ("Op " + juce::String (op));
         put (out, "selectionNames", selNames);
         return out;
+    }
+    if (op == "setParamId")   // a parameter by id, in its own units (the VA's engine switch)
+    {
+        if (d != nullptr && d->params().indexOf (a["id"].toString()) >= 0) d->set (a["id"].toString(), (float) (double) a["value"]);
+        return {};
     }
     if (op == "setParam")
     {

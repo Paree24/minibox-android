@@ -116,7 +116,12 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
 }
 
 /** The note a tap on an empty step writes: a held pad's, else the last pad played. */
-private fun inputNote(): Int = App.heldNotes.value.firstOrNull() ?: App.lastNote.intValue
+private fun inputNote(): Int {
+    val n = App.heldNotes.value.firstOrNull() ?: App.lastNote.intValue
+    val p = App.project.value
+    // in key, as everything else in Seq: a note off the scale moves down onto it
+    return (n downTo maxOf(0, n - 11)).firstOrNull { ((it - p.scaleRoot) % 12 + 12) % 12 in p.scaleIntervals } ?: n
+}
 
 /** Synth steps as rows (time runs down): on, note, velocity, gate, chance, ratchet, accent, slide. */
 @OptIn(ExperimentalFoundationApi::class)

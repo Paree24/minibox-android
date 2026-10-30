@@ -52,8 +52,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
-        // background playback (a foreground service) comes in phase 7; until then the stream stops with the app
-        if (ready.value && App.fast.value.playing) {
+        // Home while playing: keep going in the background; Back (closing the app) stops it (onDestroy)
+        if (ready.value && App.fast.value.playing && !isFinishing) {
             // playing: keep going in the background, with a notification that can stop it
             App.autosave(this)
             PlaybackService.start(this)
@@ -69,5 +69,14 @@ class MainActivity : ComponentActivity() {
             App.autosave(this)
         }
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        if (isFinishing && ready.value) {   // closed with Back: the music stops with the app
+            Native.stop(); Native.stop()
+            Native.stopAudio()
+            PlaybackService.stop(this)
+        }
+        super.onDestroy()
     }
 }

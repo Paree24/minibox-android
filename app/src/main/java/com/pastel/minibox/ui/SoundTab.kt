@@ -95,6 +95,14 @@ fun SoundTab(openPresets: () -> Unit) {
                 if (drums) Pill("Slice a loop", Modifier.weight(1f), on = true, color = color, height = 44.dp) { load(true) }
             }
         }
+        // the VA's two engines: DCO (crystal-locked, one oscillator a voice) or VCO (paraphonic, three a voice)
+        if (ed.engine >= 0) {
+            Segmented(listOf("DCO", "VCO"), ed.engine, color, {
+                App.call("setParamId", "track" to track, "id" to "engine", "value" to it)
+                Sound.tab.intValue = 0
+                Sound.refresh(); App.refresh()
+            }, Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp))
+        }
         // drum part / FM operator: which one the editor shows
         if (ed.selectionNames.isNotEmpty()) {
             val names = ed.selectionNames

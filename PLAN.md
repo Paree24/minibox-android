@@ -24,13 +24,13 @@ The source is `../pastel-minibox` (JUCE 8, C++20). Mockups are in `mockups/` (se
 | 9 Release | Open |
 
 ### Parked (2026-10-30, to pick up next)
-- Undo / redo in the Seq header for all views (today only in the piano roll)
-- Accent / Slide toggles for a selected piano-roll note (the engine already plays clip slides)
-- Save: choose a file name and location; default folder in the phone's main storage (Documents/Minibox)
-- Step input: snap the last pad note into the scale when tapping an empty step
 - CPU: optimise the whole engine, not just the VA: every device, the effects, the master bus (profile on a phone)
 - Piano roll: show and edit across bars (a note drawn from bar 1 into bar 2); today it works one bar at a time
 - Piano roll: select several notes (box or multi-tap) to move, resize, delete or change velocity together
+
+Done from the parked list (2026-10-30): undo / redo in the Seq header; Accent / Slide on piano-roll notes; Save to
+Documents/Minibox and Save as (name and folder); step input snapped into the scale; closing the app stops the
+sound (Home keeps it playing); the VA's DCO / VCO switch; the arp sheet (15 rates, gate, swing); the mixer's touch.
 
 ## 1. Decisions
 

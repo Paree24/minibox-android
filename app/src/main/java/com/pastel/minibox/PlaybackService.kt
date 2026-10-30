@@ -42,6 +42,14 @@ class PlaybackService : Service() {
         return START_NOT_STICKY
     }
 
+    /** Swiped away from recents: the app is closed, so the music stops too. */
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        Native.stop(); Native.stop()
+        Native.stopAudio()
+        stopSelf()
+        super.onTaskRemoved(rootIntent)
+    }
+
     companion object {
         private const val CHANNEL = "playback"
         private const val ACTION_STOP = "stop"
