@@ -65,7 +65,7 @@ fun chordsLayout(track: Int, info: TrackInfo, p: ProjectInfo, octave: Int): PadL
 }
 
 fun rateName(beats: Float) = when (beats) {
-    0.5f -> "1/8"; 0.25f -> "1/16"; 0.125f -> "1/32"; 1f / 3f -> "1/8T"; 1f / 6f -> "1/16T"; else -> "1/16"
+    1f -> "1/4"; 0.5f -> "1/8"; 0.25f -> "1/16"; 0.125f -> "1/32"; 1f / 3f -> "1/8T"; 1f / 6f -> "1/16T"; else -> "1/16"
 }
 
 /** Drum pads: the device's parts placed for two thumbs; the lower 8 hit, the upper 8 roll at `rollBeats`. */

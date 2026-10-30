@@ -31,7 +31,7 @@ import kotlinx.coroutines.delay
 
 private val ARP_RATES = listOf(3 to "1/8", 6 to "1/16", 9 to "1/32", 5 to "1/8T", 8 to "1/16T")
 private val ARP_MODES = listOf("Up", "Down", "Up-Dn", "Dn-Up", "Rand", "Played")
-val ROLL_RATES = listOf(0.5f, 0.25f, 0.125f, 1f / 3f, 1f / 6f)
+val ROLL_RATES = listOf(1f, 0.5f, 0.25f, 0.125f, 1f / 3f, 1f / 6f)
 
 /** Play (mockups 01–03): mode, scale and octave on top, the 8 macros, the 16 square pads on the nav. */
 @Composable
