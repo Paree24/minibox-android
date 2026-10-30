@@ -151,10 +151,10 @@ fun Segmented(options: List<String>, selected: Int, color: Color, onSelect: (Int
 
 @Composable
 fun Pill(text: String, modifier: Modifier = Modifier, on: Boolean = false, color: Color = C.text, caret: Boolean = false,
-         height: Dp = 30.dp, onClick: () -> Unit = {}) {
+         height: Dp = 30.dp, padding: Dp = 12.dp, onClick: () -> Unit = {}) {
     Box(
         modifier.height(height).clip(CircleShape).background(if (on) color else C.control).clickable(onClick = onClick)
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = padding),
         contentAlignment = Alignment.Center,
     ) {
         Text(if (caret) "$text  ▾" else text, color = if (on) C.bg else C.text, fontSize = 12.sp, fontWeight = FontWeight.Black, maxLines = 1)

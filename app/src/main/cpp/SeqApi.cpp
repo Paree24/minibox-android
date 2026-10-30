@@ -227,6 +227,30 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
         tr.convertToPianoRoll (stepT, total);
         return {};
     }
+    // several clip notes at once (the piano roll's selection): one undo step
+    if (op == "clipEditMany" || op == "clipDeleteMany")
+    {
+        if (! tr.pianoRoll) return {};
+        auto* list = a["notes"].getArray();
+        if (list == nullptr) return {};
+        snapshot (pat);
+        const Engine::ScopedEdit edit (engine);
+        for (auto& v : *list)
+        {
+            const auto id = (uint32_t) (int) v["id"];
+            if (op == "clipDeleteMany") { tr.removeClipNote (id); continue; }
+            if (auto* n = tr.clipNote (id))
+            {
+                if (v.hasProperty ("start")) n->start = std::clamp ((int) v["start"], 0, p.patternTicks (pat) - 1);
+                if (v.hasProperty ("length")) n->length = std::max (1, (int) v["length"]);
+                if (v.hasProperty ("note")) n->note = (uint8_t) std::clamp ((int) v["note"], 0, 127);
+                if (v.hasProperty ("velocity")) n->vel = (uint8_t) std::clamp ((int) v["velocity"], 1, 127);
+                if (v.hasProperty ("flags")) n->flags = (uint8_t) ((int) v["flags"] & (kAccentFlag | kSlideFlag | kTieFlag));
+            }
+        }
+        return {};
+    }
+
     // ---- the piano roll: the first edit of a step track turns it into a clip (one way, as on the desktop)
     if (op == "clipAdd" || op == "clipEdit" || op == "clipDelete")
     {

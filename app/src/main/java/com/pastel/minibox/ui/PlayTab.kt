@@ -55,10 +55,10 @@ fun PlayTab(openScale: () -> Unit, openArp: () -> Unit) {
             when {
                 info.empty -> {}
                 info.drums -> Row(verticalAlignment = Alignment.CenterVertically) {
-                    SectionLabel("Roll", Modifier.width(48.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
+                    SectionLabel("Roll", Modifier.width(40.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
                         ROLL_RATES.forEach { r ->
-                            Pill(rateName(r), Modifier.weight(1f), on = r == rollBeats) { App.rollBeats.value = r }
+                            Pill(rateName(r), Modifier.weight(1f), on = r == rollBeats, padding = 2.dp) { App.rollBeats.value = r }
                         }
                     }
                 }
