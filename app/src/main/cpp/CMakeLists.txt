@@ -51,6 +51,11 @@ add_library(minibox SHARED Bridge.cpp MiniboxHost.cpp Api.cpp SeqApi.cpp SoundAp
 target_link_libraries(minibox PRIVATE minibox_core oboe::oboe)
 target_compile_options(minibox PRIVATE -Wall -Wextra)
 
+# Optimised in every build but Debug: -O3, no errno from the math functions (lets exp / log / sqrt inline), and
+# link-time optimisation across the core (the desktop build uses LTO too). NaN handling stays (lock lanes use NaN).
 foreach(t juce_min minibox_core minibox)
-  target_compile_options(${t} PRIVATE $<$<NOT:$<CONFIG:Debug>>:-O3>)   # same numerics as the desktop build (lock lanes use NaN)
+  target_compile_options(${t} PRIVATE $<$<NOT:$<CONFIG:Debug>>:-O3 -fno-math-errno>)
 endforeach()
+if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set_property(TARGET juce_min minibox_core minibox PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
