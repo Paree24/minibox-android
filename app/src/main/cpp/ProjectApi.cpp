@@ -124,15 +124,22 @@ juce::var MiniboxHost::projectCall (const juce::String& op, const juce::var& a, 
         return {};
     }
 
-    // ---- a track's 3 effect slots (Sound → FX)
+    // ---- effect chains: a track's 3 slots (Sound → FX), or with track -1 the master's 8 (Mix → Effects)
+    const bool master = geti (a, "track", 0) < 0;
+    const int fxPat = engine.focusPattern.load(), fxTrack = std::clamp (geti (a, "track", 0), 0, kTracks - 1);
+    const int fxCount = master ? kMasterFxSlots : kTrackFx;
+    auto chainSlot = [&] (int i) -> FxSlot&
+    {
+        i = std::clamp (i, 0, fxCount - 1);
+        return master ? p.masterFx[(size_t) i] : p.patterns[(size_t) fxPat].slots[(size_t) fxTrack].fx[(size_t) i];
+    };
     if (op == "trackFx")
     {
-        const int pat = engine.focusPattern.load(), t = std::clamp (geti (a, "track"), 0, kTracks - 1);
         auto o = obj();
         juce::Array<juce::var> slots;
-        for (int i = 0; i < kTrackFx; ++i)
+        for (int i = 0; i < fxCount; ++i)
         {
-            const auto& fx = p.patterns[(size_t) pat].slots[(size_t) t].fx[(size_t) i];
+            const auto& fx = chainSlot (i);
             auto s = obj();
             put (s, "effect", fx.effect); put (s, "mix", fx.mix); put (s, "bypass", fx.bypass); put (s, "mode", fx.mode);
             juce::Array<juce::var> params, modes;
@@ -163,14 +170,31 @@ juce::var MiniboxHost::projectCall (const juce::String& op, const juce::var& a, 
     }
     if (op == "setTrackFx")
     {
-        masterFx.setTrackEffect (engine.focusPattern.load(), std::clamp (geti (a, "track"), 0, kTracks - 1),
-                                 std::clamp (geti (a, "slot"), 0, kTrackFx - 1), a["effect"].toString());
-        return {};
+        const int i = std::clamp (geti (a, "slot"), 0, fxCount - 1);
+        const auto name = a["effect"].toString();
+        if (master)
+        {
+            // the master chain stays packed: a new effect goes to the first free slot, None removes
+            if (name.isEmpty()) { masterFx.removeSlot (i); return {}; }
+            int at = i;
+            if (chainSlot (i).effect.isEmpty())
+                for (int k = 0; k < fxCount; ++k) if (chainSlot (k).effect.isEmpty()) { at = k; break; }
+            masterFx.setSlotEffect (false, at, name);
+            return at;
+        }
+        masterFx.setTrackEffect (fxPat, fxTrack, i, name);
+        return i;
+    }
+    if (op == "moveFx")   // a slot one place left (-1) or right (+1); empty slots stay where they are
+    {
+        const int from = std::clamp (geti (a, "slot"), 0, fxCount - 1), to = from + geti (a, "dir");
+        if (to < 0 || to >= fxCount || chainSlot (from).effect.isEmpty() || (master && chainSlot (to).effect.isEmpty())) return from;
+        if (master) masterFx.moveSlot (from, to); else masterFx.moveTrackSlot (fxPat, fxTrack, from, to);
+        return to;
     }
     if (op == "setTrackFxValue")
     {
-        auto& fx = p.patterns[(size_t) engine.focusPattern.load()].slots[(size_t) std::clamp (geti (a, "track"), 0, kTracks - 1)]
-                    .fx[(size_t) std::clamp (geti (a, "slot"), 0, kTrackFx - 1)];
+        auto& fx = chainSlot (geti (a, "slot"));
         const auto k = a["key"].toString();
         const auto v = a["value"];
         if (k == "mix") fx.mix = juce::jlimit (0.0f, 1.0f, (float) v);

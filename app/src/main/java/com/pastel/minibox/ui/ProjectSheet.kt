@@ -163,7 +163,12 @@ fun ProjectSheet(done: () -> Unit) {
             Box(Modifier.size(8.dp).clip(CircleShape).background(if (midi.isEmpty()) C.faint else C.track(4)))
             Spacer(Modifier.width(10.dp))
             Text(midi.joinToString().ifEmpty { "No controller" }, color = if (midi.isEmpty()) C.faint else C.text,
-                fontSize = 13.sp, fontWeight = FontWeight.Black, maxLines = 1)
+                fontSize = 13.sp, fontWeight = FontWeight.Black, maxLines = 1, modifier = Modifier.weight(1f))
+            // multichannel: channel n plays track n (off: every channel plays the selected track)
+            val project by App.project
+            Pill(if (project.channelPerTrack) "Ch = track" else "Any channel", on = project.channelPerTrack, color = C.pattern, height = 32.dp) {
+                App.cmd("set", "key" to "channelPerTrack", "value" to !project.channelPerTrack)
+            }
         }
     }
 }
@@ -215,41 +220,12 @@ fun LatencyCard() {
     }
 }
 
-/** The master effects chain (Mix → Effects): 8 slots in series, from Pastel EFX Grid. */
+/** The master effects chain (Mix → Effects): 8 slots in series, from Pastel EFX Grid, edited as a track's are. */
 @Composable
 fun MasterFxSheet() {
-    var state by remember { mutableStateOf(JSONObject(App.call("masterFx"))) }
-    var picking by remember { mutableIntStateOf(-1) }
-    val choices = remember { state.getJSONArray("choices").let { a -> List(a.length()) { a.getString(it) } } }
-    fun reload() { state = JSONObject(App.call("masterFx")) }
     Column {
-        SheetTitle("Master effects")
-        val slots = state.getJSONArray("slots").objects()
-        val used = slots.indexOfFirst { it.getString("effect").isEmpty() }.let { if (it < 0) 8 else it }
-        for (i in 0 until minOf(8, used + 1)) {
-            val s = slots[i]
-            val fx = s.getString("effect")
-            Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                Pill(fx.ifEmpty { "+ Add" }, Modifier.weight(1f), caret = fx.isNotEmpty(), height = 40.dp) { picking = if (picking == i) -1 else i }
-                if (fx.isNotEmpty()) {
-                    Spacer(Modifier.width(6.dp))
-                    Pill(if (s.getBoolean("bypass")) "Off" else "On", on = !s.getBoolean("bypass"), color = C.pattern, height = 40.dp) {
-                        App.call("setMasterFxValue", "index" to i, "key" to "bypass", "value" to !s.getBoolean("bypass")); reload()
-                    }
-                    Spacer(Modifier.width(6.dp))
-                    Pill("✕", height = 40.dp) { App.call("removeMasterFx", "index" to i); reload() }
-                }
-            }
-            if (picking == i) {
-                Paged(choices, columns = 3, rows = 4, rowHeight = 40.dp, key = i) { _, c ->
-                    Box(Modifier.fillMaxWidth().height(40.dp).clip(RoundedCornerShape(10.dp)).background(C.control)
-                        .clickable { App.call("setMasterFx", "index" to i, "effect" to c); picking = -1; reload() }
-                        .padding(horizontal = 8.dp), contentAlignment = Alignment.CenterStart) {
-                        Text(c, color = C.text, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                    }
-                }
-            }
-        }
+        SheetTitle("Master effects", "In series, before the bus's glue and limiter")
+        TrackFxPanel(Modifier.fillMaxWidth().height(520.dp), com.pastel.minibox.state.MasterFxChain)
     }
 }
 

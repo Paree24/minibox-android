@@ -1,6 +1,8 @@
 // Seq: the step editor, drum steps and the piano roll (mockups 04–06, 15–16). Every edit takes a pattern snapshot
 // for undo (as the desktop's AppContext does) and changes the model under the engine's edit lock.
 #include "MiniboxHost.h"
+#include "seq/Scales.h"
+#include <map>
 
 namespace mb::android
 {
@@ -62,7 +64,8 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
     {
         auto o = obj();
         put (o, "bars", pt.lengthBars); put (o, "maxBars", p.maxBarsFor (pat));
-        put (o, "stepsPerBar", p.stepsPerBar (pat)); put (o, "steps", total);
+        put (o, "stepsPerBar", p.stepsPerBar (pat)); put (o, "steps", total); put (o, "stepRes", pt.stepRes);
+        put (o, "loopOn", pt.loopOn); put (o, "loopStart", pt.loopStart); put (o, "loopEnd", pt.loopEnd);
         put (o, "stepTicks", stepT); put (o, "pianoRoll", tr.pianoRoll);
         put (o, "canUndo", ! undoStack.empty()); put (o, "canRedo", ! redoStack.empty());
         const bool drum = dev != nullptr && dev->laneCount() > 0;
@@ -85,7 +88,7 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
         else if (tr.pianoRoll)
         {
             juce::Array<juce::var> notes;   // [id, start, length, note, velocity, flags]
-            for (auto& n : tr.clip) notes.add (juce::Array<juce::var> { (int) n.id, n.start, n.length, n.note, n.vel, n.flags });
+            for (auto& n : tr.clip) notes.add (juce::Array<juce::var> { (int) n.id, n.start, n.length, n.note, n.vel, n.flags, n.muted, n.locked });
             put (o, "clip", notes);
         }
         else
@@ -133,6 +136,14 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
     // ---- edits
     if (op == "undo") { swapUndo (undoStack, redoStack); return {}; }
     if (op == "redo") { swapUndo (redoStack, undoStack); return {}; }
+    if (op == "setRes")   // the pattern's step resolution: 0 1/8, 1 1/16, 2 1/32 (as the desktop's Seq bar strip)
+    {
+        snapshot (pat);
+        const Engine::ScopedEdit edit (engine);
+        pt.stepRes = std::clamp (geti (a, "res", 1), 0, 2);
+        pt.lengthBars = std::min (pt.lengthBars, p.maxBarsFor (pat));
+        return {};
+    }
     if (op == "setLength")
     {
         snapshot (pat);
@@ -219,6 +230,18 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
         return {};
     }
 
+    if (op == "clipOp")   // the piano roll's functions (the desktop's Edit, Notes, Chords and Velocity menus)
+    {
+        if (dev != nullptr && dev->laneCount() > 0) return {};
+        return clipOp (a["fn"].toString(), a, pat, t);
+    }
+    if (op == "loop")   // the pattern's loop: on / off, or a range of steps
+    {
+        const Engine::ScopedEdit edit (engine);
+        if (a.hasProperty ("on")) pt.loopOn = (bool) a["on"];
+        if (a.hasProperty ("start")) { pt.loopStart = std::clamp (geti (a, "start"), 0, total - 1); pt.loopEnd = std::clamp (geti (a, "end"), pt.loopStart + 1, total); }
+        return {};
+    }
     if (op == "toRoll")   // steps → clip, before the piano roll edits a step track's notes
     {
         if (tr.pianoRoll || (dev != nullptr && dev->laneCount() > 0)) return {};
@@ -238,6 +261,7 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
         for (auto& v : *list)
         {
             const auto id = (uint32_t) (int) v["id"];
+            if (auto* n = tr.clipNote (id); n != nullptr && n->locked) continue;   // locked: kept from edits
             if (op == "clipDeleteMany") { tr.removeClipNote (id); continue; }
             if (auto* n = tr.clipNote (id))
             {
@@ -268,6 +292,7 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
             return (int) tr.addClipNote (n);
         }
         const auto id = (uint32_t) geti (a, "id");
+        if (auto* n = tr.clipNote (id); n != nullptr && n->locked) return {};
         if (op == "clipDelete") { tr.removeClipNote (id); return {}; }
         if (auto* n = tr.clipNote (id))
         {
@@ -281,5 +306,252 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
     }
     handled = false;
     return {};
+}
+} // namespace mb::android
+
+namespace mb::android
+{
+/** The piano roll's functions, as the desktop's (ui/PianoRoll.cpp): on the selected notes (`ids`; none: every
+    note), one undo step each. Locked notes are left alone. Returns the notes to select afterwards. */
+juce::var MiniboxHost::clipOp (const juce::String& fn, const juce::var& a, int pat, int track)
+{
+    auto& p = engine.project();
+    auto& pt = p.patterns[(size_t) pat];
+    auto& tr = pt.slots[(size_t) track].track;
+    const int stepT = p.stepTicks (pat), total = p.patternSteps (pat), totalT = p.patternTicks (pat);
+    const int g = std::max (1, a.hasProperty ("grid") ? (int) a["grid"] : stepT);
+    const int tol = std::max (1, stepT / 16);
+    std::vector<uint32_t> ids;
+    if (auto* l = a["ids"].getArray()) for (auto& v : *l) ids.push_back ((uint32_t) (int) v);
+    auto chosen = [&] (const ClipNote& n) { return ids.empty() || std::find (ids.begin(), ids.end(), n.id) != ids.end(); };
+    auto result = [] (const std::vector<uint32_t>& v) { juce::Array<juce::var> r; for (auto id : v) r.add ((int) id); return juce::var (r); };
+
+    if (fn == "copy")   // nothing changes: the selection goes to the clipboard, from 0
+    {
+        clipboard.clear();
+        for (auto& n : tr.clip) if (! ids.empty() && chosen (n)) clipboard.push_back (n);
+        int lo = INT_MAX;
+        for (auto& c : clipboard) lo = std::min (lo, c.start);
+        for (auto& c : clipboard) c.start -= lo;
+        return result (ids);
+    }
+    if (fn == "loopSelection")
+    {
+        int lo = INT_MAX, hi = 0;
+        for (auto& n : tr.clip) if (! ids.empty() && chosen (n)) { lo = std::min (lo, n.start); hi = std::max (hi, n.end()); }
+        if (lo > hi) return result (ids);
+        const Engine::ScopedEdit edit (engine);
+        pt.loopStart = std::clamp (lo / stepT, 0, total - 1);
+        pt.loopEnd = std::min (total, std::max (pt.loopStart + 1, (hi + stepT - 1) / stepT));
+        pt.loopOn = true;
+        return result (ids);
+    }
+
+    snapshot (pat);
+    const Engine::ScopedEdit edit (engine);
+    if (! tr.pianoRoll) tr.convertToPianoRoll (stepT, total);
+    // the notes to change come out of the clip, sorted by time; put() writes them back and selects them
+    auto take = [&]
+    {
+        std::vector<ClipNote> out;
+        for (auto& n : tr.clip) if (chosen (n) && ! n.locked) out.push_back (n);
+        tr.clip.erase (std::remove_if (tr.clip.begin(), tr.clip.end(), [&] (const ClipNote& n) { return chosen (n) && ! n.locked; }), tr.clip.end());
+        std::sort (out.begin(), out.end(), [] (const ClipNote& x, const ClipNote& y) { return x.start != y.start ? x.start < y.start : x.note < y.note; });
+        return out;
+    };
+    auto put = [&] (const std::vector<ClipNote>& notes)
+    {
+        std::vector<uint32_t> sel;
+        for (auto n : notes)
+        {
+            if (n.start < 0 || n.start >= totalT || n.note > 127) continue;
+            n.length = std::max (1, n.length);
+            sel.push_back (tr.addClipNote (n));
+        }
+        return result (sel);
+    };
+    auto chords = [&] (const std::vector<ClipNote>& n)
+    {
+        std::vector<std::vector<size_t>> groups;
+        for (size_t i = 0; i < n.size(); ++i)
+        {
+            bool placed = false;
+            for (auto& gr : groups) if (std::abs (n[gr.front()].start - n[i].start) <= tol) { gr.push_back (i); placed = true; break; }
+            if (! placed) groups.push_back ({ i });
+        }
+        for (auto& gr : groups) std::sort (gr.begin(), gr.end(), [&] (size_t x, size_t y) { return n[x].note < n[y].note; });
+        return groups;
+    };
+    const auto& facts = Scales::factoryScales();
+    const auto& iv = facts[(size_t) std::clamp (p.scale.scale, 0, (int) facts.size() - 1)].intervals;
+    const int dir = (int) a.getProperty ("dir", 1);
+
+    if (fn == "cut")
+    {
+        clipboard = take();
+        int lo = INT_MAX;
+        for (auto& c : clipboard) lo = std::min (lo, c.start);
+        for (auto& c : clipboard) c.start -= lo;
+        return result ({});
+    }
+    if (fn == "paste")   // after the selection (its end, up to the grid), or at `at`
+    {
+        int at = (int) a.getProperty ("at", 0);
+        if (! ids.empty())
+        {
+            int end = 0;
+            for (auto& n : tr.clip) if (chosen (n)) end = std::max (end, n.end());
+            at = (end + g - 1) / g * g;
+        }
+        std::vector<ClipNote> notes;
+        for (auto c : clipboard) { c.start += at; notes.push_back (c); }
+        return put (notes);
+    }
+    if (fn == "duplicate")   // a copy right after the selection's span (rounded up to the grid)
+    {
+        int lo = INT_MAX, hi = 0;
+        std::vector<ClipNote> notes;
+        for (auto& n : tr.clip) if (! ids.empty() && chosen (n)) { lo = std::min (lo, n.start); hi = std::max (hi, n.end()); notes.push_back (n); }
+        const int span = std::max (g, (hi - lo + g - 1) / g * g);
+        for (auto& n : notes) n.start += span;
+        return put (notes);
+    }
+    auto n = take();
+    if (fn == "transpose")   // semitones, octaves (dir ±12), or in key (scale: the next note of the scale)
+    {
+        const bool inKey = (bool) a.getProperty ("scale", false) && std::abs (dir) == 1;
+        const auto pcs = Scales::pcSet (p.scale.root, iv);
+        for (auto& x : n)
+        {
+            int m = x.note;
+            if (inKey) do m += dir; while (m > 0 && m < 127 && ! pcs[(size_t) (m % 12)]);
+            else m += dir;
+            x.note = (uint8_t) std::clamp (m, 0, 127);
+        }
+    }
+    else if (fn == "length") for (auto& x : n) x.length = std::max (std::max (1, g / 4), x.length + dir * g);
+    else if (fn == "velocity") for (auto& x : n) x.vel = (uint8_t) std::clamp (x.vel + dir * 8, 1, 127);
+    else if (fn == "velocitySet") for (auto& x : n) x.vel = (uint8_t) std::clamp ((int) a.getProperty ("value", 100), 1, 127);
+    else if (fn == "velocityRandom") for (auto& x : n) x.vel = (uint8_t) std::clamp (x.vel + rnd.nextInt (41) - 20, 1, 127);
+    else if (fn == "velocityRamp" && ! n.empty())
+    {
+        const int lo = n.front().start, hi = std::max (lo + 1, n.back().start);
+        for (auto& x : n) { const float k = (x.start - lo) / (float) (hi - lo); x.vel = (uint8_t) juce::roundToInt (40 + 87 * (dir > 0 ? k : 1.0f - k)); }
+    }
+    else if (fn == "mute") { bool anyOn = false; for (auto& x : n) anyOn = anyOn || ! x.muted; for (auto& x : n) x.muted = anyOn; }
+    else if (fn == "lock")
+    {
+        // locking takes every chosen note (locked ones too); the notes stay where they are
+        for (auto& c : tr.clip) if (chosen (c)) n.push_back (c);
+        tr.clip.erase (std::remove_if (tr.clip.begin(), tr.clip.end(), [&] (const ClipNote& c) { return chosen (c); }), tr.clip.end());
+        bool anyOpen = false;
+        for (auto& x : n) anyOpen = anyOpen || ! x.locked;
+        for (auto& x : n) x.locked = anyOpen;
+    }
+    else if (fn == "quantize")
+    {
+        const float amount = (float) (double) a.getProperty ("amount", 1.0);
+        for (auto& x : n)
+        {
+            const int target = (int) std::lround (x.start / (double) g) * g;
+            x.start = (int) std::lround (x.start + (target - x.start) * amount);
+            if ((bool) a.getProperty ("lengths", false)) x.length = std::max (g, (int) std::lround ((x.start + x.length) / (double) g) * g - x.start);
+        }
+    }
+    else if (fn == "humanize") for (auto& x : n) { x.start = std::max (0, x.start + rnd.nextInt (7) - 3); x.vel = (uint8_t) std::clamp (x.vel + rnd.nextInt (21) - 10, 1, 127); }
+    else if (fn == "legato")
+        for (auto& x : n)
+        {
+            int next = -1;
+            for (auto& y : n) if (y.start > x.start && (next < 0 || y.start < next)) next = y.start;
+            if (next > x.start) x.length = next - x.start;
+        }
+    else if (fn == "stretch" && ! n.empty())   // factor 2: twice as long, 0.5: half
+    {
+        const double f = (double) a.getProperty ("factor", 2.0);
+        const int first = n.front().start;
+        for (auto& x : n) { x.start = first + (int) std::lround ((x.start - first) * f); x.length = std::max (1, (int) std::lround (x.length * f)); }
+    }
+    else if (fn == "reverse" && ! n.empty())
+    {
+        int lo = INT_MAX, hi = 0;
+        for (auto& x : n) { lo = std::min (lo, x.start); hi = std::max (hi, x.end()); }
+        for (auto& x : n) x.start = lo + hi - x.end();
+    }
+    else if (fn == "invertPitch")
+    {
+        int lo = 127, hi = 0;
+        for (auto& x : n) { lo = std::min (lo, (int) x.note); hi = std::max (hi, (int) x.note); }
+        for (auto& x : n) x.note = (uint8_t) (lo + hi - x.note);
+    }
+    else if (fn == "fitToScale") for (auto& x : n) x.note = (uint8_t) Scales::snapNote (x.note, p.scale.root, iv, 0);
+    else if (fn == "chop")   // longer notes become a run of grid-length notes
+    {
+        std::vector<ClipNote> out;
+        for (auto& x : n)
+        {
+            if (x.length <= g) { out.push_back (x); continue; }
+            for (int k = 0; k * g < x.length; ++k) { auto piece = x; piece.start = x.start + k * g; piece.length = std::min (g, x.length - k * g); out.push_back (piece); }
+        }
+        n = out;
+    }
+    else if (fn == "glue")   // a note that ends where the next of the same pitch starts swallows it
+    {
+        std::vector<ClipNote> out;
+        for (auto& x : n)
+        {
+            bool merged = false;
+            for (auto& o : out) if (o.note == x.note && std::abs (o.end() - x.start) <= 1) { o.length = x.end() - o.start; merged = true; break; }
+            if (! merged) out.push_back (x);
+        }
+        n = out;
+    }
+    else if (fn == "strum")
+    {
+        std::map<int, int> rank;
+        for (auto& x : n) { const int k = rank[x.start]++; x.start += k * 3; x.vel = (uint8_t) std::max (1, x.vel - k * 6); }
+    }
+    else if (fn == "chordInvert")   // up: each chord's lowest note an octave up; down: its highest an octave down
+    {
+        for (auto& gr : chords (n))
+            if (gr.size() >= 2) { auto& x = n[dir > 0 ? gr.front() : gr.back()]; x.note = (uint8_t) std::clamp (x.note + (dir > 0 ? 12 : -12), 0, 127); }
+    }
+    else if (fn == "chordSpread")
+    {
+        for (auto& gr : chords (n)) if (gr.size() >= 3) { auto& x = n[gr[gr.size() - 2]]; x.note = (uint8_t) std::max (0, x.note - 12); }
+    }
+    else if (fn == "chordClose")
+    {
+        for (auto& gr : chords (n))
+        {
+            const int root = n[gr.front()].note;
+            for (size_t k = 1; k < gr.size(); ++k) { int m = n[gr[k]].note; while (m - root >= 12) m -= 12; while (m < root) m += 12; n[gr[k]].note = (uint8_t) m; }
+        }
+    }
+    else if (fn == "chordAddBass")
+    {
+        std::vector<ClipNote> extra;
+        for (auto& gr : chords (n)) { auto b = n[gr.front()]; if (b.note >= 12) { b.note = (uint8_t) (b.note - 12); extra.push_back (b); } }
+        n.insert (n.end(), extra.begin(), extra.end());
+    }
+    else if (fn == "rotate")   // every note a step later / earlier, wrapping round the pattern
+    {
+        for (auto& x : n) x.start = ((x.start + dir * stepT) % totalT + totalT) % totalT;
+    }
+    else if (fn == "insertStep")   // at the first chosen note's step: later notes a step right (dir 1) or left (-1, its own notes go)
+    {
+        int at = INT_MAX;
+        for (auto& x : n) at = std::min (at, x.start / stepT);
+        if (at == INT_MAX) at = 0;
+        const int a0 = at * stepT;
+        for (auto& c : tr.clip) n.push_back (c);   // every note moves, not only the chosen
+        tr.clip.clear();
+        if (dir < 0) n.erase (std::remove_if (n.begin(), n.end(), [&] (const ClipNote& x) { return x.start >= a0 && x.start < a0 + stepT; }), n.end());
+        for (auto& x : n) if (x.start >= a0) x.start += dir > 0 ? stepT : -stepT;
+        put (n);
+        return result ({});
+    }
+    else if (fn == "delete") return result ({});
+    return put (n);
 }
 } // namespace mb::android

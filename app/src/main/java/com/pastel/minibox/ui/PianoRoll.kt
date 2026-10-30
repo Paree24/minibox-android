@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -52,6 +53,27 @@ import kotlin.math.roundToInt
 private val SNAPS = listOf("1/32" to 0.5f, "1/16" to 1f, "1/8" to 2f, "1/4" to 4f, "Off" to 0f)
 private val ZOOMS = listOf(1, 2, 4, 0)   // bars in view; 0 = the whole pattern
 
+/** The roll's functions (the desktop's Edit, Notes, Chords and Velocity menus): a label and the clipOp it runs
+    (with its arguments); "sel:" ones change only the selection. On the selection, or every note when none is. */
+private val TOOLS: List<Pair<String, List<Pair<String, Any>>>> = listOf(
+    "Select all" to listOf("sel" to "all"), "Invert sel." to listOf("sel" to "invert"), "Chord notes" to listOf("sel" to "chords"),
+    "Copy" to listOf("fn" to "copy"), "Cut" to listOf("fn" to "cut"), "Paste" to listOf("fn" to "paste"),
+    "Duplicate" to listOf("fn" to "duplicate"), "Delete" to listOf("fn" to "delete"), "Mute" to listOf("fn" to "mute"),
+    "Up" to listOf("fn" to "transpose", "dir" to 1), "Down" to listOf("fn" to "transpose", "dir" to -1), "Lock" to listOf("fn" to "lock"),
+    "Octave +" to listOf("fn" to "transpose", "dir" to 12), "Octave −" to listOf("fn" to "transpose", "dir" to -12), "Fit to scale" to listOf("fn" to "fitToScale"),
+    "Longer" to listOf("fn" to "length", "dir" to 1), "Shorter" to listOf("fn" to "length", "dir" to -1), "Legato" to listOf("fn" to "legato"),
+    "Quantize" to listOf("fn" to "quantize"), "Quantize ends" to listOf("fn" to "quantize", "lengths" to true), "Humanize" to listOf("fn" to "humanize"),
+    "Stretch ×2" to listOf("fn" to "stretch", "factor" to 2.0), "Stretch ½" to listOf("fn" to "stretch", "factor" to 0.5), "Reverse" to listOf("fn" to "reverse"),
+    "Flip pitch" to listOf("fn" to "invertPitch"), "Chop" to listOf("fn" to "chop"), "Glue" to listOf("fn" to "glue"),
+    "Strum" to listOf("fn" to "strum"), "Rotate ←" to listOf("fn" to "rotate", "dir" to -1), "Rotate →" to listOf("fn" to "rotate", "dir" to 1),
+    "Insert step" to listOf("fn" to "insertStep", "dir" to 1), "Remove step" to listOf("fn" to "insertStep", "dir" to -1), "Loop selection" to listOf("fn" to "loopSelection"),
+    "Inversion ↑" to listOf("fn" to "chordInvert", "dir" to 1), "Inversion ↓" to listOf("fn" to "chordInvert", "dir" to -1), "+ Bass" to listOf("fn" to "chordAddBass"),
+    "Spread" to listOf("fn" to "chordSpread"), "Close" to listOf("fn" to "chordClose"), "Loop on / off" to listOf("sel" to "loop"),
+    "Vel −8" to listOf("fn" to "velocity", "dir" to -1), "Vel +8" to listOf("fn" to "velocity", "dir" to 1), "Vel random" to listOf("fn" to "velocityRandom"),
+    "Ramp up" to listOf("fn" to "velocityRamp", "dir" to 1), "Ramp down" to listOf("fn" to "velocityRamp", "dir" to -1), "Vel 64" to listOf("fn" to "velocitySet", "value" to 64),
+    "Vel 100" to listOf("fn" to "velocitySet", "value" to 100), "Vel 127" to listOf("fn" to "velocitySet", "value" to 127),
+)
+
 /** A note being drawn, moved or resized, before the finger lifts (one undo step per gesture). */
 private data class Preview(val id: Int, val start: Int, val length: Int, val note: Int, val velocity: Int)
 
@@ -82,6 +104,7 @@ fun PianoRoll(bar: Int, color: Color) {
     var lastLength by remember { mutableIntStateOf(0) }
     val project by App.project
     var scaleOn by remember { mutableStateOf(true) }
+    var tools by remember { mutableStateOf(false) }
     val rowNotes = remember(scaleOn, project.scaleRoot, project.scaleIntervals) {
         if (!scaleOn) (0..127).toList()
         else (0..127).filter { ((it - project.scaleRoot) % 12 + 12) % 12 in project.scaleIntervals }
@@ -118,9 +141,44 @@ fun PianoRoll(bar: Int, color: Color) {
                 scaleOn = !scaleOn
                 low = -2 - keep   // re-found when drawn, on the same note, once the rows change
             }
+            Spacer(Modifier.weight(1f))
+            RoundIcon(if (tools) "✕" else "⋯") { tools = !tools }
         }
         Spacer(Modifier.height(8.dp))
-        Canvas(
+        if (tools) {
+            // the functions, in the roll's place while open (paged: nothing scrolls); each one keeps the panel open
+            Text(if (selected.isEmpty()) "On every note (nothing selected)" else "On ${selected.size} selected", color = C.faint,
+                fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(6.dp))
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                Paged(TOOLS, columns = 3, rows = 8, rowHeight = 38.dp, key = "tools") { _, (label, args) ->
+                    Box(Modifier.fillMaxWidth().height(38.dp).clip(RoundedCornerShape(10.dp)).background(C.control).clickable {
+                        val clip = Seq.data.value.clip
+                        when (args.first().second) {
+                            "all" -> selected = clip.map { it.id }.toSet()
+                            "invert" -> selected = clip.map { it.id }.toSet() - selected
+                            "chords" -> {
+                                val starts = clip.filter { it.id in selected }.map { it.start }
+                                val tol = maxOf(1, stepT / 16)
+                                selected = selected + clip.filter { n -> starts.any { abs(it - n.start) <= tol } }.map { it.id }
+                            }
+                            "loop" -> Seq.edit("loop", "on" to !Seq.data.value.loopOn)
+                            else -> {
+                                val ids = JSONArray(); selected.forEach { ids.put(it) }
+                                val extra = args.drop(1).toMutableList<Pair<String, Any?>>()
+                                if (label == "Up" || label == "Down") extra += "scale" to scaleOn   // in key while the rows are the scale
+                                val r = Seq.edit("clipOp", "fn" to args.first().second, "ids" to ids,
+                                    "grid" to (if (SNAPS[snap].second == 0f) stepT else snapTicks()), "at" to viewStart, *extra.toTypedArray())
+                                runCatching { JSONArray(r) }.getOrNull()?.let { a -> selected = List(a.length()) { a.getInt(it) }.toSet() }
+                            }
+                        }
+                    }.padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+                        val on = (label == "Loop on / off" && seq.loopOn)
+                        Text(label, color = if (on) C.pattern else C.text, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    }
+                }
+            }
+        } else Canvas(
             Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(10.dp))
                 // keyed only on the geometry: scrolling (low), the tool, the snap and the selection are read live
                 .pointerInput(stepT, viewStart, viewTicks) {
@@ -253,6 +311,12 @@ fun PianoRoll(bar: Int, color: Color) {
                     drawContext.canvas.nativeCanvas.drawText("${b + 1}.${beat + 1}", keysW + t * tickW + 3.dp.toPx(), 11.dp.toPx(), rulerLabel)
             }
             drawRect(C.surface, Offset(keysW, rulerH), Size(size.width - keysW, rows * rowH))
+            if (seq.loopOn && seq.loopEnd > seq.loopStart) {   // the loop's range, on the ruler
+                val lx0 = keysW + (seq.loopStart * stepT - viewStart) * tickW
+                val lx1 = keysW + (seq.loopEnd * stepT - viewStart) * tickW
+                val a0 = max(lx0, keysW); val a1 = min(lx1, size.width)
+                if (a1 > a0) drawRect(C.pattern.copy(alpha = 0.35f), Offset(a0, rulerH - 4.dp.toPx()), Size(a1 - a0, 3.dp.toPx()))
+            }
             if (low <= -2) low = rowOf(-2 - low)   // the Scale toggle: the same note stays in view
             low = low.coerceIn(0, max(0, rowNotes.size - rows))
             for (r in 0 until rows) {
@@ -287,7 +351,7 @@ fun PianoRoll(bar: Int, color: Color) {
                     if (isBar) 1.6f else if (isBeat) 1.0f else 0.6f, alpha = if (isBar) 0.7f else 1f)
             }
             val moving = previews.map { it.id }.toSet()
-            fun drawNote(start: Int, length: Int, note: Int, vel: Int, flags: Int, sel: Boolean) {
+            fun drawNote(start: Int, length: Int, note: Int, vel: Int, flags: Int, sel: Boolean, muted: Boolean = false, locked: Boolean = false) {
                 val r = low + rows - 1 - rowOf(note)
                 if (r < 0 || r >= rows) return
                 val x = keysW + (start - viewStart) * tickW
@@ -296,15 +360,16 @@ fun PianoRoll(bar: Int, color: Color) {
                 val y = rulerH + r * rowH
                 val offScale = rowNotes.getOrNull(rowOf(note)) != note
                 val left = max(x, keysW)
-                drawRoundRect(color.copy(alpha = if (sel) 1f else if (offScale) 0.3f else 0.45f + 0.45f * vel / 127f), Offset(left + 1f, y + 2f),
+                drawRoundRect(color.copy(alpha = if (muted) 0.15f else if (sel) 1f else if (offScale) 0.3f else 0.45f + 0.45f * vel / 127f), Offset(left + 1f, y + 2f),
                     Size(min(x + w, size.width) - left - 2f, rowH - 4f), CornerRadius(4.dp.toPx()))
                 if (sel) drawRoundRect(C.text, Offset(left - 1f, y + 0.5f), Size(min(x + w, size.width) - left + 2f, rowH - 1f),
                     CornerRadius(5.dp.toPx()), style = Stroke(2.dp.toPx()))
+                if (locked) drawRect(C.bg, Offset(min(x + w, size.width) - 8.dp.toPx(), y + 6.dp.toPx()), Size(5.dp.toPx(), 5.dp.toPx()))   // locked
                 if (flags and 1 != 0) drawCircle(C.bg, 2.5.dp.toPx(), Offset(left + 6.dp.toPx(), y + rowH / 2))   // accent
                 if (flags and 2 != 0) drawLine(C.bg, Offset(x + w - 9.dp.toPx(), y + rowH - 6.dp.toPx()), Offset(x + w - 3.dp.toPx(), y + 6.dp.toPx()), 2.dp.toPx())   // slide
             }
             seq.rollNotes.filter { it.id < 0 || it.id !in moving }
-                .forEach { drawNote(it.start, it.length, it.note, it.velocity, it.flags, it.id >= 0 && it.id in selected) }
+                .forEach { drawNote(it.start, it.length, it.note, it.velocity, it.flags, it.id >= 0 && it.id in selected, it.muted, it.locked) }
             previews.forEach { drawNote(it.start, it.length, it.note, it.velocity, 0, true) }
             box?.let { (a, b) ->
                 drawRect(C.text.copy(alpha = 0.08f), Offset(min(a.x, b.x), min(a.y, b.y)), Size(abs(a.x - b.x), abs(a.y - b.y)))

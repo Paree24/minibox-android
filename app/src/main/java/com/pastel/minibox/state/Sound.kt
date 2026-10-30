@@ -76,13 +76,15 @@ object Sound {
 data class FxParam(val index: Int, val name: String, val value: Float, val text: String, val default: Float, val choices: List<String>)
 data class FxSlotInfo(val effect: String, val mix: Float, val bypass: Boolean, val mode: Int, val modes: List<String>, val params: List<FxParam>)
 
-/** The selected track's 3 effect slots (cpp/ProjectApi.cpp: trackFx). */
-object TrackFx {
-    val slots = mutableStateOf(List(3) { FxSlotInfo("", 1f, false, 0, emptyList(), emptyList()) })
+/** An effect chain: the selected track's 3 slots (Sound → FX), or the master's 8 (Mix → Effects). */
+class FxChain(private val master: Boolean) {
+    val slots = mutableStateOf(List(if (master) 8 else 3) { FxSlotInfo("", 1f, false, 0, emptyList(), emptyList()) })
     val choices = mutableStateOf<List<String>>(emptyList())   // state: the picker redraws when they arrive
+    val isMaster get() = master
+    private val track get() = if (master) -1 else App.focusTrack.intValue
 
     fun refresh() {
-        val o = JSONObject(App.call("trackFx", "track" to App.focusTrack.intValue))
+        val o = JSONObject(App.call("trackFx", "track" to track))
         choices.value = o.getJSONArray("choices").strings()
         slots.value = o.getJSONArray("slots").objects().map { s ->
             FxSlotInfo(s.getString("effect"), s.getDouble("mix").toFloat(), s.getBoolean("bypass"), s.getInt("mode"),
@@ -94,9 +96,23 @@ object TrackFx {
         }
     }
 
-    fun setEffect(slot: Int, effect: String) { App.call("setTrackFx", "track" to App.focusTrack.intValue, "slot" to slot, "effect" to effect); refresh() }
+    /** Puts an effect in a slot ("" removes it); returns where it went (the master chain stays packed). */
+    fun setEffect(slot: Int, effect: String): Int {
+        val at = App.call("setTrackFx", "track" to track, "slot" to slot, "effect" to effect).trim().toIntOrNull() ?: slot
+        refresh()
+        return at
+    }
+    /** Moves a slot one place (-1 left, +1 right); returns where it is now. */
+    fun move(slot: Int, dir: Int): Int {
+        val at = App.call("moveFx", "track" to track, "slot" to slot, "dir" to dir).trim().toIntOrNull() ?: slot
+        refresh()
+        return at
+    }
     fun set(slot: Int, key: String, value: Any, index: Int = -1) {
-        App.call("setTrackFxValue", "track" to App.focusTrack.intValue, "slot" to slot, "key" to key, "value" to value, "index" to index)
+        App.call("setTrackFxValue", "track" to track, "slot" to slot, "key" to key, "value" to value, "index" to index)
         refresh()
     }
 }
+
+val TrackFx = FxChain(false)
+val MasterFxChain = FxChain(true)

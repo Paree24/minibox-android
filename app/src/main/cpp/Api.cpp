@@ -54,6 +54,7 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
         put (o, "metronome", p.metronome); put (o, "countIn", p.countIn);
         put (o, "recordMode", p.recordMode); put (o, "overdub", p.overdub); put (o, "recordQuantize", p.recordQuantize);
         put (o, "switchQuantize", p.switchQuantize); put (o, "perform", p.perform);
+        put (o, "channelPerTrack", p.channelPerTrack);
         put (o, "focusPattern", pat); put (o, "focusTrack", engine.focusTrack.load());
         put (o, "scaleRoot", p.scale.root); put (o, "scaleIndex", p.scale.scale);
         juce::Array<juce::var> iv;
@@ -91,6 +92,7 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
             put (pl, "chordOn", s.play.chordOn); put (pl, "arpOn", s.play.arpOn); put (pl, "arpLatch", s.play.arpLatch);
             put (pl, "arpMode", s.play.arpMode); put (pl, "arpRate", s.play.arpRate); put (pl, "arpOct", s.play.arpOct);
             put (pl, "arpGate", s.play.arpGate); put (pl, "arpSwing", s.play.arpSwing);
+            put (pl, "inversion", s.play.inversion); put (pl, "invLower", s.play.invLower); put (pl, "bassBelow", s.play.bassBelow);
             put (o, "play", pl);
             juce::Array<juce::var> lanes;
             if (d != nullptr)
@@ -170,7 +172,12 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
     // ---------------------------------------------------------------- commands
     if (op == "play") { engine.play(); return {}; }
     if (op == "stop") { engine.stop(); return {}; }
-    if (op == "setRecord") { engine.setRecord (getb (a, "on")); return {}; }
+    if (op == "setRecord")   // the phone records live only (a project saved on the desktop in Step mode too)
+    {
+        if (getb (a, "on")) engine.project().recordMode = 0;
+        engine.setRecord (getb (a, "on"));
+        return {};
+    }
     if (op == "setTimeSig") { engine.setTimeSignature (geti (a, "beats", 4), geti (a, "unit", 4)); return {}; }
     if (op == "queuePattern") { engine.queuePattern (geti (a, "pattern")); return {}; }
     if (op == "copyPattern") { engine.copyPattern (geti (a, "from"), geti (a, "to")); masterFx.sync(); return {}; }   // its track effects too
@@ -223,6 +230,8 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
         else if (k == "arpRate") s.arpRate = std::clamp ((int) v, 0, 14); else if (k == "arpOct") s.arpOct = std::clamp ((int) v, 0, 3);
         else if (k == "arpGate") s.arpGate = juce::jlimit (10.0f, 100.0f, (float) v);   // %, as the desktop's Play drawer
         else if (k == "arpSwing") s.arpSwing = juce::jlimit (0.0f, 60.0f, (float) v);
+        else if (k == "inversion") s.inversion = std::clamp ((int) v, 0, 2);
+        else if (k == "invLower") s.invLower = (bool) v; else if (k == "bassBelow") s.bassBelow = (bool) v;
         return {};
     }
     if (op == "set")
@@ -233,11 +242,12 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
         else if (k == "swing") p.swing = juce::jlimit (0.5f, 0.75f, (float) v);
         else if (k == "metronome") p.metronome = (bool) v;
         else if (k == "countIn") p.countIn = (bool) v;
-        else if (k == "recordMode") p.recordMode = std::clamp ((int) v, 0, 1);
+        else if (k == "recordMode") p.recordMode = 0;   // live only on the phone
         else if (k == "overdub") p.overdub = (bool) v;
         else if (k == "recordQuantize") p.recordQuantize = juce::jlimit (0.0f, 1.0f, (float) v);
         else if (k == "switchQuantize") p.switchQuantize = std::clamp ((int) v, 0, 2);
         else if (k == "perform") p.perform = (bool) v;
+        else if (k == "channelPerTrack") p.channelPerTrack = (bool) v;   // MIDI channel n plays track n
         else if (k == "scaleRoot") p.scale.root = ((int) v % 12 + 12) % 12;
         else if (k == "scaleIndex") p.scale.scale = std::clamp ((int) v, 0, (int) Scales::factoryScales().size() - 1);
         else if (k == "volume") p.master.volume = juce::jlimit (0.0f, 1.0f, (float) v);

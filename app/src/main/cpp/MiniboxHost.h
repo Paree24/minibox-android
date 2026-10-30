@@ -96,6 +96,9 @@ private:
     // undo / redo of sequence edits: a snapshot of the pattern's tracks before each edit (as the desktop)
     struct PatternSnap { int pattern = 0; std::array<Track, kTracks> tracks; int lengthBars = 1, stepRes = 1; };
     std::vector<PatternSnap> undoStack, redoStack;
+    std::vector<ClipNote> clipboard;   // the piano roll's copy / cut (starts from 0)
+    juce::Random rnd;
+    juce::var clipOp (const juce::String& fn, const juce::var& a, int pat, int track);
     PatternSnap capture (int pattern);
     void restore (const PatternSnap&);
     void snapshot (int pattern);

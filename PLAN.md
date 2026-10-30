@@ -23,6 +23,22 @@ The source is `../pastel-minibox` (JUCE 8, C++20). Mockups are in `mockups/` (se
 | 8 Low-end | Open: quality tiers (voice caps, oversampling) need engine work in pastel-minibox |
 | 9 Release | Open |
 
+### Done 2026-10-31 (parity round)
+- Chords: inversion (Root / 1st / 2nd), Oct ↓ (the shape an octave down), + Bass
+- Seq: step resolution 1/8, 1/16, 1/32 per pattern (in the length dropdown); at 1/32 the step editors page by half
+  bars (1a, 1b) so nothing scrolls
+- Piano roll: the desktop's functions behind ⋯ (select all / invert / chord notes, copy, cut, paste, duplicate,
+  delete, mute, lock, transpose in key and by octave, fit to scale, longer / shorter, legato, quantize (and ends),
+  humanize, stretch, reverse, flip pitch, chop, glue, strum, rotate, insert / remove a step, chord inversion /
+  spread / close / + bass, velocity steps / random / ramps / set, loop the selection, loop on / off). Not ported
+  on purpose: chance and controller lanes
+- Recording: live only (Step recording removed from the phone; a project saved in Step mode records live)
+- Master effects: edited as a track's (knobs, mode, mix, on / off, move, remove), 8 slots
+- MIDI: channel per track (Project ▸ MIDI), off by default; no cost on the audio thread
+- Presets: saving was already there (Sound ▸ preset sheet ▸ name ▸ Save)
+- Desktop (pastel-minibox): track effects drawer (3 slots per device), note repeat for everything played (N; keys
+  1-6 pick the rate), knobs follow the held performance effect; synth rolls now hold for half the rate (phone too)
+
 ### Parked (2026-10-30, to pick up next)
 - CPU, next steps: profile on a phone (simpleperf) for the real hotspots; the Acid's 4× oversampled voice; the drum
   models' per-sample time envelopes (exp of the time since the hit); the Drum Sampler's resampling

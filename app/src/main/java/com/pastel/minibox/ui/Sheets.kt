@@ -106,7 +106,7 @@ fun TempoSheet() {
     }
 }
 
-/** Record (mockup 13): Live / Step, Extend / Overdub, quantize, count-in. */
+/** Record (mockup 13): live recording: Extend / Overdub, quantize, count-in. */
 @Composable
 fun RecordSheet() {
     val p by App.project
@@ -120,9 +120,8 @@ fun RecordSheet() {
                 contentAlignment = Alignment.Center,
             ) { Box(Modifier.size(16.dp).clip(CircleShape).background(if (fast.recording) C.bg else C.record)) }
         }
-        ChoicePads(listOf("Live", "Step"), p.recordMode, C.record, { App.cmd("set", "key" to "recordMode", "value" to it) }, height = 52.dp)
-        Spacer(Modifier.height(18.dp))
-        if (p.recordMode == 0) {
+        Spacer(Modifier.height(12.dp))
+        run {
             SectionLabel("Takes")
             Spacer(Modifier.height(8.dp))
             ChoicePads(listOf("Extend", "Overdub"), if (p.overdub) 1 else 0, C.text, { App.cmd("set", "key" to "overdub", "value" to (it == 1)) })

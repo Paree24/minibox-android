@@ -76,6 +76,23 @@ fun PlayTab(openScale: () -> Unit, openArp: () -> Unit) {
                         Spacer(Modifier.width(6.dp))
                         OctaveButton("Oct +", octaves[track] < 3) { App.setOctave(track, octaves[track] + 1) }
                     }
+                    if (info.play.chordOn) {
+                        // the chord's voicing: an inversion, the whole shape an octave down, a bass note below
+                        Spacer(Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Segmented(listOf("Root", "1st", "2nd"), info.play.inversion, color, {
+                                App.cmd("setPlay", "track" to track, "key" to "inversion", "value" to it)
+                            }, Modifier.weight(1f))
+                            Spacer(Modifier.width(8.dp))
+                            Pill("Oct ↓", on = info.play.invLower, color = color, height = 34.dp) {
+                                App.cmd("setPlay", "track" to track, "key" to "invLower", "value" to !info.play.invLower)
+                            }
+                            Spacer(Modifier.width(6.dp))
+                            Pill("+ Bass", on = info.play.bassBelow, color = color, height = 34.dp) {
+                                App.cmd("setPlay", "track" to track, "key" to "bassBelow", "value" to !info.play.bassBelow)
+                            }
+                        }
+                    }
                     if (info.play.arpOn) {
                         Spacer(Modifier.height(8.dp))
                         // one dropdown: the rate, the mode and the octaves; the Arp sheet holds every setting

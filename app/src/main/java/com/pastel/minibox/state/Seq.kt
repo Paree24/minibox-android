@@ -10,10 +10,12 @@ data class StepData(val step: Int, val notes: List<Int>, val velocity: Int, val 
     val slide get() = flags and 2 != 0
 }
 data class Cell(val step: Int, val velocity: Int, val probability: Int, val ratchet: Int, val micro: Int)
-data class ClipNote(val id: Int, val start: Int, val length: Int, val note: Int, val velocity: Int, val flags: Int)
+data class ClipNote(val id: Int, val start: Int, val length: Int, val note: Int, val velocity: Int, val flags: Int,
+                    val muted: Boolean = false, val locked: Boolean = false)
 data class SeqData(
     val bars: Int = 1, val maxBars: Int = 16, val stepsPerBar: Int = 16, val steps: Int = 16, val stepTicks: Int = 480,
     val pianoRoll: Boolean = false, val drum: Boolean = false, val canUndo: Boolean = false, val canRedo: Boolean = false,
+    val stepRes: Int = 1, val loopOn: Boolean = false, val loopStart: Int = 0, val loopEnd: Int = 0,
     val stepList: Map<Int, StepData> = emptyMap(), val lanes: List<Map<Int, Cell>> = List(8) { emptyMap() },
     val clip: List<ClipNote> = emptyList(),
 ) {
@@ -32,7 +34,7 @@ object Seq {
         val o = JSONObject(App.call("seq", "track" to App.focusTrack.intValue))
         data.value = SeqData(
             o.getInt("bars"), o.getInt("maxBars"), o.getInt("stepsPerBar"), o.getInt("steps"), o.getInt("stepTicks"),
-            o.getBoolean("pianoRoll"), o.getBoolean("drum"), o.getBoolean("canUndo"), o.getBoolean("canRedo"),
+            o.getBoolean("pianoRoll"), o.getBoolean("drum"), o.getBoolean("canUndo"), o.getBoolean("canRedo"), o.optInt("stepRes", 1), o.optBoolean("loopOn"), o.optInt("loopStart"), o.optInt("loopEnd"),
             o.optJSONArray("stepList")?.let { a ->
                 List(a.length()) { a.getJSONArray(it) }.associate { r ->
                     val s = r.getInt(0)
@@ -50,7 +52,7 @@ object Seq {
             } ?: List(8) { emptyMap() },
             o.optJSONArray("clip")?.let { a ->
                 List(a.length()) { a.getJSONArray(it) }.map { r ->
-                    ClipNote(r.getInt(0), r.getInt(1), r.getInt(2), r.getInt(3), r.getInt(4), r.getInt(5))
+                    ClipNote(r.getInt(0), r.getInt(1), r.getInt(2), r.getInt(3), r.getInt(4), r.getInt(5), r.optBoolean(6), r.optBoolean(7))
                 }
             } ?: emptyList(),
         )
