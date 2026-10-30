@@ -183,19 +183,30 @@ private fun TapText(text: String, strong: Boolean, width: androidx.compose.ui.un
     }
 }
 
-/** The step's note: drag up or down to change it (a semitone per notch); a chord shows its size. */
+/** The step's note: drag up or down to change it, a note of the project scale per notch (in key, as the pads and the
+    piano roll); a note off the scale moves onto it. A chord shows its size. */
 @Composable
 private fun NotePill(st: StepData, color: Color) {
+    val project by App.project
+    val inKey = remember(project.scaleRoot, project.scaleIntervals) {
+        (0..127).filter { ((it - project.scaleRoot) % 12 + 12) % 12 in project.scaleIntervals }
+    }
     var drag by remember(st) { mutableFloatStateOf(0f) }
-    val shown = st.notes.first() + (drag / 28f).toInt()
+    fun moved(d: Float): Int {
+        val first = st.notes.first()
+        val row = inKey.indexOfLast { it <= first }.coerceAtLeast(0)
+        val steps = (d / 28f).toInt()
+        return if (steps == 0) first else inKey[(row + steps).coerceIn(0, inKey.size - 1)]
+    }
+    val shown = moved(drag)
     Box(
         Modifier.width(54.dp).height(24.dp).padding(end = 6.dp).clip(CircleShape).background(C.bg)
-            .pointerInput(st) {
+            .pointerInput(st, inKey) {
                 detectVerticalDragGestures(
                     onDragEnd = {
-                        val n = st.notes.first() + (drag / 28f).toInt()
+                        val n = moved(drag)
                         drag = 0f
-                        if (n != st.notes.first()) Seq.edit("stepSet", "step" to st.step, "key" to "note", "value" to n.coerceIn(0, 127))
+                        if (n != st.notes.first()) Seq.edit("stepSet", "step" to st.step, "key" to "note", "value" to n)
                     },
                 ) { c, dy -> c.consume(); drag -= dy }
             },

@@ -23,6 +23,12 @@ The source is `../pastel-minibox` (JUCE 8, C++20). Mockups are in `mockups/` (se
 | 8 Low-end | Open: quality tiers (voice caps, oversampling) need engine work in pastel-minibox |
 | 9 Release | Open |
 
+### Parked (2026-10-30, to pick up next)
+- Undo / redo in the Seq header for all views (today only in the piano roll)
+- Accent / Slide toggles for a selected piano-roll note (the engine already plays clip slides)
+- Save: choose a file name and location; default folder in the phone's main storage (Documents/Minibox)
+- Step input: snap the last pad note into the scale when tapping an empty step
+
 ## 1. Decisions
 
 | Topic | Decision | Why |

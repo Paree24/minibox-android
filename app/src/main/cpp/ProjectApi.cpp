@@ -123,6 +123,62 @@ juce::var MiniboxHost::projectCall (const juce::String& op, const juce::var& a, 
         return {};
     }
 
+    // ---- a track's 3 effect slots (Sound → FX)
+    if (op == "trackFx")
+    {
+        const int pat = engine.focusPattern.load(), t = std::clamp (geti (a, "track"), 0, kTracks - 1);
+        auto o = obj();
+        juce::Array<juce::var> slots;
+        for (int i = 0; i < kTrackFx; ++i)
+        {
+            const auto& fx = p.patterns[(size_t) pat].slots[(size_t) t].fx[(size_t) i];
+            auto s = obj();
+            put (s, "effect", fx.effect); put (s, "mix", fx.mix); put (s, "bypass", fx.bypass); put (s, "mode", fx.mode);
+            juce::Array<juce::var> params, modes;
+            if (const auto* d = efx::defForId (efx::idForName (fx.effect)))
+            {
+                for (int m = 0; m < d->numModes; ++m) modes.add (juce::String (d->modes[m]));
+                for (int k = 0; k < d->numParams; ++k)
+                {
+                    if (! efx::paramVisible (*d, k, fx.mode, fx.norm.data())) continue;
+                    const auto& ps = d->p[k];
+                    auto pv = obj();
+                    put (pv, "index", k); put (pv, "name", juce::String (ps.name)); put (pv, "value", fx.norm[(size_t) k]);
+                    put (pv, "text", efx::formatParam (ps, fx.norm[(size_t) k])); put (pv, "default", ps.def);
+                    juce::Array<juce::var> ch;
+                    for (int c = 0; c < ps.numChoices; ++c) ch.add (juce::String (ps.choices[c]));
+                    put (pv, "choices", ch);
+                    params.add (pv);
+                }
+            }
+            put (s, "modes", modes); put (s, "params", params);
+            slots.add (s);
+        }
+        put (o, "slots", slots);
+        juce::Array<juce::var> names;
+        for (int id : MasterFx::choosableEffects()) if (const auto* d = efx::defForId (id)) names.add (juce::String (d->name));
+        put (o, "choices", names);
+        return o;
+    }
+    if (op == "setTrackFx")
+    {
+        masterFx.setTrackEffect (engine.focusPattern.load(), std::clamp (geti (a, "track"), 0, kTracks - 1),
+                                 std::clamp (geti (a, "slot"), 0, kTrackFx - 1), a["effect"].toString());
+        return {};
+    }
+    if (op == "setTrackFxValue")
+    {
+        auto& fx = p.patterns[(size_t) engine.focusPattern.load()].slots[(size_t) std::clamp (geti (a, "track"), 0, kTracks - 1)]
+                    .fx[(size_t) std::clamp (geti (a, "slot"), 0, kTrackFx - 1)];
+        const auto k = a["key"].toString();
+        const auto v = a["value"];
+        if (k == "mix") fx.mix = juce::jlimit (0.0f, 1.0f, (float) v);
+        else if (k == "bypass") fx.bypass = (bool) v;
+        else if (k == "mode") fx.mode = std::max (0, (int) v);
+        else if (k == "param") { const int i = geti (a, "index", -1); if (i >= 0 && i < FxSlot::kParams) fx.norm[(size_t) i] = juce::jlimit (0.0f, 1.0f, (float) v); }
+        return {};
+    }
+
     // ---- samples: a file from the phone (copied into app storage) onto the Sampler or a Drum Sampler pad
     if (op == "loadSample")
     {

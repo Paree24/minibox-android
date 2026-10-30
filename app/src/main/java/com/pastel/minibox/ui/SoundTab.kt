@@ -52,7 +52,7 @@ fun SoundTab(openPresets: () -> Unit) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("+", color = C.faint, fontSize = 40.sp) }
         return
     }
-    if (tab >= ed.sections.size) tab = 0
+    if (tab >= ed.sections.size && tab != FX_TAB) tab = 0
 
     Column(Modifier.fillMaxSize()) {
         // preset: ‹ name › and the browser
@@ -109,7 +109,12 @@ fun SoundTab(openPresets: () -> Unit) {
             ed.sections.forEachIndexed { i, s ->
                 Pill(s.title, on = i == tab, color = color, height = 34.dp) { Sound.tab.intValue = i }
             }
+            Pill("Effects", on = tab == FX_TAB, color = color, height = 34.dp) { Sound.tab.intValue = FX_TAB }   // the 3 effect slots
         }
+        if (tab == FX_TAB) {
+            TrackFxPanel(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp).clip(RoundedCornerShape(16.dp))
+                .background(C.surface).padding(12.dp))
+        } else {
         val sec = ed.sections.getOrNull(tab)
         Column(
             Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp).clip(RoundedCornerShape(16.dp))
@@ -144,6 +149,7 @@ fun SoundTab(openPresets: () -> Unit) {
                 }
             }
         }
+        }
         Spacer(Modifier.height(6.dp))
         if (drawer) {
             Box(Modifier.fillMaxWidth().clickable { drawer = false }.padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
@@ -154,6 +160,9 @@ fun SoundTab(openPresets: () -> Unit) {
         Spacer(Modifier.height(12.dp))
     }
 }
+
+/** The Sound tab index of the track's effect slots (after the device's own sections). */
+const val FX_TAB = 99
 
 /** The preset browser: families, the list (tap loads), and saving the current sound as a user preset. */
 @Composable

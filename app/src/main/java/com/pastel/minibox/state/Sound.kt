@@ -69,3 +69,31 @@ object Sound {
 
     fun save(name: String): Boolean = App.call("savePreset", "track" to App.focusTrack.intValue, "name" to name).trim() == "true"
 }
+
+data class FxParam(val index: Int, val name: String, val value: Float, val text: String, val default: Float, val choices: List<String>)
+data class FxSlotInfo(val effect: String, val mix: Float, val bypass: Boolean, val mode: Int, val modes: List<String>, val params: List<FxParam>)
+
+/** The selected track's 3 effect slots (cpp/ProjectApi.cpp: trackFx). */
+object TrackFx {
+    val slots = mutableStateOf(List(3) { FxSlotInfo("", 1f, false, 0, emptyList(), emptyList()) })
+    val choices = mutableStateOf<List<String>>(emptyList())   // state: the picker redraws when they arrive
+
+    fun refresh() {
+        val o = JSONObject(App.call("trackFx", "track" to App.focusTrack.intValue))
+        choices.value = o.getJSONArray("choices").strings()
+        slots.value = o.getJSONArray("slots").objects().map { s ->
+            FxSlotInfo(s.getString("effect"), s.getDouble("mix").toFloat(), s.getBoolean("bypass"), s.getInt("mode"),
+                s.getJSONArray("modes").strings(),
+                s.getJSONArray("params").objects().map { p ->
+                    FxParam(p.getInt("index"), p.getString("name"), p.getDouble("value").toFloat(), p.getString("text"),
+                        p.getDouble("default").toFloat(), p.getJSONArray("choices").strings())
+                })
+        }
+    }
+
+    fun setEffect(slot: Int, effect: String) { App.call("setTrackFx", "track" to App.focusTrack.intValue, "slot" to slot, "effect" to effect); refresh() }
+    fun set(slot: Int, key: String, value: Any, index: Int = -1) {
+        App.call("setTrackFxValue", "track" to App.focusTrack.intValue, "slot" to slot, "key" to key, "value" to value, "index" to index)
+        refresh()
+    }
+}

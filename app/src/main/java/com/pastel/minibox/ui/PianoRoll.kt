@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,7 +61,18 @@ fun PianoRoll(bar: Int, color: Color) {
     var selected by remember { mutableIntStateOf(-1) }
     var preview by remember { mutableStateOf<Preview?>(null) }
     var lastLength by remember { mutableIntStateOf(0) }
-    var low by remember { mutableIntStateOf(seq.rollNotes.minOfOrNull { it.note }?.minus(2) ?: (App.lastNote.intValue - 6)) }
+    // the rows: the project scale's notes (Scale on, the default: every note drawn or moved stays in key), or all 128
+    val project by App.project
+    var scaleOn by remember { mutableStateOf(true) }
+    val rowNotes = remember(scaleOn, project.scaleRoot, project.scaleIntervals) {
+        if (!scaleOn) (0..127).toList()
+        else (0..127).filter { ((it - project.scaleRoot) % 12 + 12) % 12 in project.scaleIntervals }
+    }
+    val rowsNow by rememberUpdatedState(rowNotes)
+    /** A note's row: its own, or the row below it when it is off the scale. */
+    fun rowOf(note: Int): Int = rowsNow.indexOfLast { it <= note }.coerceAtLeast(0)
+    var low by remember { mutableIntStateOf(-1) }   // the bottom row in view (an index into the rows)
+    if (low == -1) low = rowOf(seq.rollNotes.minOfOrNull { it.note }?.minus(2) ?: (App.lastNote.intValue - 4))
     val track = App.focusTrack.intValue
     val stepT = seq.stepTicks
     val barTicks = seq.stepsPerBar * stepT
@@ -77,6 +89,12 @@ fun PianoRoll(bar: Int, color: Color) {
             Segmented(listOf("Draw", "Select"), tool, C.text, { tool = it }, Modifier.width(140.dp), height = 32.dp)
             Spacer(Modifier.width(8.dp))
             Pill(SNAPS[snap].first, caret = true) { snap = (snap + 1) % SNAPS.size }
+            Spacer(Modifier.width(6.dp))
+            Pill("Scale", on = scaleOn, color = color) {
+                val keep = rowsNow.getOrElse(low) { 60 }
+                scaleOn = !scaleOn
+                low = -2 - keep   // re-found when drawn, on the same note, once the rows change
+            }
             Spacer(Modifier.weight(1f))
             if (selected >= 0) {
                 RoundIcon("✕") { Seq.edit("clipDelete", "id" to selected); selected = -1 }
@@ -96,14 +114,16 @@ fun PianoRoll(bar: Int, color: Color) {
                     val rowH = 24.dp.toPx()
                     val rows = ((size.height - rulerH) / rowH).toInt().coerceAtLeast(1)
                     val tickW = (size.width - keysW) / barTicks
-                    fun noteAtY(y: Float) = low + rows - 1 - ((y - rulerH) / rowH).toInt()
+                    fun rowAtY(y: Float) = low + rows - 1 - ((y - rulerH) / rowH).toInt()
+                    fun noteAtY(y: Float) = rowsNow[rowAtY(y).coerceIn(0, rowsNow.size - 1)]
                     fun tickAtX(x: Float) = barStart + ((x - keysW) / tickW).toInt()
                     fun hit(notes: List<ClipNote>, x: Float, y: Float): Pair<ClipNote, Boolean>? {
                         val n = noteAtY(y)
                         val t = tickAtX(x)
-                        val found = notes.lastOrNull { it.note == n && t >= it.start && t < it.start + it.length } ?: return null
+                        val found = notes.lastOrNull { rowOf(it.note) == rowOf(n) && t >= it.start && t < it.start + it.length } ?: return null
                         val right = keysW + (found.start + found.length - barStart) * tickW
-                        return found to (right - x < 16.dp.toPx())
+                        // the end handle: the note's last third, at most 14 dp (a short note is mostly for moving)
+                        return found to (right - x < minOf(14.dp.toPx(), found.length * tickW / 3f))
                     }
                     awaitEachGesture {
                         val down = awaitFirstDown()
@@ -119,7 +139,7 @@ fun PianoRoll(bar: Int, color: Color) {
                                 if (!c.pressed) break
                                 c.consume()
                                 moved = c.position.y - y0
-                                low = (startLow + (moved / rowH).roundToInt()).coerceIn(0, 127 - rows)
+                                low = (startLow + (moved / rowH).roundToInt()).coerceIn(0, maxOf(0, rowsNow.size - rows))
                             }
                             if (abs(moved) < 8f) {
                                 val n = noteAtY(y0)
@@ -157,7 +177,7 @@ fun PianoRoll(bar: Int, color: Color) {
                                 val dt = ((last.x - x0) / tickW).toInt()
                                 preview = if (edge) Preview(n.id, n.start, maxOf(snapTicks(), snapTo(n.length + dt)), n.note, n.velocity)
                                 else Preview(n.id, snapTo(n.start + dt).coerceAtLeast(0), n.length,
-                                    (n.note + noteAtY(last.y) - noteAtY(y0)).coerceIn(0, 127), n.velocity)
+                                    rowsNow[(rowOf(n.note) + rowAtY(last.y) - rowAtY(y0)).coerceIn(0, rowsNow.size - 1)], n.velocity)
                             }
                             val p = preview!!
                             preview = null
@@ -198,14 +218,28 @@ fun PianoRoll(bar: Int, color: Color) {
             for (s in 0 until seq.stepsPerBar step 4)   // the ruler: bar.beat
                 drawContext.canvas.nativeCanvas.drawText("${bar + 1}.${s / 4 + 1}", keysW + s * stepT * tickW + 3.dp.toPx(), 11.dp.toPx(), rulerLabel)
             drawRect(C.surface, Offset(keysW, rulerH), Size(size.width - keysW, rows * rowH))
+            if (low <= -2) low = rowOf(-2 - low)   // the Scale toggle: the same note stays in view
+            low = low.coerceIn(0, maxOf(0, rowNotes.size - rows))
             for (r in 0 until rows) {
-                val n = low + rows - 1 - r
+                val idx = low + rows - 1 - r
+                if (idx >= rowNotes.size) continue
+                val n = rowNotes[idx]
                 val y = rulerH + r * rowH
-                val black = (n % 12) in listOf(1, 3, 6, 8, 10)
-                if (black) drawRect(Color(0xFF1B1D22), Offset(keysW, y), Size(size.width - keysW, rowH))
-                drawRoundRect(if (black) Color(0xFF2E323A) else Color(0xFFC9C4BE), Offset(0f, y + 0.5f), Size(keysW - 2f, rowH - 1f), CornerRadius(3.dp.toPx()))
+                val root = ((n - project.scaleRoot) % 12 + 12) % 12 == 0
+                if (scaleOn) {
+                    // in key: every row named, the roots in the track colour
+                    if (root) drawRect(color.copy(alpha = 0.08f), Offset(keysW, y), Size(size.width - keysW, rowH))
+                    drawRoundRect(if (root) color else C.control, Offset(0f, y + 0.5f), Size(keysW - 2f, rowH - 1f), CornerRadius(3.dp.toPx()))
+                    keyLabel.color = if (root) Tokens.BG else Tokens.QUIET
+                    drawContext.canvas.nativeCanvas.drawText(noteName(n), keysW - 5.dp.toPx(), y + rowH / 2 + 4.dp.toPx(), keyLabel)
+                } else {
+                    val black = (n % 12) in listOf(1, 3, 6, 8, 10)
+                    if (black) drawRect(Color(0xFF1B1D22), Offset(keysW, y), Size(size.width - keysW, rowH))
+                    drawRoundRect(if (black) Color(0xFF2E323A) else Color(0xFFC9C4BE), Offset(0f, y + 0.5f), Size(keysW - 2f, rowH - 1f), CornerRadius(3.dp.toPx()))
+                    keyLabel.color = Tokens.BG
+                    if (n % 12 == 0) drawContext.canvas.nativeCanvas.drawText(noteName(n), keysW - 5.dp.toPx(), y + rowH / 2 + 4.dp.toPx(), keyLabel)
+                }
                 drawLine(C.divider, Offset(keysW, y + rowH), Offset(size.width, y + rowH), 0.6f)
-                if (n % 12 == 0) drawContext.canvas.nativeCanvas.drawText(noteName(n), keysW - 5.dp.toPx(), y + rowH / 2 + 4.dp.toPx(), keyLabel)
             }
             for (s in 0..seq.stepsPerBar) {
                 val x = keysW + s * stepT * tickW
@@ -213,13 +247,14 @@ fun PianoRoll(bar: Int, color: Color) {
             }
             val notes = seq.rollNotes.filter { (preview == null || it.id != preview!!.id || it.id < 0) }
             fun drawNote(start: Int, length: Int, note: Int, vel: Int, sel: Boolean) {
-                val r = low + rows - 1 - note
+                val r = low + rows - 1 - rowOf(note)
                 if (r < 0 || r >= rows) return
+                val offScale = rowNotes.getOrNull(rowOf(note)) != note   // kept as it was, shown on the row below
                 val x = keysW + (start - barStart) * tickW
                 val w = length * tickW
                 if (x + w < keysW || x > size.width) return
                 val y = rulerH + r * rowH
-                drawRoundRect(color.copy(alpha = if (sel) 1f else 0.45f + 0.45f * vel / 127f), Offset(maxOf(x, keysW) + 1f, y + 2f),
+                drawRoundRect(color.copy(alpha = if (sel) 1f else if (offScale) 0.3f else 0.45f + 0.45f * vel / 127f), Offset(maxOf(x, keysW) + 1f, y + 2f),
                     Size(minOf(w, size.width - x) - 2f, rowH - 4f), CornerRadius(4.dp.toPx()))
                 if (sel) drawRoundRect(C.text, Offset(x - 1f, y + 0.5f), Size(w + 2f, rowH - 1f), CornerRadius(5.dp.toPx()), style = Stroke(2.dp.toPx()))
             }

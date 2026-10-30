@@ -128,8 +128,8 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
     if (op == "setRecord") { engine.setRecord (getb (a, "on")); return {}; }
     if (op == "setTimeSig") { engine.setTimeSignature (geti (a, "beats", 4), geti (a, "unit", 4)); return {}; }
     if (op == "queuePattern") { engine.queuePattern (geti (a, "pattern")); return {}; }
-    if (op == "copyPattern") { engine.copyPattern (geti (a, "from"), geti (a, "to")); return {}; }
-    if (op == "clearPattern") { engine.clearPattern (geti (a, "pattern")); return {}; }
+    if (op == "copyPattern") { engine.copyPattern (geti (a, "from"), geti (a, "to")); masterFx.sync(); return {}; }   // its track effects too
+    if (op == "clearPattern") { engine.clearPattern (geti (a, "pattern")); masterFx.sync(); return {}; }
     if (op == "focusPattern") { engine.focusPattern = std::clamp (geti (a, "pattern"), 0, kPatterns - 1); return {}; }
     if (op == "setMacro")
     {
