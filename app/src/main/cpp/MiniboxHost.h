@@ -18,8 +18,12 @@ class MiniboxHost final : public oboe::AudioStreamDataCallback, public oboe::Aud
 public:
     static MiniboxHost& get();
 
-    /** Message thread, once: factory content folder, the starter rack (pattern A). */
-    void init (const juce::String& factoryDir);
+    /** Message thread, once: factory content folder, app storage (projects), the starter rack (pattern A). */
+    void init (const juce::String& factoryDir, const juce::String& storageDir);
+
+    /** MIDI controllers (MidiIn.cpp): open an android.media.midi.MidiDevice's output port; close them all. */
+    bool openMidi (void* jniEnv, void* midiDevice, int port);
+    void closeMidi();
     bool startAudio();
     void stopAudio();
 
@@ -42,8 +46,10 @@ public:
     void play() { engine.play(); }
     void stop() { engine.stop(); }
 
-    /** 1–4 bursts of buffering (PLAN.md §3.1); 0 = automatic (2 bursts, growing on underruns). */
-    void setBufferBursts (int bursts);
+    /** Latency (Settings): 0 Low, the smallest buffer the phone sustains (one burst, a burst more on each underrun);
+        1 Medium, 2 High, 3 Very high: the largest buffer whose output latency stays within 30, 50 or 80 ms. */
+    void setLatencyMode (int mode, int lowBursts = 1);   // lowBursts: where Low settled last time on this phone
+    static constexpr float kLatencyTargetMs[4] = { 0.0f, 30.0f, 50.0f, 80.0f };
 
     struct Stats
     {
@@ -59,11 +65,29 @@ public:
     void onErrorAfterClose (oboe::AudioStream*, oboe::Result) override;
 
 private:
-    MiniboxHost() = default;
+    MiniboxHost();
+    ~MiniboxHost() override;   // MidiIn.cpp, where MidiPort is complete
     bool openStream();
     void tuneBuffer();
 
     juce::var seqCall (const juce::String& op, const juce::var& args, bool& handled);     // SeqApi.cpp
+    juce::var projectCall (const juce::String& op, const juce::var& args, bool& handled); // ProjectApi.cpp
+    void afterProjectChange();
+    juce::File projectsDir() const;
+    juce::File storage;
+
+    struct MidiPort;
+    std::mutex midiPortsLock;
+    std::vector<std::unique_ptr<MidiPort>> midiPorts;
+    struct MidiMsg { uint8_t status = 0, d1 = 0, d2 = 0, size = 0; };
+    static constexpr int kMidiQueue = 1024;
+    juce::AbstractFifo midiFifo { kMidiQueue };    // one producer at a time in practice (a controller); see pushMidiBytes
+    std::array<MidiMsg, kMidiQueue> midiQueue {};
+    uint8_t midiStatus = 0, midiData[2] {};
+    int midiHave = 0;
+    juce::MidiBuffer midiBlock;
+    void pushMidiBytes (const uint8_t*, int);
+    const juce::MidiBuffer* takeMidi();
     juce::var soundCall (const juce::String& op, const juce::var& args, bool& handled);   // SoundApi.cpp
 
     // undo / redo of sequence edits: a snapshot of the pattern's tracks before each edit (as the desktop)
@@ -79,7 +103,8 @@ private:
     std::mutex streamLock;                         // open / close / reconfigure (never the audio thread)
     std::shared_ptr<oboe::AudioStream> stream;
     std::atomic<bool> wantRunning { false };
-    int bufferBursts = 0;
+    int latencyMode = 0, lowStartBursts = 1;
+    bool bigCapacity = false;   // the open stream was asked for room for the higher modes
     int32_t lastXruns = 0;
 
     static constexpr int kMaxBlock = 1024;          // the engine renders longer callbacks in pieces

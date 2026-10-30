@@ -9,7 +9,9 @@ import dalvik.annotation.optimization.CriticalNative
 object Native {
     init { System.loadLibrary("minibox") }
 
-    @JvmStatic external fun nativeInit(context: Context, factoryDir: String): Boolean
+    @JvmStatic external fun nativeInit(context: Context, factoryDir: String, storageDir: String): Boolean
+    @JvmStatic external fun midiOpen(device: android.media.midi.MidiDevice, port: Int): Boolean
+    @JvmStatic external fun midiCloseAll()
 
     // pads: no JNIEnv, no objects (PLAN.md §3.3); main thread only
     @CriticalNative @JvmStatic external fun noteOn(track: Int, note: Int, velocity: Float)
@@ -22,7 +24,9 @@ object Native {
     @JvmStatic external fun stopAudio()
     @JvmStatic external fun play()
     @JvmStatic external fun stop()
-    @JvmStatic external fun setBufferBursts(bursts: Int)
+    /** 0 Low (the minimum the phone sustains), 1 Medium (≤ 30 ms), 2 High (≤ 50 ms), 3 Very high (≤ 80 ms).
+        `lowBursts`: the buffer Low settled on last time on this phone (it starts there instead of re-learning). */
+    @JvmStatic external fun setLatencyMode(mode: Int, lowBursts: Int)
     @JvmStatic external fun readStats(out: FloatArray)
     /** Playhead, patterns, meters (MiniboxHost::readFast); also runs the engine's main-thread housekeeping. */
     @JvmStatic external fun readFast(out: FloatArray)

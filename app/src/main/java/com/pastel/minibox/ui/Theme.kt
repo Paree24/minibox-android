@@ -31,5 +31,6 @@ object C {
     val faint = Color(Tokens.FAINT)
     val pattern = Color(Tokens.PATTERN)
     val record = Color(Tokens.RECORD)
+    val mute = Color(Tokens.MUTE)
     fun track(i: Int) = Color(Tokens.TRACK[i.coerceIn(0, 7)])
 }

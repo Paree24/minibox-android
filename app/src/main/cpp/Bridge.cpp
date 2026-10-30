@@ -52,7 +52,7 @@ jboolean startAudio (JNIEnv*, jclass) { return MiniboxHost::get().startAudio(); 
 void stopAudio (JNIEnv*, jclass) { MiniboxHost::get().stopAudio(); }
 void play (JNIEnv*, jclass) { MiniboxHost::get().play(); }
 void stop (JNIEnv*, jclass) { MiniboxHost::get().stop(); }
-void setBufferBursts (JNIEnv*, jclass, jint b) { MiniboxHost::get().setBufferBursts (b); }
+void setLatencyMode (JNIEnv*, jclass, jint m, jint lowBursts) { MiniboxHost::get().setLatencyMode (m, lowBursts); }
 
 void readStats (JNIEnv* env, jclass, jfloatArray out)
 {
@@ -95,6 +95,9 @@ jstring call (JNIEnv* env, jclass, jstring op, jstring args)
     return env->NewStringUTF (juce::JSON::toString (result, true).toRawUTF8());
 }
 
+jboolean midiOpen (JNIEnv* env, jclass, jobject device, jint port) { return MiniboxHost::get().openMidi (env, device, port); }
+void midiCloseAll (JNIEnv*, jclass) { MiniboxHost::get().closeMidi(); }
+
 void runPosted (JNIEnv*, jclass, jlong ptr)
 {
     std::unique_ptr<std::function<void()>> fn (reinterpret_cast<std::function<void()>*> ((intptr_t) ptr));
@@ -103,7 +106,7 @@ void runPosted (JNIEnv*, jclass, jlong ptr)
 } // namespace
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_pastel_minibox_engine_Native_nativeInit (JNIEnv* env, jclass cls, jobject context, jstring factoryDir)
+Java_com_pastel_minibox_engine_Native_nativeInit (JNIEnv* env, jclass cls, jobject context, jstring factoryDir, jstring storageDir)
 {
     if (vm != nullptr) return JNI_TRUE;   // already up (an Activity was recreated)
     env->GetJavaVM (&vm);
@@ -125,15 +128,17 @@ Java_com_pastel_minibox_engine_Native_nativeInit (JNIEnv* env, jclass cls, jobje
         { "stopAudio", "()V", reinterpret_cast<void*> (stopAudio) },
         { "play", "()V", reinterpret_cast<void*> (play) },
         { "stop", "()V", reinterpret_cast<void*> (stop) },
-        { "setBufferBursts", "(I)V", reinterpret_cast<void*> (setBufferBursts) },
+        { "setLatencyMode", "(II)V", reinterpret_cast<void*> (setLatencyMode) },
         { "readStats", "([F)V", reinterpret_cast<void*> (readStats) },
         { "runPosted", "(J)V", reinterpret_cast<void*> (runPosted) },
         { "laneNotes", "(I)[I", reinterpret_cast<void*> (laneNotes) },
+        { "midiOpen", "(Landroid/media/midi/MidiDevice;I)Z", reinterpret_cast<void*> (midiOpen) },
+        { "midiCloseAll", "()V", reinterpret_cast<void*> (midiCloseAll) },
         { "laneName", "(II)Ljava/lang/String;", reinterpret_cast<void*> (laneName) },
     };
     if (env->RegisterNatives (cls, methods, (jint) std::size (methods)) != JNI_OK) return JNI_FALSE;
 
     mb::setMainThreadPoster (postToMain);
-    MiniboxHost::get().init (toJuce (env, factoryDir));
+    MiniboxHost::get().init (toJuce (env, factoryDir), toJuce (env, storageDir));
     return JNI_TRUE;
 }

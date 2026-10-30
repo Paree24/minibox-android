@@ -64,6 +64,28 @@ fun SoundTab(openPresets: () -> Unit) {
                     modifier = Modifier.weight(1f).clickable(onClick = openPresets), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 Box(Modifier.size(40.dp).clickable { Sound.step(1) }, contentAlignment = Alignment.Center) { Text("›", color = C.quiet, fontSize = 20.sp) }
             }
+            val type = rack[track].type
+            if (type == "sampler" || type == "drumsampler") {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                var slice by remember { mutableStateOf(false) }
+                val pick = androidx.activity.compose.rememberLauncherForActivityResult(
+                    androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+                    if (uri != null) {
+                        // samples live in app storage, so a project keeps working after the original file moves
+                        val tmp = copyIn(context, uri, "sample.wav")
+                        val dst = java.io.File(context.filesDir, "Samples/${tmp.name}").apply { parentFile?.mkdirs() }
+                        tmp.copyTo(dst, overwrite = true)
+                        App.call("loadSample", "track" to track, "path" to dst.absolutePath, "pad" to selection, "slice" to slice)
+                        Sound.refresh()
+                    }
+                }
+                Spacer(Modifier.width(8.dp))
+                Pill("Sample", height = 40.dp) { slice = false; pick.launch(arrayOf("audio/*")) }
+                if (type == "drumsampler") {
+                    Spacer(Modifier.width(6.dp))
+                    Pill("Slice", height = 40.dp) { slice = true; pick.launch(arrayOf("audio/*")) }
+                }
+            }
             Spacer(Modifier.width(8.dp))
             Box(Modifier.size(40.dp).clip(CircleShape).background(C.control).clickable(onClick = openPresets), contentAlignment = Alignment.Center) {
                 Text("⋯", color = C.quiet, fontSize = 18.sp, fontWeight = FontWeight.Black)

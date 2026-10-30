@@ -203,6 +203,7 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
     auto r = seqCall (op, a, handled);
     if (handled) return r;
     r = soundCall (op, a, handled);
-    return r;
+    if (handled) return r;
+    return projectCall (op, a, handled);
 }
 } // namespace mb::android

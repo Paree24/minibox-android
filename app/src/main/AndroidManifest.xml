@@ -3,6 +3,7 @@
 
     <uses-feature android:name="android.hardware.audio.low_latency" android:required="false" />
     <uses-feature android:name="android.hardware.audio.pro" android:required="false" />
+    <uses-feature android:name="android.software.midi" android:required="false" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
@@ -22,5 +23,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.pastel.minibox.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>

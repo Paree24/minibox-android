@@ -47,7 +47,7 @@ target_link_libraries(minibox_core PUBLIC juce_min)
 
 # ---- the app's native library: Oboe audio, the engine host and the JNI bridge
 find_package(oboe REQUIRED CONFIG)
-add_library(minibox SHARED Bridge.cpp MiniboxHost.cpp Api.cpp SeqApi.cpp SoundApi.cpp)
+add_library(minibox SHARED Bridge.cpp MiniboxHost.cpp Api.cpp SeqApi.cpp SoundApi.cpp ProjectApi.cpp MidiIn.cpp)
 target_link_libraries(minibox PRIVATE minibox_core oboe::oboe)
 target_compile_options(minibox PRIVATE -Wall -Wextra)
 

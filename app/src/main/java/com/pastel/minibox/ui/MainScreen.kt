@@ -51,7 +51,9 @@ sealed interface Sheet {
     data object Tempo : Sheet
     data object Record : Sheet
     data object Scale : Sheet
-    data object Settings : Sheet
+    data object Project : Sheet
+    data object MasterFx : Sheet
+    data class TrackMix(val track: Int) : Sheet
     data class Device(val track: Int) : Sheet
     data class PatternMenu(val pattern: Int) : Sheet
     data class Step(val step: Int, val lane: Int) : Sheet
@@ -72,7 +74,7 @@ fun MainScreen() {
     Column(Modifier.fillMaxSize().background(C.bg).statusBarsPadding()) {
         TopBar(
             onTempo = { sheet = Sheet.Tempo }, onRecordMenu = { sheet = Sheet.Record },
-            onPatterns = { tab = Tab.Perform }, onMenu = { sheet = Sheet.Settings },
+            onPatterns = { tab = Tab.Perform }, onMenu = { sheet = Sheet.Project },
         )
         if (tab != Tab.Mix && tab != Tab.Perform) TrackRow { sheet = Sheet.Device(it) }
         Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -81,6 +83,7 @@ fun MainScreen() {
                 Tab.Perform -> PerformTab(onPatternMenu = { sheet = Sheet.PatternMenu(it) })
                 Tab.Seq -> SeqTab(openStep = { s, l -> sheet = Sheet.Step(s, l) })
                 Tab.Sound -> SoundTab(openPresets = { sheet = Sheet.Presets })
+                Tab.Mix -> MixTab(openTrack = { sheet = Sheet.TrackMix(it) }, openEffects = { sheet = Sheet.MasterFx })
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(tab.title, color = C.faint, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
@@ -102,7 +105,9 @@ fun MainScreen() {
                     Sheet.Tempo -> TempoSheet()
                     Sheet.Record -> RecordSheet()
                     Sheet.Scale -> ScaleSheet()
-                    Sheet.Settings -> SettingsSheet()
+                    Sheet.Project -> ProjectSheet { sheet = null }
+                    Sheet.MasterFx -> MasterFxSheet()
+                    is Sheet.TrackMix -> TrackMixSheet(current.track)
                     is Sheet.Device -> DevicePickerSheet(current.track) { sheet = null }
                     is Sheet.PatternMenu -> PatternMenuSheet(current.pattern) { sheet = null }
                     is Sheet.Step -> StepSheet(current.step, current.lane) { sheet = null }

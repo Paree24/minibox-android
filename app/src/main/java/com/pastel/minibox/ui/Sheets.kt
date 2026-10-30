@@ -225,46 +225,6 @@ fun MenuRow(text: String, onClick: () -> Unit) {
             .clickable(onClick = onClick).padding(16.dp))
 }
 
-/** ⋯ → Settings: the audio path (PLAN.md §2, §6). */
-@Composable
-fun SettingsSheet() {
-    var stats by remember { mutableStateOf(AudioStats()) }
-    var bursts by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) {
-        val buf = FloatArray(11)
-        while (true) { Native.readStats(buf); stats = AudioStats.from(buf); delay(200) }
-    }
-    Column {
-        SheetTitle("Settings")
-        AudioCard(stats, bursts) { bursts = it; Native.setBufferBursts(it) }
-    }
-}
-
-@Composable
-fun AudioCard(s: AudioStats, bursts: Int, onBursts: (Int) -> Unit) {
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(C.control).padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SectionLabel("Audio", Modifier.weight(1f))
-            val low = s.mmap && s.exclusive
-            Text(if (!s.running) "Stopped" else if (low) "Low latency" else "Standard latency",
-                color = if (low) C.track(4) else C.quiet, fontSize = 11.sp, fontWeight = FontWeight.Black)
-        }
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(if (s.latencyMs >= 0) "%.1f".format(s.latencyMs) else "–", color = C.text, fontSize = 40.sp, fontWeight = FontWeight.Black)
-            Spacer(Modifier.width(6.dp))
-            Text("ms", color = C.quiet, fontSize = 15.sp, modifier = Modifier.padding(bottom = 8.dp))
-        }
-        Text("AAudio · ${if (s.exclusive) "exclusive" else "shared"}${if (s.mmap) " · MMAP" else ""} · ${s.sampleRate / 1000f} kHz · ${s.bufferFrames} frames",
-            color = C.quiet, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        Text("burst ${s.burst} · callback ${s.callbackFrames} · xruns ${s.xruns} · cpu ${(s.cpu * 100).toInt()}%",
-            color = C.faint, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(12.dp))
-        SectionLabel("Buffer")
-        Spacer(Modifier.height(8.dp))
-        ChoicePads(listOf("Auto", "1×", "2×", "3×", "4×"), bursts, C.text, onBursts, height = 36.dp)
-    }
-}
-
 @Composable
 private fun SquareButton(text: String, onClick: () -> Unit) {
     Box(Modifier.size(72.dp).clip(RoundedCornerShape(16.dp)).background(C.control).clickable(onClick = onClick),

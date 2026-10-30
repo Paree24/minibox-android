@@ -132,6 +132,13 @@ object App {
         refreshMacros()
     }
 
+    /** Saves the project under its name (an untitled one as "Autosave") and remembers it for the next launch. */
+    fun autosave(context: android.content.Context) {
+        val name = project.value.name.takeIf { it.isNotBlank() && it != "Untitled" } ?: "Autosave"
+        val ok = JSONObject(call("saveProject", "name" to name)).optBoolean("ok")
+        if (ok) com.pastel.minibox.engine.Prefs.setLastProject(context, name)
+    }
+
     fun setOctave(track: Int, oct: Int) {
         octave.value = octave.value.toMutableList().also { it[track] = oct.coerceIn(-2, 3) }
     }

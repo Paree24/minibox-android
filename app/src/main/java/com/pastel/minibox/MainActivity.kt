@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import com.pastel.minibox.engine.Factory
+import com.pastel.minibox.engine.Midi
 import com.pastel.minibox.engine.Native
+import com.pastel.minibox.engine.Prefs
 import com.pastel.minibox.ui.C
 import com.pastel.minibox.state.App
 import com.pastel.minibox.ui.MainScreen
@@ -28,8 +30,11 @@ class MainActivity : ComponentActivity() {
         Thread {
             val factory = Factory.unpack(applicationContext)
             runOnUiThread {
-                Native.nativeInit(applicationContext, factory.absolutePath)
+                Native.nativeInit(applicationContext, factory.absolutePath, filesDir.absolutePath)
+                Native.setLatencyMode(Prefs.latencyMode(this), Prefs.lowBursts(this))
+                Prefs.lastProject(this)?.let { App.call("openProject", "name" to it) }   // carry on where we were
                 App.init()
+                Midi.start(applicationContext)
                 ready.value = true
                 if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) Native.startAudio()
             }
@@ -43,7 +48,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         // background playback (a foreground service) comes in phase 7; until then the stream stops with the app
-        if (ready.value) Native.stopAudio()
+        if (ready.value) {
+            // remember where Low settled on this phone (it starts there next time, without the first clicks)
+            val st = FloatArray(11).also { Native.readStats(it) }
+            if (Prefs.latencyMode(this) == 0 && st[1] > 0) Prefs.setLowBursts(this, (st[2] / st[1]).toInt().coerceIn(1, 8))
+            Native.stopAudio()
+            App.autosave(this)
+        }
         super.onStop()
     }
 }
