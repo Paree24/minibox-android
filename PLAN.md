@@ -24,13 +24,25 @@ The source is `../pastel-minibox` (JUCE 8, C++20). Mockups are in `mockups/` (se
 | 9 Release | Open |
 
 ### Parked (2026-10-30, to pick up next)
-- CPU: optimise the whole engine, not just the VA: every device, the effects, the master bus (profile on a phone)
-- Piano roll: show and edit across bars (a note drawn from bar 1 into bar 2); today it works one bar at a time
-- Piano roll: select several notes (box or multi-tap) to move, resize, delete or change velocity together
+- CPU, next steps: profile on a phone (simpleperf) for the real hotspots; the Acid's 4× oversampled voice; the drum
+  models' per-sample time envelopes (exp of the time since the hit); the Drum Sampler's resampling
 
 Done from the parked list (2026-10-30): undo / redo in the Seq header; Accent / Slide on piano-roll notes; Save to
 Documents/Minibox and Save as (name and folder); step input snapped into the scale; closing the app stops the
-sound (Home keeps it playing); the VA's DCO / VCO switch; the arp sheet (15 rates, gate, swing); the mixer's touch.
+sound (Home keeps it playing); the VA's DCO / VCO switch; the arp sheet (15 rates, gate, swing); the mixer's touch;
+the piano roll across bars (zoom 1, 2, 4 bars or all) with multi-select (tap, box; move, resize, delete, accent,
+slide, velocity together); CPU, first pass (one desktop core, busy part per device, before → after):
+
+| Device | Before | After |
+|---|---|---|
+| Bassline | 1.37 % | 0.82 % |
+| VA (chords) | 4.89 % | 3.16 % |
+| Acid | 2.13 % | 1.59 % |
+| FM (chords) | 4.26 % | 2.79 % |
+| Sampler | 1.26 % | 0.70 % |
+| Drums | 3.70 % | 2.87 % |
+| Drum Sampler | 2.04 % | 1.47 % |
+| Empty project | 0.81 % | 0.24 % |
 
 ## 1. Decisions
 
