@@ -84,6 +84,14 @@ fun PadGrid(layout: PadLayout, onPress: (note: Int, down: Boolean) -> Unit, modi
                 if (o.x - col * (s + gap) > s || o.y - row * (s + gap) > s) return -1   // in a gap
                 return (3 - row) * 4 + col
             }
+            // a finger already on a pad keeps it until it is clearly inside another one (6 dp past its edge): a
+            // resting finger wobbling over a gap or an edge must not re-strike the note (it chopped held notes up)
+            fun clearlyIn(pad: Int, o: Offset): Boolean {
+                val s = (size.width - 3 * gap) / 4f
+                val m = 6.dp.toPx()
+                val left = (pad % 4) * (s + gap); val top = (3 - pad / 4) * (s + gap)
+                return o.x > left + m && o.x < left + s - m && o.y > top + m && o.y < top + s - m
+            }
             fun velocityAt(pad: Int, y: Float): Float {
                 val s = (size.width - 3 * gap) / 4f
                 val top = (3 - pad / 4) * (s + gap)
@@ -99,7 +107,8 @@ fun PadGrid(layout: PadLayout, onPress: (note: Int, down: Boolean) -> Unit, modi
                             !c.pressed -> release(id)
                             else -> {
                                 val p = padAt(c.position)
-                                if (p != (held[id] ?: -1)) { release(id); if (p >= 0) press(id, p, velocityAt(p, c.position.y)) }
+                                val cur = held[id] ?: -1
+                                if (p >= 0 && p != cur && (cur < 0 || clearlyIn(p, c.position))) { release(id); press(id, p, velocityAt(p, c.position.y)) }
                             }
                         }
                         c.consume()

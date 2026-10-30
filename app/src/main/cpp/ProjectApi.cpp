@@ -72,6 +72,7 @@ juce::var MiniboxHost::projectCall (const juce::String& op, const juce::var& a, 
     {
         engine.stop(); engine.stop();
         engine.newProject();
+        p.overdub = true;   // loop recording on the phone (Extend stays in the Record sheet)
         afterProjectChange();
         return result (true);
     }
