@@ -1,0 +1,218 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="412" height="915" viewBox="0 0 412 915">
+<rect x="0" y="0" width="412" height="915" fill="#141518"/>
+<text x="20" y="19" font-family="Lato, sans-serif" font-size="12" font-weight="700" fill="#A8A49E" text-anchor="start">9:41</text>
+<rect x="338" y="15" width="3" height="4" rx="1" fill="#A8A49E"/>
+<rect x="343" y="12.5" width="3" height="6.5" rx="1" fill="#A8A49E"/>
+<rect x="348" y="10" width="3" height="9" rx="1" fill="#A8A49E"/>
+<rect x="353" y="7.5" width="3" height="11.5" rx="1" fill="#A8A49E"/>
+<rect x="368" y="9" width="22" height="11" rx="3" fill="none" stroke="#A8A49E" stroke-width="1.2"/>
+<rect x="370" y="11" width="14" height="7" rx="1.5" fill="#A8A49E"/>
+<rect x="391" y="12.5" width="2" height="4" rx="1" fill="#A8A49E"/>
+<circle cx="36" cy="60" r="20" fill="#E88A8A"/>
+<circle cx="36" cy="60" r="6" fill="#141518"/>
+<circle cx="86" cy="60" r="20" fill="#262930"/>
+<circle cx="86" cy="60" r="23.5" fill="none" stroke="#2A2D34" stroke-width="2.5"/>
+<path d="M86 36.5 A23.5 23.5 0 0 1 99.81 79.01" fill="none" stroke="#B9A7F0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M81.68 53 L94.7 60 L81.68 67 Z" fill="#B9A7F0" stroke="#B9A7F0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="136" cy="60" r="20" fill="#262930"/>
+<rect x="130" y="54" width="12" height="12" rx="2" fill="#ECE8E3"/>
+<text x="172" y="62" font-family="Lato, sans-serif" font-size="20" font-weight="900" fill="#ECE8E3" text-anchor="start">124.0</text>
+<text x="172" y="78" font-family="Lato, sans-serif" font-size="10" font-weight="700" fill="#E88A8A" text-anchor="start">1.1.1</text>
+<text x="206" y="78" font-family="Lato, sans-serif" font-size="10" font-weight="700" fill="#55585E" text-anchor="start">· 4/4</text>
+<rect x="264" y="40" width="44" height="40" rx="10" fill="#B9A7F0" opacity="0.18"/>
+<rect x="264" y="40" width="44" height="40" rx="10" fill="none" stroke="#B9A7F0" stroke-width="1.5"/>
+<text x="286" y="61" font-family="Lato, sans-serif" font-size="16" font-weight="900" fill="#B9A7F0" text-anchor="middle">A</text>
+<circle cx="271.3" cy="72" r="1.5" fill="#9EB9F3"/>
+<circle cx="275.5" cy="72" r="1.5" fill="#8FD0C2"/>
+<circle cx="279.7" cy="72" r="1.5" fill="#E8B86A"/>
+<circle cx="283.9" cy="72" r="1.5" fill="#E9A3B8"/>
+<circle cx="288.1" cy="72" r="1.5" fill="#A8D58A"/>
+<circle cx="292.3" cy="72" r="1.5" fill="#F0A07C"/>
+<circle cx="296.5" cy="72" r="1.5" fill="#7FC6E8"/>
+<circle cx="300.7" cy="72" r="1.5" fill="#55585E"/>
+<circle cx="376" cy="60" r="20" fill="#262930"/>
+<circle cx="371" cy="60" r="1.8" fill="#A8A49E"/>
+<circle cx="376" cy="60" r="1.8" fill="#A8A49E"/>
+<circle cx="381" cy="60" r="1.8" fill="#A8A49E"/>
+<line x1="0" y1="92" x2="412" y2="92" stroke="#2A2D34" stroke-width="1" stroke-linecap="round"/>
+<circle cx="32" cy="120" r="16" fill="#262930"/>
+<circle cx="32" cy="120" r="15" fill="none" stroke="#9EB9F3" stroke-width="2" opacity="0.55"/>
+<text x="32" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#9EB9F3" text-anchor="middle">1</text>
+<rect x="53" y="102" width="121" height="36" rx="18" fill="#8FD0C2"/>
+<circle cx="71" cy="120" r="13" fill="#141518" opacity="0.22"/>
+<text x="71" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#141518" text-anchor="middle">2</text>
+<text x="91" y="125" font-family="Lato, sans-serif" font-size="14" font-weight="900" fill="#141518" text-anchor="start">Acid</text>
+<path d="M152.5 118.25 L156 121.75 L159.5 118.25" fill="none" stroke="#141518" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="195" cy="120" r="16" fill="#262930"/>
+<circle cx="195" cy="120" r="15" fill="none" stroke="#E8B86A" stroke-width="2" opacity="0.55"/>
+<text x="195" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#E8B86A" text-anchor="middle">3</text>
+<circle cx="232" cy="120" r="16" fill="#262930"/>
+<circle cx="232" cy="120" r="15" fill="none" stroke="#E9A3B8" stroke-width="2" opacity="0.55"/>
+<text x="232" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#E9A3B8" text-anchor="middle">4</text>
+<circle cx="269" cy="120" r="16" fill="#262930"/>
+<circle cx="269" cy="120" r="15" fill="none" stroke="#A8D58A" stroke-width="2" opacity="0.55"/>
+<text x="269" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#A8D58A" text-anchor="middle">5</text>
+<circle cx="306" cy="120" r="16" fill="#262930"/>
+<circle cx="306" cy="120" r="15" fill="none" stroke="#F0A07C" stroke-width="2" opacity="0.55"/>
+<text x="306" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#F0A07C" text-anchor="middle">6</text>
+<circle cx="343" cy="120" r="16" fill="#262930"/>
+<circle cx="343" cy="120" r="15" fill="none" stroke="#7FC6E8" stroke-width="2" opacity="0.55"/>
+<text x="343" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#7FC6E8" text-anchor="middle">7</text>
+<circle cx="380" cy="120" r="16" fill="none" stroke="#55585E" stroke-width="1.5" stroke-dasharray="3 3"/>
+<line x1="375" y1="120" x2="385" y2="120" stroke="#55585E" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="380" y1="115" x2="380" y2="125" stroke="#55585E" stroke-width="1.6" stroke-linecap="round"/>
+<rect x="0" y="843" width="412" height="72" fill="#20232A"/>
+<rect x="13.2" y="852" width="56" height="30" rx="15" fill="#262930"/>
+<rect x="32.2" y="858" width="8" height="8" rx="2.5" fill="#ECE8E3"/>
+<rect x="42.2" y="858" width="8" height="8" rx="2.5" fill="#ECE8E3"/>
+<rect x="32.2" y="868" width="8" height="8" rx="2.5" fill="#ECE8E3"/>
+<rect x="42.2" y="868" width="8" height="8" rx="2.5" fill="#ECE8E3"/>
+<text x="41.2" y="899" font-family="Lato, sans-serif" font-size="11" font-weight="900" fill="#ECE8E3" text-anchor="middle">Play</text>
+<rect x="114.6" y="864.75" width="3.24" height="8.1" rx="1.5" fill="#55585E"/>
+<rect x="119.28" y="860.25" width="3.24" height="8.1" rx="1.5" fill="#55585E"/>
+<rect x="123.96" y="864.75" width="3.24" height="8.1" rx="1.5" fill="#55585E"/>
+<rect x="128.64" y="860.25" width="3.24" height="8.1" rx="1.5" fill="#55585E"/>
+<text x="123.6" y="899" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#55585E" text-anchor="middle">Seq</text>
+<circle cx="206" cy="867" r="8" fill="none" stroke="#55585E" stroke-width="2"/>
+<line x1="206" y1="867" x2="210" y2="862" stroke="#55585E" stroke-width="2" stroke-linecap="round"/>
+<path d="M197.87 875.13 A11.5 11.5 0 1 1 214.13 875.13" fill="none" stroke="#55585E" stroke-width="1.5" opacity="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="206" y="899" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#55585E" text-anchor="middle">Sound</text>
+<line x1="282.1" y1="858" x2="282.1" y2="876" stroke="#55585E" stroke-width="1.6" stroke-linecap="round"/>
+<rect x="280.12" y="868.35" width="3.96" height="2.7" rx="1" fill="#55585E"/>
+<line x1="288.4" y1="858" x2="288.4" y2="876" stroke="#55585E" stroke-width="1.6" stroke-linecap="round"/>
+<rect x="286.42" y="862.05" width="3.96" height="2.7" rx="1" fill="#55585E"/>
+<line x1="294.7" y1="858" x2="294.7" y2="876" stroke="#55585E" stroke-width="1.6" stroke-linecap="round"/>
+<rect x="292.72" y="866.55" width="3.96" height="2.7" rx="1" fill="#55585E"/>
+<text x="288.4" y="899" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#55585E" text-anchor="middle">Mix</text>
+<path d="M372.8 857 L364.8 868 L370.8 868 L368.8 877 L376.8 866 L370.8 866 Z" fill="#55585E"/>
+<text x="370.8" y="899" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#55585E" text-anchor="middle">Perform</text>
+<rect x="152" y="907" width="108" height="4" rx="2" fill="#55585E"/>
+<rect x="16" y="164" width="196" height="34" rx="17" fill="#262930"/>
+<rect x="18" y="166" width="63.57" height="30" rx="15" fill="#8FD0C2"/>
+<text x="49.79" y="185.32" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#141518" text-anchor="middle">Notes</text>
+<text x="120.72" y="185.32" font-family="Lato, sans-serif" font-size="12" font-weight="700" fill="#A8A49E" text-anchor="middle">Chords</text>
+<text x="184.93" y="185.32" font-family="Lato, sans-serif" font-size="12" font-weight="700" fill="#A8A49E" text-anchor="middle">Arp</text>
+<rect x="222" y="167" width="85.04" height="28" rx="14" fill="#262930"/>
+<text x="257.52" y="185.32" font-family="Lato, sans-serif" font-size="12" font-weight="700" fill="#ECE8E3" text-anchor="middle">C minor</text>
+<path d="M287.54 179.25 L291.04 182.75 L294.54 179.25" fill="none" stroke="#ECE8E3" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="318" y="167" width="78" height="28" rx="14" fill="#262930"/>
+<path d="M335.75 177.5 L332.25 181 L335.75 184.5" fill="none" stroke="#A8A49E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="357" y="186" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#ECE8E3" text-anchor="middle">C2</text>
+<path d="M378.25 177.5 L381.75 181 L378.25 184.5" fill="none" stroke="#A8A49E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="16" y="210" width="380" height="229" rx="16" fill="#20232A"/>
+<path d="M45.82 269.68 A25 25 0 1 1 81.18 269.68" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M45.82 269.68 A25 25 0 0 1 54.3 228.76" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="63.5" cy="252" r="20" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="61.29" y1="246.42" x2="57.76" y2="237.5" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="63.5" y="291" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Cutoff</text>
+<text x="63.5" y="305" font-family="Lato, sans-serif" font-size="10" font-weight="400" fill="#55585E" text-anchor="middle">640 Hz</text>
+<path d="M140.82 269.68 A25 25 0 1 1 176.18 269.68" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M140.82 269.68 A25 25 0 1 1 180.02 239.27" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="158.5" cy="252" r="20" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="163.66" y1="248.95" x2="171.93" y2="244.06" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="158.5" y="291" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Reso</text>
+<text x="158.5" y="305" font-family="Lato, sans-serif" font-size="10" font-weight="400" fill="#55585E" text-anchor="middle">72%</text>
+<path d="M235.82 269.68 A25 25 0 1 1 271.18 269.68" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M235.82 269.68 A25 25 0 0 1 264.85 229.72" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="253.5" cy="252" r="20" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="256.22" y1="246.65" x2="260.58" y2="238.1" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="253.5" y="291" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Env Mod</text>
+<text x="253.5" y="305" font-family="Lato, sans-serif" font-size="10" font-weight="400" fill="#55585E" text-anchor="middle">60%</text>
+<path d="M330.82 269.68 A25 25 0 1 1 366.18 269.68" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M330.82 269.68 A25 25 0 0 1 342.66 227.69" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="348.5" cy="252" r="20" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="347.1" y1="246.17" x2="344.86" y2="236.83" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="348.5" y="291" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Decay</text>
+<text x="348.5" y="305" font-family="Lato, sans-serif" font-size="10" font-weight="400" fill="#55585E" text-anchor="middle">310 ms</text>
+<path d="M45.82 384.18 A25 25 0 1 1 81.18 384.18" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M45.82 384.18 A25 25 0 1 1 83.73 351.81" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="63.5" cy="366.5" r="20" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="68.35" y1="362.97" x2="76.12" y2="357.33" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="63.5" y="405.5" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Accent</text>
+<text x="63.5" y="419.5" font-family="Lato, sans-serif" font-size="10" font-weight="400" fill="#55585E" text-anchor="middle">70%</text>
+<path d="M140.82 384.18 A25 25 0 1 1 176.18 384.18" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M140.82 384.18 A25 25 0 0 1 142.26 347.49" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="158.5" cy="366.5" r="20" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="154.6" y1="361.94" x2="148.37" y2="354.64" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="158.5" y="405.5" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Slide</text>
+<text x="158.5" y="419.5" font-family="Lato, sans-serif" font-size="10" font-weight="400" fill="#55585E" text-anchor="middle">60 ms</text>
+<path d="M235.82 384.18 A25 25 0 1 1 271.18 384.18" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M235.82 384.18 A25 25 0 0 1 247.66 342.19" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="253.5" cy="366.5" r="20" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="252.1" y1="360.67" x2="249.86" y2="351.33" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="253.5" y="405.5" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Drive</text>
+<text x="253.5" y="419.5" font-family="Lato, sans-serif" font-size="10" font-weight="400" fill="#55585E" text-anchor="middle">Tube</text>
+<path d="M330.82 384.18 A25 25 0 1 1 366.18 384.18" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M330.82 384.18 A25 25 0 0 1 328.27 351.81" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="348.5" cy="366.5" r="20" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="343.65" y1="362.97" x2="335.88" y2="357.33" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="348.5" y="405.5" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Delay</text>
+<text x="348.5" y="419.5" font-family="Lato, sans-serif" font-size="10" font-weight="400" fill="#55585E" text-anchor="middle">3/16</text>
+<rect x="16" y="742" width="89" height="89" rx="14" fill="#262930"/>
+<rect x="16" y="742" width="89" height="89" rx="14" fill="#8FD0C2" opacity="0.28"/>
+<text x="28" y="764" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#ECE8E3" text-anchor="start">C2</text>
+<rect x="113" y="742" width="89" height="89" rx="14" fill="#262930"/>
+<text x="125" y="764" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#ECE8E3" text-anchor="start">D2</text>
+<rect x="210" y="742" width="89" height="89" rx="14" fill="#262930"/>
+<text x="222" y="764" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#ECE8E3" text-anchor="start">Eb2</text>
+<rect x="307" y="742" width="89" height="89" rx="14" fill="#262930"/>
+<text x="319" y="764" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#ECE8E3" text-anchor="start">F2</text>
+<rect x="16" y="645" width="89" height="89" rx="14" fill="#262930"/>
+<text x="28" y="667" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#ECE8E3" text-anchor="start">F2</text>
+<rect x="113" y="645" width="89" height="89" rx="14" fill="#262930"/>
+<text x="125" y="667" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#ECE8E3" text-anchor="start">G2</text>
+<rect x="210" y="645" width="89" height="89" rx="14" fill="#262930"/>
+<text x="222" y="667" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#ECE8E3" text-anchor="start">Ab2</text>
+<rect x="307" y="645" width="89" height="89" rx="14" fill="#262930"/>
+<text x="319" y="667" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#ECE8E3" text-anchor="start">Bb2</text>
+<rect x="16" y="548" width="89" height="89" rx="14" fill="#262930"/>
+<text x="28" y="570" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#ECE8E3" text-anchor="start">Bb2</text>
+<rect x="113" y="548" width="89" height="89" rx="14" fill="#262930"/>
+<rect x="113" y="548" width="89" height="89" rx="14" fill="#8FD0C2" opacity="0.28"/>
+<text x="125" y="570" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#ECE8E3" text-anchor="start">C3</text>
+<rect x="210" y="548" width="89" height="89" rx="14" fill="#262930"/>
+<text x="222" y="570" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#ECE8E3" text-anchor="start">D3</text>
+<rect x="307" y="548" width="89" height="89" rx="14" fill="#262930"/>
+<text x="319" y="570" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#ECE8E3" text-anchor="start">Eb3</text>
+<rect x="16" y="451" width="89" height="89" rx="14" fill="#262930"/>
+<text x="28" y="473" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#ECE8E3" text-anchor="start">Eb3</text>
+<rect x="113" y="451" width="89" height="89" rx="14" fill="#262930"/>
+<text x="125" y="473" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#ECE8E3" text-anchor="start">F3</text>
+<rect x="210" y="451" width="89" height="89" rx="14" fill="#262930"/>
+<text x="222" y="473" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#ECE8E3" text-anchor="start">G3</text>
+<rect x="307" y="451" width="89" height="89" rx="14" fill="#262930"/>
+<text x="319" y="473" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#ECE8E3" text-anchor="start">Ab3</text>
+<rect x="0" y="0" width="412" height="915" fill="#0B0C0E" opacity="0.72"/>
+<rect x="0" y="430" width="412" height="505" rx="24" fill="#20232A"/>
+<rect x="186" y="440" width="40" height="4" rx="2" fill="#55585E"/>
+<text x="20" y="478" font-family="Lato, sans-serif" font-size="18" font-weight="900" fill="#ECE8E3" text-anchor="start">Record</text>
+<rect x="152" y="907" width="108" height="4" rx="2" fill="#55585E"/>
+<circle cx="374" cy="472" r="22" fill="#E88A8A"/>
+<text x="374" y="480" font-family="Lato, sans-serif" font-size="22" font-weight="900" fill="#141518" text-anchor="middle">3</text>
+<rect x="16" y="506" width="186" height="52" rx="12" fill="#E88A8A"/>
+<text x="109" y="537" font-family="Lato, sans-serif" font-size="14" font-weight="900" fill="#141518" text-anchor="middle">Live</text>
+<rect x="210" y="506" width="186" height="52" rx="12" fill="#262930"/>
+<text x="303" y="537" font-family="Lato, sans-serif" font-size="14" font-weight="900" fill="#A8A49E" text-anchor="middle">Step</text>
+<text x="20" y="580" font-family="Lato, sans-serif" font-size="11" font-weight="900" fill="#55585E" text-anchor="start" letter-spacing="1.2">TAKES</text>
+<rect x="16" y="590" width="186" height="44" rx="12" fill="#ECE8E3"/>
+<text x="109" y="617" font-family="Lato, sans-serif" font-size="14" font-weight="900" fill="#141518" text-anchor="middle">Extend</text>
+<rect x="210" y="590" width="186" height="44" rx="12" fill="#262930"/>
+<text x="303" y="617" font-family="Lato, sans-serif" font-size="14" font-weight="900" fill="#A8A49E" text-anchor="middle">Overdub</text>
+<text x="20" y="656" font-family="Lato, sans-serif" font-size="11" font-weight="900" fill="#55585E" text-anchor="start" letter-spacing="1.2">QUANTIZE</text>
+<rect x="16" y="666" width="89" height="44" rx="12" fill="#262930"/>
+<text x="60.5" y="693" font-family="Lato, sans-serif" font-size="14" font-weight="900" fill="#A8A49E" text-anchor="middle">Off</text>
+<rect x="113" y="666" width="89" height="44" rx="12" fill="#262930"/>
+<text x="157.5" y="693" font-family="Lato, sans-serif" font-size="14" font-weight="900" fill="#A8A49E" text-anchor="middle">50</text>
+<rect x="210" y="666" width="89" height="44" rx="12" fill="#262930"/>
+<text x="254.5" y="693" font-family="Lato, sans-serif" font-size="14" font-weight="900" fill="#A8A49E" text-anchor="middle">75</text>
+<rect x="307" y="666" width="89" height="44" rx="12" fill="#ECE8E3"/>
+<text x="351.5" y="693" font-family="Lato, sans-serif" font-size="14" font-weight="900" fill="#141518" text-anchor="middle">100</text>
+<rect x="16" y="732" width="186" height="56" rx="14" fill="#262930"/>
+<text x="32" y="765" font-family="Lato, sans-serif" font-size="14" font-weight="900" fill="#ECE8E3" text-anchor="start">Count-in</text>
+<rect x="148" y="749" width="40" height="22" rx="11" fill="#ECE8E3"/>
+<circle cx="177" cy="760" r="8" fill="#141518"/>
+<rect x="210" y="732" width="186" height="56" rx="14" fill="#262930"/>
+<text x="226" y="765" font-family="Lato, sans-serif" font-size="14" font-weight="900" fill="#ECE8E3" text-anchor="start">Knobs</text>
+<rect x="342" y="749" width="40" height="22" rx="11" fill="#ECE8E3"/>
+<circle cx="371" cy="760" r="8" fill="#141518"/>
+</svg>
