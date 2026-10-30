@@ -72,27 +72,30 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (!seq.drum) {
-                Segmented(listOf("Steps", "Roll"), if (roll) 1 else 0, C.text, { if (!seq.pianoRoll) view = it }, Modifier.width(132.dp))
+                Segmented(listOf("Steps", "Roll"), if (roll) 1 else 0, C.text, { if (!seq.pianoRoll) view = it }, Modifier.width(116.dp))
                 Spacer(Modifier.width(8.dp))
             }
-            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                val first = (bar / 4) * 4
-                for (b in first until minOf(seq.bars, first + 4)) {
-                    val on = b == bar
-                    Box(
-                        Modifier.size(34.dp).clip(RoundedCornerShape(10.dp))
-                            .background(if (on) C.pattern.copy(alpha = 0.18f) else C.control)
-                            .then(if (on) Modifier.border(1.5.dp, C.pattern, RoundedCornerShape(10.dp)) else Modifier)
-                            .clickable { pickedBar = b },
-                        contentAlignment = Alignment.Center,
-                    ) { Text("${b + 1}", color = if (on) C.pattern else C.quiet, fontSize = 13.sp, fontWeight = FontWeight.Black) }
+            // the bar in view: ‹ 2 / 4 ›
+            Row(Modifier.height(34.dp).clip(CircleShape).background(C.control), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(30.dp, 34.dp).clickable(enabled = bar > 0) { pickedBar = bar - 1 }, contentAlignment = Alignment.Center) {
+                    Text("‹", color = if (bar > 0) C.text else C.faint, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                }
+                Text("${bar + 1}/${seq.bars}", color = C.pattern, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                Box(Modifier.size(30.dp, 34.dp).clickable(enabled = bar < seq.bars - 1) { pickedBar = bar + 1 }, contentAlignment = Alignment.Center) {
+                    Text("›", color = if (bar < seq.bars - 1) C.text else C.faint, fontSize = 16.sp, fontWeight = FontWeight.Black)
                 }
             }
+            Spacer(Modifier.weight(1f))
             val lengths = listOf(1, 2, 4, 8, 16).filter { it <= seq.maxBars }
             Pill("${seq.bars} bar${if (seq.bars > 1) "s" else ""}", caret = true) {
                 val next = lengths.firstOrNull { it > seq.bars } ?: lengths.first()
                 Seq.edit("setLength", "bars" to next)
             }
+            // undo / redo every sequence edit (steps, drum cells, the piano roll, the length)
+            Spacer(Modifier.width(6.dp))
+            RoundIcon("↶", seq.canUndo) { Seq.edit("undo") }
+            Spacer(Modifier.width(4.dp))
+            RoundIcon("↷", seq.canRedo) { Seq.edit("redo") }
         }
         Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp)) {
             when {

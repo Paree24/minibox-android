@@ -100,9 +100,6 @@ fun PianoRoll(bar: Int, color: Color) {
                 RoundIcon("✕") { Seq.edit("clipDelete", "id" to selected); selected = -1 }
                 Spacer(Modifier.width(6.dp))
             }
-            RoundIcon("↶", seq.canUndo) { Seq.edit("undo") }
-            Spacer(Modifier.width(6.dp))
-            RoundIcon("↷", seq.canRedo) { Seq.edit("redo") }
         }
         Spacer(Modifier.height(8.dp))
         Canvas(
@@ -314,7 +311,7 @@ private fun VelocityLane(bar: Int, barStart: Int, barTicks: Int, color: Color, s
 }
 
 @Composable
-private fun RoundIcon(text: String, enabled: Boolean = true, onClick: () -> Unit) {
+fun RoundIcon(text: String, enabled: Boolean = true, onClick: () -> Unit) {
     Box(Modifier.size(32.dp).clip(CircleShape).background(C.control).clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center) {
         Text(text, color = if (enabled) C.quiet else C.faint, fontSize = 14.sp, fontWeight = FontWeight.Black)
