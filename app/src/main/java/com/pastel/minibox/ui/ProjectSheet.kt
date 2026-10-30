@@ -171,6 +171,9 @@ fun LatencyCard() {
         Text("AAudio · ${if (s.exclusive) "exclusive" else "shared"}${if (s.mmap) " · MMAP" else ""} · ${s.sampleRate / 1000f} kHz · ${s.bufferFrames} frames",
             color = C.quiet, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Text("burst ${s.burst} · xruns ${s.xruns} · cpu ${(s.cpu * 100).toInt()}%", color = C.faint, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        if (com.pastel.minibox.engine.Device.bluetooth.value)
+            Text("Bluetooth output adds 150–250 ms the app cannot remove: use wired or USB audio to play live.",
+                color = C.record, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             LATENCY.forEachIndexed { i, label ->

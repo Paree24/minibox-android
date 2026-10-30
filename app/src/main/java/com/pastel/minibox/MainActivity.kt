@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import com.pastel.minibox.engine.Factory
+import com.pastel.minibox.engine.Device
 import com.pastel.minibox.engine.Midi
 import com.pastel.minibox.engine.Native
 import com.pastel.minibox.engine.Prefs
@@ -23,6 +24,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        if (android.os.Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1)   // the background-playback notification
         setContent {
             if (ready.value) MainScreen() else Box(Modifier.fillMaxSize().background(C.bg))
         }
@@ -35,6 +39,7 @@ class MainActivity : ComponentActivity() {
                 Prefs.lastProject(this)?.let { App.call("openProject", "name" to it) }   // carry on where we were
                 App.init()
                 Midi.start(applicationContext)
+                Device.start(applicationContext)
                 ready.value = true
                 if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) Native.startAudio()
             }
@@ -43,12 +48,21 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        PlaybackService.stop(this)   // back in front: the app holds the audio again
         if (ready.value) Native.startAudio()
     }
 
     override fun onStop() {
         // background playback (a foreground service) comes in phase 7; until then the stream stops with the app
+        if (ready.value && App.fast.value.playing) {
+            // playing: keep going in the background, with a notification that can stop it
+            App.autosave(this)
+            PlaybackService.start(this)
+            super.onStop()
+            return
+        }
         if (ready.value) {
+            Device.abandonFocus(this)
             // remember where Low settled on this phone (it starts there next time, without the first clicks)
             val st = FloatArray(11).also { Native.readStats(it) }
             if (Prefs.latencyMode(this) == 0 && st[1] > 0) Prefs.setLowBursts(this, (st[2] / st[1]).toInt().coerceIn(1, 8))

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -71,7 +72,9 @@ fun MainScreen() {
     // a pattern switch (or editing another one) changes the devices the screens show
     LaunchedEffect(fast.focusPattern, fast.activePattern) { App.refresh() }
 
-    Column(Modifier.fillMaxSize().background(C.bg).statusBarsPadding()) {
+    // tablets: the phone layout, centred, at most 600 dp wide (PLAN.md §15.1)
+    Box(Modifier.fillMaxSize().background(C.bg), contentAlignment = Alignment.TopCenter) {
+    Column(Modifier.widthIn(max = 600.dp).fillMaxSize().background(C.bg).statusBarsPadding()) {
         TopBar(
             onTempo = { sheet = Sheet.Tempo }, onRecordMenu = { sheet = Sheet.Record },
             onPatterns = { tab = Tab.Perform }, onMenu = { sheet = Sheet.Project },
@@ -90,6 +93,7 @@ fun MainScreen() {
             }
         }
         BottomNav(tab) { tab = it }
+    }
     }
 
     val current = sheet
@@ -130,7 +134,8 @@ private fun TopBar(onTempo: () -> Unit, onRecordMenu: () -> Unit, onPatterns: ()
             contentAlignment = Alignment.Center,
         ) { Box(Modifier.size(12.dp).clip(CircleShape).background(if (fast.recording) C.bg else C.record)) }
         Spacer(Modifier.width(10.dp))
-        Box(Modifier.size(44.dp).clickable { App.cmd("play") }, contentAlignment = Alignment.Center) {
+        val context = androidx.compose.ui.platform.LocalContext.current
+        Box(Modifier.size(44.dp).clickable { com.pastel.minibox.engine.Device.requestFocus(context); App.cmd("play") }, contentAlignment = Alignment.Center) {
             Canvas(Modifier.size(44.dp)) {
                 drawCircle(C.control, size.minDimension / 2 - 3.dp.toPx())
                 drawCircle(C.divider, size.minDimension / 2 - 1.dp.toPx(), style = Stroke(2.5.dp.toPx()))
@@ -154,6 +159,9 @@ private fun TopBar(onTempo: () -> Unit, onRecordMenu: () -> Unit, onPatterns: ()
                 fontSize = 10.sp, fontWeight = FontWeight.Bold)
         }
         Spacer(Modifier.weight(1f))
+        if (com.pastel.minibox.engine.Device.hot.value) {   // throttling soon: suggest a higher latency (Project sheet)
+            Text("HOT", color = C.record, fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(end = 8.dp))
+        }
         Row(Modifier.clickable(onClick = onPatterns), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             PatternTile("ABCDEFGH"[fast.activePattern.coerceIn(0, 7)].toString(), current = true)
             if (fast.queuedPattern in 0..7) PatternTile("ABCDEFGH"[fast.queuedPattern].toString(), current = false)
