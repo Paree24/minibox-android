@@ -7,7 +7,7 @@ import org.json.JSONObject
 
 data class Param(val index: Int, val id: String, val label: String, val value: Float, val text: String, val default: Float, val bipolar: Boolean)
 data class Choice(val index: Int, val options: List<String>, val selected: Int)
-data class Visual(val kind: Int, val variant: Int, val values: List<Float>)
+data class Visual(val kind: Int, val variant: Int, val values: List<Float>, val extra: JSONObject? = null)
 data class Section(val title: String, val knobs: List<Param>, val choice: Choice?, val toggle: Param?, val visual: Visual)
 data class Editor(val preset: String = "", val sections: List<Section> = emptyList(), val selectionNames: List<String> = emptyList(),
                   val engine: Int = -1)
@@ -36,7 +36,8 @@ object Sound {
                     s.optJSONObject("choice")?.let { c -> Choice(c.getInt("index"), c.getJSONArray("options").strings(), c.getInt("selected")) },
                     s.optJSONObject("toggle")?.let(::param),
                     s.getJSONObject("visual").let { v ->
-                        Visual(v.getInt("kind"), v.getInt("variant"), v.getJSONArray("values").let { a -> List(a.length()) { a.getDouble(it).toFloat() } })
+                        Visual(v.getInt("kind"), v.getInt("variant"), v.getJSONArray("values").let { a -> List(a.length()) { a.getDouble(it).toFloat() } },
+                            v.optJSONObject("extra"))
                     },
                 )
             },

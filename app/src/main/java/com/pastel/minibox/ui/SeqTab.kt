@@ -65,8 +65,9 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
         return
     }
     val spb = seq.stepsPerBar.coerceAtLeast(1)
-    // follow the playhead while playing in the pattern being edited
-    val bar = if (fast.playing && fast.activePattern == fast.focusPattern) (fast.step / spb).coerceIn(0, seq.bars - 1) else pickedBar.coerceIn(0, seq.bars - 1)
+    // the view follows the playhead only while recording a take: when editing by hand it stays where it was put,
+    // so a tap lands where the finger is (a following roll turned deletes into new notes)
+    val bar = if (fast.playing && fast.recording && fast.activePattern == fast.focusPattern) (fast.step / spb).coerceIn(0, seq.bars - 1) else pickedBar.coerceIn(0, seq.bars - 1)
     val roll = !seq.drum && (view == 1 || seq.pianoRoll)
 
     Column(Modifier.fillMaxSize()) {

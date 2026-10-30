@@ -17,6 +17,7 @@ MiniboxHost& MiniboxHost::get()
 void MiniboxHost::init (const juce::String& factoryDir, const juce::String& storageDir)
 {
     storage = juce::File (storageDir);
+    oversampleVoices() = false;   // the VA and Bassline voices at 1x: chords cost far less on a phone
     setFactoryDir (juce::File (factoryDir));
     midiBlock.ensureSize (4096);   // the audio thread fills it without allocating
     presets::rescan();

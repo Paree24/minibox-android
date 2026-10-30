@@ -3,6 +3,10 @@
 #include "MiniboxHost.h"
 #include "app/presets/PresetBank.h"
 #include "ui/EditorSpecs.h"
+#include "devices/fm/FmDevice.h"
+#include "devices/fm/Algorithms.h"
+#include "devices/sampler/SamplerDevice.h"
+#include "devices/drumsampler/DrumSamplerDevice.h"
 
 namespace mb::android
 {
@@ -22,6 +26,123 @@ juce::var param (const DeviceProcessor& d, int i)
     return o;
 }
 } // namespace
+
+namespace
+{
+juce::Array<juce::var> peaksOf (const SamplePtr& data)
+{
+    juce::Array<juce::var> out;
+    if (data) for (float v : data->peaks) out.add (v);
+    return out;
+}
+
+juce::String sampleName (const juce::String& ref, const SamplePtr& data)
+{
+    if (data) return data->name;
+    return ref.isEmpty() ? juce::String() : ref.fromLastOccurrenceOf ("/", false, false).fromFirstOccurrenceOf ("factory:", false, false);
+}
+} // namespace
+
+/** What a visual draws beyond its parameters: the FM algorithm's graph and operators, sample waveforms with their
+    markers and zones, a loop's slices, the Acid stack's intervals. */
+juce::var MiniboxHost::visualExtra (const DeviceProcessor& dev, const ui::VisualSpec& vs, int sel)
+{
+    auto o = obj();
+    using VK = ui::VisualKind;
+    auto& d = const_cast<DeviceProcessor&> (dev);
+    if (vs.kind == VK::Algo)
+    {
+        const int alg = std::clamp ((int) std::lround (d.get ("algorithm")), 1, 32);
+        const auto& A = fm::algorithms()[(size_t) alg - 1];
+        const auto L = fm::layoutFor (alg);
+        juce::Array<juce::var> stacks, mods;
+        for (int k = 0; k < L.numStacks; ++k)
+        {
+            juce::Array<juce::var> st;
+            for (int j = 0; j < L.stackLen[k]; ++j) st.add (L.stacks[k][j]);
+            stacks.add (st);
+        }
+        for (auto m : A.mods) mods.add ((int) m);
+        put (o, "stacks", stacks); put (o, "mods", mods); put (o, "carriers", (int) A.carriers);
+        put (o, "feedbackOp", A.feedbackOp); put (o, "selected", sel);
+    }
+    else if (vs.kind == VK::Ops)
+    {
+        if (auto* fm = dynamic_cast<FmDevice*> (&d))
+        {
+            juce::Array<juce::var> ops;
+            for (int op = 0; op < 6; ++op)
+            {
+                auto x = obj();
+                put (x, "carrier", fm->isCarrier (op));
+                put (x, "muted", fm->get (fm->opParam (op, FmDevice::Mute)) > 0.5f);
+                put (x, "fixed", fm->get (fm->opParam (op, FmDevice::Fixed)) > 0.5f);
+                put (x, "freq", fm->get (fm->opParam (op, FmDevice::Freq)));
+                put (x, "ratio", fm->get (fm->opParam (op, FmDevice::Ratio)));
+                put (x, "level", fm->get (fm->opParam (op, FmDevice::Level)));
+                put (x, "wave", (int) fm->get (fm->opParam (op, FmDevice::Wave)));
+                put (x, "l1", fm->get (fm->opParam (op, FmDevice::L1))); put (x, "l3", fm->get (fm->opParam (op, FmDevice::L3)));
+                put (x, "r1", fm->get (fm->opParam (op, FmDevice::R1)));
+                ops.add (x);
+            }
+            put (o, "ops", ops); put (o, "selected", sel);
+        }
+    }
+    else if (vs.kind == VK::Sample)
+    {
+        if (auto* sd = dynamic_cast<SamplerDevice*> (&d))
+        {
+            const auto data = sd->zone[std::clamp (sel, 0, SamplerDevice::kZones - 1)].get();
+            const auto reg = sd->region (0);
+            const bool loop = (int) sd->get (SamplerDevice::playMode) == 2;
+            put (o, "peaks", peaksOf (data)); put (o, "name", sampleName (sd->zoneRef (sel), data));
+            put (o, "s", reg.s); put (o, "e", reg.e); put (o, "ls", loop ? reg.ls : -1.0); put (o, "le", loop ? reg.le : -1.0);
+            juce::Array<juce::var> zones;
+            for (int z = 0; z < SamplerDevice::kZones; ++z)
+            {
+                if (sd->zoneRef (z).isEmpty()) continue;
+                auto zv = obj();
+                put (zv, "lo", sd->get (sd->zoneLo (z))); put (zv, "hi", sd->get (sd->zoneHi (z))); put (zv, "root", sd->get (sd->zoneRoot (z)));
+                put (zv, "sel", z == sel);
+                zones.add (zv);
+            }
+            put (o, "zones", zones);
+        }
+        else if (auto* ds = dynamic_cast<DrumSamplerDevice*> (&d))
+        {
+            const int p = std::clamp (sel, 0, 7);
+            const auto data = ds->pad[p].get();
+            const float st = ds->get (ds->padParam (p, DrumSamplerDevice::Start));
+            put (o, "peaks", peaksOf (data)); put (o, "name", sampleName (ds->padRef (p), data));
+            put (o, "s", st); put (o, "e", st + ds->get (ds->padParam (p, DrumSamplerDevice::Length)) * (1.0f - st));
+            put (o, "ls", -1.0); put (o, "le", -1.0);
+        }
+    }
+    else if (vs.kind == VK::Slices)
+    {
+        if (auto* ds = dynamic_cast<DrumSamplerDevice*> (&d))
+        {
+            const auto data = ds->pad[0].get();
+            bool shared = data != nullptr;
+            for (int p = 1; p < 8 && shared; ++p) shared = ds->padRef (p) == ds->padRef (0);
+            put (o, "peaks", shared ? peaksOf (data) : juce::Array<juce::var>());
+            put (o, "name", shared ? sampleName (ds->padRef (0), data) : juce::String());
+            juce::Array<juce::var> starts, ends;
+            for (int p = 0; p < 8; ++p)
+            {
+                const float st = ds->get (ds->padParam (p, DrumSamplerDevice::Start));
+                starts.add (st);
+                ends.add (st + ds->get (ds->padParam (p, DrumSamplerDevice::Length)) * (1.0f - st));
+            }
+            put (o, "starts", starts); put (o, "ends", ends); put (o, "selected", sel);
+        }
+    }
+    else if (vs.kind == VK::Voices && vs.variant == 3 && d.params().indexOf ("stackMode") >= 0)
+    {
+        put (o, "stackMode", (int) d.get ("stackMode")); put (o, "stacked", d.get ("stack") > 0.5f);
+    }
+    return o;
+}
 
 juce::var MiniboxHost::soundCall (const juce::String& op, const juce::var& a, bool& handled)
 {
@@ -75,9 +196,11 @@ juce::var MiniboxHost::soundCall (const juce::String& op, const juce::var& a, bo
                 auto vis = obj();
                 put (vis, "kind", (int) s.visual.kind);
                 put (vis, "variant", s.visual.variant);
+                // raw values, as the desktop's drawings use them (Hz, seconds, choice indices …): the playing value
                 juce::Array<juce::var> vals;
-                for (auto& id : s.visual.ids) { const int i = d->params().indexOf (id); vals.add (i >= 0 ? d->shownNorm (i) : 0.0f); }
+                for (auto& id : s.visual.ids) { const int i = d->params().indexOf (id); vals.add (i >= 0 ? d->pv (i) : 0.0f); }
                 put (vis, "values", vals);
+                put (vis, "extra", visualExtra (*d, s.visual, sel));
                 put (o, "visual", vis);
                 sections.add (o);
             }

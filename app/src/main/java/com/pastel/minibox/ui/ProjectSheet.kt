@@ -67,6 +67,7 @@ fun ProjectSheet(done: () -> Unit) {
     var projects by remember { mutableStateOf(listProjects()) }
     var exporting by remember { mutableStateOf(false) }
     var showExport by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf<String?>(null) }
     // Save as…: the system picker chooses the name and the folder; the project is written there
     val saveAs = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
         if (uri != null) {
@@ -136,10 +137,19 @@ fun ProjectSheet(done: () -> Unit) {
                             if (r.optBoolean("ok")) Prefs.setLastProject(context, p)
                             App.refresh(); done()
                         },
-                        onLongClick = { App.call("deleteProject", "name" to p); projects = listProjects() },
+                        onLongClick = { confirmDelete = p },   // asks first (below)
                     ).padding(horizontal = 12.dp),
                 contentAlignment = Alignment.CenterStart,
             ) { Text(p, color = if (p == project.name) C.bg else C.text, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
+        }
+        confirmDelete?.let { victim ->
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(12.dp)).background(C.record.copy(alpha = 0.15f))
+                .padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Delete \"$victim\"?", color = C.text, fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), maxLines = 1)
+                Pill("Delete", on = true, color = C.record) { App.call("deleteProject", "name" to victim); projects = listProjects(); confirmDelete = null }
+                Spacer(Modifier.width(6.dp))
+                Pill("Cancel") { confirmDelete = null }
+            }
         }
         Spacer(Modifier.height(14.dp))
         LatencyCard()

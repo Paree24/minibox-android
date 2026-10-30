@@ -1,6 +1,7 @@
 #pragma once
 #include "engine/Engine.h"
 #include "efx/MasterFx.h"
+#include "ui/VisualSpec.h"
 #include <oboe/Oboe.h>
 #include <oboe/OboeExtensions.h>
 #include <atomic>
@@ -89,6 +90,7 @@ private:
     void pushMidiBytes (const uint8_t*, int);
     const juce::MidiBuffer* takeMidi();
     juce::var soundCall (const juce::String& op, const juce::var& args, bool& handled);   // SoundApi.cpp
+    juce::var visualExtra (const DeviceProcessor&, const ui::VisualSpec&, int selection);   // SoundApi.cpp
 
     // undo / redo of sequence edits: a snapshot of the pattern's tracks before each edit (as the desktop)
     struct PatternSnap { int pattern = 0; std::array<Track, kTracks> tracks; int lengthBars = 1, stepRes = 1; };
