@@ -15,6 +15,8 @@ object Native {
     @CriticalNative @JvmStatic external fun noteOn(track: Int, note: Int, velocity: Float)
     @CriticalNative @JvmStatic external fun noteOff(track: Int, note: Int)
     @CriticalNative @JvmStatic external fun selectTrack(track: Int)
+    @CriticalNative @JvmStatic external fun roll(track: Int, note: Int, velocity: Float, beats: Float, on: Boolean)
+    @CriticalNative @JvmStatic external fun fxHold(pad: Int, on: Boolean)
 
     @JvmStatic external fun startAudio(): Boolean
     @JvmStatic external fun stopAudio()
@@ -22,6 +24,10 @@ object Native {
     @JvmStatic external fun stop()
     @JvmStatic external fun setBufferBursts(bursts: Int)
     @JvmStatic external fun readStats(out: FloatArray)
+    /** Playhead, patterns, meters (MiniboxHost::readFast); also runs the engine's main-thread housekeeping. */
+    @JvmStatic external fun readFast(out: FloatArray)
+    /** UI commands and queries, JSON in and out (cpp/Api.cpp). */
+    @JvmStatic external fun call(op: String, args: String): String
     /** A drum device's parts, in lane order: the notes that play them and their names (empty for a synth). */
     @JvmStatic external fun laneNotes(track: Int): IntArray
     @JvmStatic external fun laneName(track: Int, lane: Int): String

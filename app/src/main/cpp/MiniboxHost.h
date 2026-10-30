@@ -1,5 +1,6 @@
 #pragma once
 #include "engine/Engine.h"
+#include "efx/MasterFx.h"
 #include <oboe/Oboe.h>
 #include <oboe/OboeExtensions.h>
 #include <atomic>
@@ -26,6 +27,16 @@ public:
     void noteOn (int track, int note, float velocity) { engine.injectNote (track, note, velocity, true); }
     void noteOff (int track, int note) { engine.injectNote (track, note, 0.0f, false); }
     void selectTrack (int track) { engine.focusTrack = track; }
+    void roll (int track, int note, float velocity, double beats, bool on) { engine.setRoll (track, note, velocity, beats, on); }
+    void fxHold (int pad, bool on) { masterFx.setHeld (pad, on); }
+
+    /** UI commands and queries, JSON in and out (Api.cpp). Main thread. */
+    juce::var call (const juce::String& op, const juce::var& args);
+
+    /** The playhead, patterns and meters for the UI's 60 Hz poll; also runs the main-thread housekeeping the
+        engine needs (recorded notes into clips, motion recording, freeing replaced samples). */
+    static constexpr int kFastSize = 24;
+    void readFast (float* out);
 
     // transport
     void play() { engine.play(); }
@@ -53,6 +64,7 @@ private:
     void tuneBuffer();
 
     Engine engine { Engine::Mode::Groovebox };
+    MasterFx masterFx { engine };
     std::mutex streamLock;                         // open / close / reconfigure (never the audio thread)
     std::shared_ptr<oboe::AudioStream> stream;
     std::atomic<bool> wantRunning { false };

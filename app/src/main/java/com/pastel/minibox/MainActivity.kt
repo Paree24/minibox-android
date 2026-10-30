@@ -12,7 +12,8 @@ import androidx.compose.ui.Modifier
 import com.pastel.minibox.engine.Factory
 import com.pastel.minibox.engine.Native
 import com.pastel.minibox.ui.C
-import com.pastel.minibox.ui.PlayScreen
+import com.pastel.minibox.state.App
+import com.pastel.minibox.ui.MainScreen
 
 class MainActivity : ComponentActivity() {
     private val ready = mutableStateOf(false)
@@ -21,13 +22,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            if (ready.value) PlayScreen() else Box(Modifier.fillMaxSize().background(C.bg))
+            if (ready.value) MainScreen() else Box(Modifier.fillMaxSize().background(C.bg))
         }
         // unpack the factory content off the main thread, then bring the engine up on it
         Thread {
             val factory = Factory.unpack(applicationContext)
             runOnUiThread {
                 Native.nativeInit(applicationContext, factory.absolutePath)
+                App.init()
                 ready.value = true
                 if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) Native.startAudio()
             }

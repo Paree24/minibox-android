@@ -44,6 +44,8 @@ juce::String toJuce (JNIEnv* env, jstring s)
 void criticalNoteOn (jint track, jint note, jfloat vel) { MiniboxHost::get().noteOn (track, note, vel); }
 void criticalNoteOff (jint track, jint note) { MiniboxHost::get().noteOff (track, note); }
 void criticalSelectTrack (jint track) { MiniboxHost::get().selectTrack (track); }
+void criticalRoll (jint track, jint note, jfloat vel, jfloat beats, jboolean on) { MiniboxHost::get().roll (track, note, vel, beats, on); }
+void criticalFxHold (jint pad, jboolean on) { MiniboxHost::get().fxHold (pad, on); }
 
 // ---- regular natives
 jboolean startAudio (JNIEnv*, jclass) { return MiniboxHost::get().startAudio(); }
@@ -78,6 +80,21 @@ jstring laneName (JNIEnv* env, jclass, jint track, jint lane)
     return env->NewStringUTF (d != nullptr ? d->laneName (lane).toRawUTF8() : "");
 }
 
+void readFast (JNIEnv* env, jclass, jfloatArray out)
+{
+    float v[MiniboxHost::kFastSize];
+    MiniboxHost::get().readFast (v);
+    env->SetFloatArrayRegion (out, 0, std::min<jsize> (MiniboxHost::kFastSize, env->GetArrayLength (out)), v);
+}
+
+/** call (op, json) → json: the UI's commands and queries (Api.cpp). */
+jstring call (JNIEnv* env, jclass, jstring op, jstring args)
+{
+    const auto parsed = juce::JSON::parse (toJuce (env, args));
+    const auto result = MiniboxHost::get().call (toJuce (env, op), parsed);
+    return env->NewStringUTF (juce::JSON::toString (result, true).toRawUTF8());
+}
+
 void runPosted (JNIEnv*, jclass, jlong ptr)
 {
     std::unique_ptr<std::function<void()>> fn (reinterpret_cast<std::function<void()>*> ((intptr_t) ptr));
@@ -100,6 +117,10 @@ Java_com_pastel_minibox_engine_Native_nativeInit (JNIEnv* env, jclass cls, jobje
         { "noteOn", "(IIF)V", reinterpret_cast<void*> (criticalNoteOn) },
         { "noteOff", "(II)V", reinterpret_cast<void*> (criticalNoteOff) },
         { "selectTrack", "(I)V", reinterpret_cast<void*> (criticalSelectTrack) },
+        { "roll", "(IIFFZ)V", reinterpret_cast<void*> (criticalRoll) },
+        { "fxHold", "(IZ)V", reinterpret_cast<void*> (criticalFxHold) },
+        { "readFast", "([F)V", reinterpret_cast<void*> (readFast) },
+        { "call", "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;", reinterpret_cast<void*> (call) },
         { "startAudio", "()Z", reinterpret_cast<void*> (startAudio) },
         { "stopAudio", "()V", reinterpret_cast<void*> (stopAudio) },
         { "play", "()V", reinterpret_cast<void*> (play) },

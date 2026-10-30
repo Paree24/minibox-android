@@ -40,14 +40,14 @@ target_link_libraries(juce_min PUBLIC android log)
 set(CS "${MINIBOX_CORE_DIR}/Source")
 file(GLOB_RECURSE MINIBOX_CORE CONFIGURE_DEPENDS
   ${CS}/engine/*.cpp ${CS}/model/*.cpp ${CS}/seq/*.cpp ${CS}/dsp/*.cpp ${CS}/devices/*.cpp ${CS}/efx/*.cpp
-  ${CS}/app/presets/*.cpp)
+  ${CS}/app/presets/*.cpp ${CS}/ui/EditorSpecs.cpp)   # EditorSpecs: the Sound tabs come from the same specs
 add_library(minibox_core STATIC ${MINIBOX_CORE})
 target_include_directories(minibox_core PUBLIC ${CS} ${CS}/efx)
 target_link_libraries(minibox_core PUBLIC juce_min)
 
 # ---- the app's native library: Oboe audio, the engine host and the JNI bridge
 find_package(oboe REQUIRED CONFIG)
-add_library(minibox SHARED Bridge.cpp MiniboxHost.cpp)
+add_library(minibox SHARED Bridge.cpp MiniboxHost.cpp Api.cpp)
 target_link_libraries(minibox PRIVATE minibox_core oboe::oboe)
 target_compile_options(minibox PRIVATE -Wall -Wextra)
 

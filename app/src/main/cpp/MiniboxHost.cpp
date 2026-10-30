@@ -19,6 +19,8 @@ void MiniboxHost::init (const juce::String& factoryDir)
     setFactoryDir (juce::File (factoryDir));
     presets::rescan();
     engine.prepare (48000.0, kMaxBlock);   // re-prepared at the stream's own rate when it opens
+    engine.setMasterInsert (&masterFx);    // master effects chain and the 8 performance pads
+    masterFx.sync();
 
     // the starter rack on pattern A: a drum kit and three synths
     const DeviceType starter[] = { DeviceType::Drums, DeviceType::Mono, DeviceType::Acid, DeviceType::Poly };
@@ -52,7 +54,10 @@ bool MiniboxHost::openStream()
         return false;
     }
     if (std::abs (engine.getSampleRate() - s->getSampleRate()) > 0.5)
-        engine.prepare ((double) s->getSampleRate(), kMaxBlock);
+    {
+        engine.prepare ((double) s->getSampleRate(), kMaxBlock);   // also prepares the master insert
+        masterFx.sync();
+    }
     s->setPerformanceHintEnabled (true);   // ADPF: clocks ramp before an underrun, not after
     stream = s;
     lastXruns = 0;
@@ -107,6 +112,32 @@ void MiniboxHost::tuneBuffer()
     else if (xr > lastXruns) size = std::min (size + burst, burst * 6);
     lastXruns = xr;
     stream->setBufferSizeInFrames (size);
+}
+
+void MiniboxHost::readFast (float* out)
+{
+    engine.applyRecorded();
+    engine.recordTouched();
+    collectRetiredSamples();
+    const auto& p = engine.project();
+    const int act = engine.activePattern();
+    out[0] = engine.isPlaying() ? 1.0f : 0.0f;
+    out[1] = engine.isRecording() ? 1.0f : 0.0f;
+    out[2] = engine.inCountIn() ? 1.0f : 0.0f;
+    out[3] = (float) act;
+    out[4] = (float) engine.queuedPattern();
+    out[5] = (float) engine.currentStep();
+    out[6] = (float) p.patternSteps (act);
+    out[7] = engine.patternProgress();
+    out[8] = (float) p.bpm;
+    out[9] = (float) p.beats;
+    out[10] = (float) p.unit;
+    out[11] = (float) p.stepsPerBar (act);
+    out[12] = std::max (engine.master().peakL.load(), engine.master().peakR.load());
+    for (int t = 0; t < kTracks; ++t) out[13 + t] = engine.slotPeak[act][t].load();
+    out[21] = (float) engine.focusPattern.load();
+    out[22] = (float) engine.stepRecordCursor.load();
+    out[23] = 0.0f;
 }
 
 MiniboxHost::Stats MiniboxHost::stats()

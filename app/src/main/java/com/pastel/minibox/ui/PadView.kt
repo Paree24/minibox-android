@@ -19,8 +19,13 @@ import com.pastel.minibox.engine.Native
  */
 class PadView(context: Context) : View(context) {
 
-    /** What the 16 pads play; index 0 is bottom-left. */
-    class Layout(val track: Int, val color: Int, val notes: IntArray, val labels: Array<String>, val roots: Set<Int>)
+    /** What the 16 pads play; index 0 is bottom-left. A roll pad repeats its note every `rollBeats` while held;
+        `subs` is a second, quieter label (a chord's degree, a roll's rate). */
+    class Layout(
+        val track: Int, val color: Int, val notes: IntArray, val labels: Array<String>, val roots: Set<Int>,
+        val subs: Array<String> = Array(16) { "" }, val rolls: BooleanArray = BooleanArray(16), val rollBeats: Float = 0.25f,
+        val bigLabels: Boolean = false,
+    )
 
     var layout: Layout? = null
         set(value) {
@@ -38,6 +43,15 @@ class PadView(context: Context) : View(context) {
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         textSize = 13 * dp
+    }
+    private val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        textSize = 11 * dp
+    }
+    private val bigPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        textSize = 20 * dp
+        textAlign = Paint.Align.CENTER
     }
     private val rect = RectF()
 
@@ -67,14 +81,20 @@ class PadView(context: Context) : View(context) {
     private fun press(pointer: Int, pad: Int, y: Float) {
         val l = layout ?: return
         held[pointer] = pad
-        if (lit[pad]++ == 0) Native.noteOn(l.track, l.notes[pad], velocityAt(pad, y))
+        if (lit[pad]++ == 0) {
+            if (l.rolls[pad]) Native.roll(l.track, l.notes[pad], velocityAt(pad, y), l.rollBeats, true)
+            else Native.noteOn(l.track, l.notes[pad], velocityAt(pad, y))
+        }
         performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)   // after the note, never before it
     }
 
     private fun release(pointer: Int) {
         val l = layout ?: return
         val pad = held.remove(pointer) ?: return
-        if (--lit[pad] == 0) Native.noteOff(l.track, l.notes[pad])
+        if (--lit[pad] == 0) {
+            if (l.rolls[pad]) Native.roll(l.track, l.notes[pad], 0f, l.rollBeats, false)
+            else Native.noteOff(l.track, l.notes[pad])
+        }
     }
 
     private fun releaseAll() {
@@ -125,8 +145,26 @@ class PadView(context: Context) : View(context) {
                 padPaint.color = (l.color and 0x00FFFFFF) or (0x47 shl 24)
                 canvas.drawRoundRect(rect, radius, radius, padPaint)
             }
-            textPaint.color = if (on) Tokens.BG else Tokens.TEXT
-            canvas.drawText(l.labels[pad], x + 12 * dp, y + 22 * dp, textPaint)
+            if (l.bigLabels) {
+                bigPaint.color = if (on) Tokens.BG else Tokens.TEXT
+                canvas.drawText(l.labels[pad], x + s / 2, y + s / 2 + 4 * dp, bigPaint)
+                subPaint.color = if (on) Tokens.BG else if (root) l.color else Tokens.FAINT
+                subPaint.textAlign = Paint.Align.CENTER
+                canvas.drawText(l.subs[pad], x + s / 2, y + s / 2 + 22 * dp, subPaint)
+            } else {
+                textPaint.color = if (on) Tokens.BG else Tokens.TEXT
+                canvas.drawText(l.labels[pad], x + 12 * dp, y + 22 * dp, textPaint)
+                subPaint.color = if (on) Tokens.BG else Tokens.FAINT
+                subPaint.textAlign = Paint.Align.LEFT
+                canvas.drawText(l.subs[pad], x + 12 * dp, y + s - 12 * dp, subPaint)
+            }
+            if (l.rolls[pad]) {   // three bars: this pad repeats
+                padPaint.color = if (on) Tokens.BG else l.color
+                for (k in 0 until 3) {
+                    val bx = x + s - 26 * dp + k * 6 * dp
+                    canvas.drawRoundRect(bx, y + 12 * dp, bx + 3 * dp, y + 24 * dp, 1.5f * dp, 1.5f * dp, padPaint)
+                }
+            }
         }
     }
 
