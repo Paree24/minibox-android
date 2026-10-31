@@ -37,6 +37,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
@@ -106,7 +107,7 @@ private class RollView {
  * Rows are the project scale (an octave in view; drag the keys or use two fingers to see more). The view never
  * moves by itself.
  * Notes: one finger edits, two fingers pinch (horizontally: time, vertically: rows) and pan; drag the ruler to
- * scroll time. Draw: tap empty space for a note (drag for its length), tap a note to select it, drag it to move,
+ * scroll time. Draw: tap empty space for a note (drag for its length), tap a note to select it (twice: delete it), drag it to move,
  * drag its end to resize. Select: tap notes to add / remove, drag on empty space to box them, drag selected notes
  * to move them together. Erase: tap or swipe over notes to delete them (it never adds).
  */
@@ -117,7 +118,7 @@ fun PianoRoll(color: Color) {
     val project by App.project
     val track = App.focusTrack.intValue
     var tab by remember { mutableIntStateOf(0) }
-    var tool by remember { mutableIntStateOf(0) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     var snap by remember { mutableIntStateOf(1) }
     var selected by remember(track) { mutableStateOf(setOf<Int>()) }
     var previews by remember { mutableStateOf<List<Preview>>(emptyList()) }
@@ -140,7 +141,6 @@ fun PianoRoll(color: Color) {
     view.rows = view.rows.coerceIn(4f, 36f)
     view.low = view.low.coerceIn(0f, max(0f, rowNotes.size - view.rows))
     val rowsNow by rememberUpdatedState(rowNotes)
-    val toolNow by rememberUpdatedState(tool)
     val totalNow by rememberUpdatedState(totalTicks)
     val stepNow by rememberUpdatedState(stepT)
     val selNow by rememberUpdatedState(selected)
@@ -162,17 +162,21 @@ fun PianoRoll(color: Color) {
             1 -> VelocityPanel(Modifier.weight(1f).fillMaxWidth(), view, color, selected)
             else -> {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // the buttons never move: delete and deselect are always there (dim with nothing selected)
-                    Segmented(listOf("Draw", "Select", "Erase"), tool, C.text, { tool = it }, Modifier.weight(1f), height = 32.dp)
+                    // no modes: the gestures are the tools
+                    Text("Tap: add · Double tap: delete · Hold: select, then drag sideways: length", color = C.faint, fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                        maxLines = 2, modifier = Modifier.weight(1f))
                     Spacer(Modifier.width(6.dp))
                     // what the edits below act on
                     val sel = seq.clip.filter { it.id in selected }
                     Text(when { sel.isEmpty() -> "All"; sel.size == 1 -> noteName(sel.first().note); else -> "${sel.size} notes" },
                         color = if (sel.isEmpty()) C.faint else color, fontSize = 12.sp, fontWeight = FontWeight.Black, maxLines = 1,
                         modifier = Modifier.width(54.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                    RoundIcon("⌫", selected.isNotEmpty()) { deleteMany(selected); selected = emptySet() }
-                    Spacer(Modifier.width(4.dp))
-                    RoundIcon("✕", selected.isNotEmpty()) { selected = emptySet() }
+                    // one clearly named button (an icon beside a ✕ was easy to mistake); holding empty space clears the selection
+                    val canDelete = selected.isNotEmpty()
+                    Box(Modifier.width(68.dp).height(32.dp).clip(RoundedCornerShape(16.dp)).background(C.control)
+                        .clickable(enabled = canDelete) { deleteMany(selected); selected = emptySet() }, contentAlignment = Alignment.Center) {
+                        Text("Delete", color = if (canDelete) C.record else C.faint, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                    }
                 }
                 Spacer(Modifier.height(6.dp))
                 // the everyday edits, on the selection (or every note): in key, octaves, the clipboard, quantize
@@ -221,10 +225,14 @@ fun PianoRoll(color: Color) {
                                 val right = xOf(found.start + found.length)
                                 return found to (x <= right + reach && right - x < min(14.dp.toPx(), found.length * tickW() / 3f))
                             }
+                            /** The notes `dt` ticks longer (shorter when negative), snapped, never under one snap. */
+                            fun resized (group: List<ClipNote>, dt: Int) = group.map { g -> Preview(g.id, g.start, max(snapTicks(), snapTo(g.length + dt)), g.note, g.velocity) }
                             fun ensureClip(): List<ClipNote> {
                                 if (!Seq.data.value.pianoRoll) Seq.edit("toRoll")
                                 return Seq.data.value.clip
                             }
+                            var lastTapId = -1          // double tap on a note deletes it
+                            var lastTapAt = 0L
                             awaitEachGesture {
                                 val down = awaitFirstDown()
                                 down.consume()
@@ -284,24 +292,61 @@ fun PianoRoll(color: Color) {
                                     follow { p -> view.start = (startT - (p.x - x0) / tickW()).coerceIn(0f, max(0f, totalNow - view.ticks)) }
                                     return@awaitEachGesture
                                 }
-                                var notes0 = if (toolNow == 2) ensureClip() else Seq.data.value.rollNotes   // Erase: on the clip's own notes
+                                var notes0 = Seq.data.value.rollNotes
                                 var h = hit(notes0, x0, y0)
                                 if (h != null && h.first.id < 0) {   // a step track: becomes a clip before its notes change
                                     notes0 = ensureClip()
                                     h = hit(notes0, x0, y0)
                                 }
+                                // what this touch is: 0 a tap, 1 a drag, 2 a hold, 3 two fingers
+                                val kind = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                                    var k = -1
+                                    while (k < 0) {
+                                        val e = awaitPointerEvent()
+                                        if (pinch(e)) { k = 3; break }
+                                        val c = e.changes.firstOrNull { it.id == down.id } ?: e.changes.first()
+                                        if (e.changes.none { it.pressed }) { k = 0; break }
+                                        c.consume()
+                                        if (abs(c.position.x - x0) > slop || abs(c.position.y - y0) > slop) { moved = true; k = 1 }
+                                    }
+                                    k
+                                } ?: 2
                                 when {
-                                    toolNow == 2 -> {   // Erase: every note the finger passes over goes; nothing is ever added
-                                        var gone = setOfNotNull(h?.first)
-                                        hidden = gone.map { it.id }.toSet()
-                                        val ok = follow { p -> hit(notes0, p.x, p.y)?.first?.let { gone = gone + it; hidden = gone.map { g -> g.id }.toSet() } }
-                                        hidden = emptySet()
-                                        if (ok && gone.isNotEmpty()) {
-                                            deleteMany(gone.map { it.id })
-                                            selected = selected - gone.map { it.id }.toSet()
+                                    kind == 3 -> follow {}   // zoom / pan until the fingers lift
+                                    kind == 0 && h != null -> {   // a tap on a note: hear it; a second tap soon after deletes it
+                                        val id = h.first.id
+                                        if (id == lastTapId && down.uptimeMillis - lastTapAt < 300) {
+                                            deleteMany(listOf(id))
+                                            selected = selected - id
+                                            lastTapId = -1
+                                        } else {
+                                            audition(track, h.first.note)
+                                            lastTapId = id; lastTapAt = down.uptimeMillis
                                         }
                                     }
-                                    h == null && toolNow == 1 -> {   // Select on empty space: a box, or a tap that clears
+                                    kind == 0 -> {   // a tap on empty space: a note there
+                                        val start = snapTo(tickAtX(x0)).coerceIn(0, totalNow - 1)
+                                        val len = if (lastLength > 0) lastLength else snapTicks().coerceAtLeast(stepNow)
+                                        val note = noteAtY(y0).coerceIn(0, 127)
+                                        audition(track, note)
+                                        val id = Seq.edit("clipAdd", "start" to start, "length" to len, "note" to note, "velocity" to 100).trim().toIntOrNull()
+                                        if (id != null) { lastTapId = id; lastTapAt = down.uptimeMillis }
+                                    }
+                                    kind == 2 && h != null -> {   // hold a note: it joins (or leaves) the selection; keep dragging sideways to resize
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        val id = h.first.id
+                                        val wasSelected = id in selected
+                                        if (!wasSelected) selected = selected + id
+                                        val group = Seq.data.value.clip.filter { it.id in selNow || it.id == id }
+                                        val ok = follow { p -> previews = resized (group, ((p.x - x0) / tickW()).roundToInt()) }
+                                        val out = previews
+                                        previews = emptyList()
+                                        if (!ok) return@awaitEachGesture
+                                        if (moved && out.isNotEmpty()) { editMany(out); lastLength = out.first().length }
+                                        else if (wasSelected) selected = selected - id   // held again without dragging: unselected
+                                    }
+                                    kind == 2 -> {   // hold empty space: drag a box to select; lift without moving to clear
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         val ok = follow { box = Offset(x0, y0) to it }
                                         val b = box
                                         box = null
@@ -309,47 +354,37 @@ fun PianoRoll(color: Color) {
                                         if (moved && b != null) {
                                             val t0 = tickAtX(min(b.first.x, b.second.x)); val t1 = tickAtX(max(b.first.x, b.second.x))
                                             val r0 = rowAtY(max(b.first.y, b.second.y)); val r1 = rowAtY(min(b.first.y, b.second.y))
-                                            selected = ensureClip().filter { it.start < t1 && it.start + it.length > t0 && rowIdx(it.note) in r0..r1 }.map { it.id }.toSet()
+                                            selected = selected + ensureClip().filter { it.start < t1 && it.start + it.length > t0 && rowIdx(it.note) in r0..r1 }.map { it.id }
                                         } else selected = emptySet()
                                     }
-                                    h == null -> {   // Draw on empty space: a note when the finger lifts (a pinch cancels it)
+                                    h == null -> {   // drag on empty space: a note as long as the drag (a pinch cancels it)
                                         val start = snapTo(tickAtX(x0)).coerceIn(0, totalNow - 1)
-                                        val len0 = if (lastLength > 0) lastLength else snapTicks().coerceAtLeast(stepNow)
                                         val note = noteAtY(y0).coerceIn(0, 127)
-                                        previews = listOf(Preview(-1, start, len0, note, 100))
                                         val ok = follow { p -> previews = listOf(Preview(-1, start, max(snapTicks(), snapTo(tickAtX(p.x)) - start), note, 100)) }
                                         val p = previews.firstOrNull()
                                         previews = emptyList()
                                         if (!ok || p == null) return@awaitEachGesture
                                         audition(track, p.note)
-                                        val id = Seq.edit("clipAdd", "start" to p.start, "length" to p.length, "note" to p.note, "velocity" to p.velocity)
-                                        selected = id.trim().toIntOrNull()?.let { setOf(it) } ?: emptySet()
+                                        Seq.edit("clipAdd", "start" to p.start, "length" to p.length, "note" to p.note, "velocity" to p.velocity)
                                         lastLength = p.length
                                     }
-                                    else -> {   // on a note: move it (or the selection), resize from its end, or a tap selects
+                                    else -> {   // drag a selected note sideways: resize the selection; an unselected one: move it (from its end: resize)
                                         val (n0, edge) = h
-                                        val inSel = toolNow == 1 && n0.id in selNow
-                                        val group = if (inSel) Seq.data.value.clip.filter { it.id in selNow } else listOf(n0)
+                                        val resize = edge || n0.id in selNow
+                                        val group = if (n0.id in selNow) Seq.data.value.clip.filter { it.id in selNow } else listOf(n0)
                                         val ok = follow { p ->
                                             val dt = ((p.x - x0) / tickW()).roundToInt()
                                             val dr = rowAtY(p.y) - rowAtY(y0)
-                                            previews = group.map { g ->
-                                                if (edge) Preview(g.id, g.start, max(snapTicks(), snapTo(g.length + dt)), g.note, g.velocity)
-                                                else Preview(g.id, (g.start + snapTo(n0.start + dt) - n0.start).coerceIn(0, totalNow - 1), g.length,
+                                            previews = if (resize) resized (group, dt) else group.map { g ->
+                                                Preview(g.id, (g.start + snapTo(n0.start + dt) - n0.start).coerceIn(0, totalNow - 1), g.length,
                                                     rowsNow[(rowIdx(g.note) + dr).coerceIn(0, rowsNow.size - 1)], g.velocity)
                                             }
                                         }
                                         val out = previews
                                         previews = emptyList()
-                                        if (!ok) return@awaitEachGesture
-                                        if (moved && out.isNotEmpty()) {
-                                            editMany(out)
-                                            if (edge) lastLength = out.first().length
-                                            if (toolNow == 0) selected = out.map { it.id }.toSet()
-                                        } else if (!moved) {
-                                            val id = n0.id
-                                            selected = if (toolNow == 1) (if (id in selected) selected - id else selected + id) else setOf(id)
-                                        }
+                                        if (!ok || out.isEmpty()) return@awaitEachGesture
+                                        editMany(out)
+                                        if (resize) lastLength = out.first().length
                                     }
                                 }
                             }
