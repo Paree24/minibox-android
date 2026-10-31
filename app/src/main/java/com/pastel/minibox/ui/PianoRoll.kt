@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -55,27 +56,6 @@ import kotlin.math.roundToInt
 
 private val SNAPS = listOf("1/32" to 0.5f, "1/16" to 1f, "1/8" to 2f, "1/4" to 4f, "Off" to 0f)
 
-/** The roll's functions (the desktop's Edit, Notes, Chords and Velocity menus): a label and the clipOp it runs
-    (with its arguments); "sel:" ones change only the selection. On the selection, or every note when none is. */
-private val TOOLS: List<Pair<String, List<Pair<String, Any>>>> = listOf(
-    "Select all" to listOf("sel" to "all"), "Invert sel." to listOf("sel" to "invert"), "Chord notes" to listOf("sel" to "chords"),
-    "Copy" to listOf("fn" to "copy"), "Cut" to listOf("fn" to "cut"), "Paste" to listOf("fn" to "paste"),
-    "Duplicate" to listOf("fn" to "duplicate"), "Delete" to listOf("fn" to "delete"), "Mute" to listOf("fn" to "mute"),
-    "Up" to listOf("fn" to "transpose", "dir" to 1), "Down" to listOf("fn" to "transpose", "dir" to -1), "Lock" to listOf("fn" to "lock"),
-    "Octave +" to listOf("fn" to "transpose", "dir" to 12), "Octave −" to listOf("fn" to "transpose", "dir" to -12), "Fit to scale" to listOf("fn" to "fitToScale"),
-    "Longer" to listOf("fn" to "length", "dir" to 1), "Shorter" to listOf("fn" to "length", "dir" to -1), "Legato" to listOf("fn" to "legato"),
-    "Quantize" to listOf("fn" to "quantize"), "Quantize ends" to listOf("fn" to "quantize", "lengths" to true), "Humanize" to listOf("fn" to "humanize"),
-    "Stretch ×2" to listOf("fn" to "stretch", "factor" to 2.0), "Stretch ½" to listOf("fn" to "stretch", "factor" to 0.5), "Reverse" to listOf("fn" to "reverse"),
-    "Flip pitch" to listOf("fn" to "invertPitch"), "Chop" to listOf("fn" to "chop"), "Glue" to listOf("fn" to "glue"),
-    "Strum" to listOf("fn" to "strum"), "Rotate ←" to listOf("fn" to "rotate", "dir" to -1), "Rotate →" to listOf("fn" to "rotate", "dir" to 1),
-    "Insert step" to listOf("fn" to "insertStep", "dir" to 1), "Remove step" to listOf("fn" to "insertStep", "dir" to -1), "Loop selection" to listOf("fn" to "loopSelection"),
-    "Inversion ↑" to listOf("fn" to "chordInvert", "dir" to 1), "Inversion ↓" to listOf("fn" to "chordInvert", "dir" to -1), "+ Bass" to listOf("fn" to "chordAddBass"),
-    "Spread" to listOf("fn" to "chordSpread"), "Close" to listOf("fn" to "chordClose"), "Loop on / off" to listOf("sel" to "loop"),
-    "Vel −8" to listOf("fn" to "velocity", "dir" to -1), "Vel +8" to listOf("fn" to "velocity", "dir" to 1), "Vel random" to listOf("fn" to "velocityRandom"),
-    "Ramp up" to listOf("fn" to "velocityRamp", "dir" to 1), "Ramp down" to listOf("fn" to "velocityRamp", "dir" to -1), "Vel 64" to listOf("fn" to "velocitySet", "value" to 64),
-    "Vel 100" to listOf("fn" to "velocitySet", "value" to 100), "Vel 127" to listOf("fn" to "velocitySet", "value" to 127),
-)
-
 /** A note being drawn, moved or resized, before the finger lifts (one undo step per gesture). */
 private data class Preview(val id: Int, val start: Int, val length: Int, val note: Int, val velocity: Int)
 
@@ -84,6 +64,22 @@ private fun editMany(notes: List<Preview>) {
     val arr = JSONArray()
     notes.forEach { arr.put(JSONObject().put("id", it.id).put("start", it.start).put("length", it.length).put("note", it.note)) }
     Seq.edit("clipEditMany", "notes" to arr)
+}
+
+private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+
+/** A short preview of a note (a key tapped, a note drawn): the release comes a moment later. A note-off in the same
+    instant as its note-on is put first by the engine (as at a loop point), which left the note ringing. */
+private fun audition(track: Int, note: Int) {
+    Native.noteOn(track, note, 0.8f)
+    handler.postDelayed({ Native.noteOff(track, note) }, 250)
+}
+
+/** One of the roll's edits on the selection (every note when none is selected): clipOp, then the new selection. */
+private fun rollOp(fn: String, selected: Set<Int>, vararg args: Pair<String, Any?>): Set<Int>? {
+    val ids = JSONArray(); selected.forEach { ids.put(it) }
+    val r = Seq.edit("clipOp", "fn" to fn, "ids" to ids, *args)
+    return runCatching { JSONArray(r) }.getOrNull()?.let { a -> List(a.length()) { a.getInt(it) }.toSet() }
 }
 
 private fun deleteMany(ids: Collection<Int>) {
@@ -153,23 +149,46 @@ fun PianoRoll(color: Color) {
 
     Column(Modifier.fillMaxSize()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Segmented(listOf("Notes", "Velocity", "Tools"), tab, C.text, { tab = it }, Modifier.weight(1f), height = 32.dp)
+            Segmented(listOf("Notes", "Velocity"), tab, C.text, { tab = it }, Modifier.weight(1f), height = 32.dp)
             Spacer(Modifier.width(6.dp))
             Pill(SNAPS[snap].first, caret = true) { snap = (snap + 1) % SNAPS.size }
         }
         Spacer(Modifier.height(6.dp))
         when (tab) {
-            2 -> RollTools(Modifier.weight(1f).fillMaxWidth(), selected, { selected = it }, stepT,
-                if (SNAPS[snap].second == 0f) stepT else snapTicks(), view.start.toInt())
             1 -> VelocityPanel(Modifier.weight(1f).fillMaxWidth(), view, color, selected)
             else -> {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     // the buttons never move: delete and deselect are always there (dim with nothing selected)
                     Segmented(listOf("Draw", "Select", "Erase"), tool, C.text, { tool = it }, Modifier.weight(1f), height = 32.dp)
                     Spacer(Modifier.width(6.dp))
+                    // what the edits below act on
+                    val sel = seq.clip.filter { it.id in selected }
+                    Text(when { sel.isEmpty() -> "All"; sel.size == 1 -> noteName(sel.first().note); else -> "${sel.size} notes" },
+                        color = if (sel.isEmpty()) C.faint else color, fontSize = 12.sp, fontWeight = FontWeight.Black, maxLines = 1,
+                        modifier = Modifier.width(54.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     RoundIcon("⌫", selected.isNotEmpty()) { deleteMany(selected); selected = emptySet() }
                     Spacer(Modifier.width(4.dp))
                     RoundIcon("✕", selected.isNotEmpty()) { selected = emptySet() }
+                }
+                Spacer(Modifier.height(6.dp))
+                // the everyday edits, on the selection (or every note): in key, octaves, the clipboard, quantize
+                val grid = if (SNAPS[snap].second == 0f) stepT else snapTicks()
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    listOf<Pair<String, () -> Unit>>(
+                        "↓" to { rollOp("transpose", selected, "dir" to -1, "scale" to true)?.let { selected = it } },
+                        "↑" to { rollOp("transpose", selected, "dir" to 1, "scale" to true)?.let { selected = it } },
+                        "8↓" to { rollOp("transpose", selected, "dir" to -12)?.let { selected = it } },
+                        "8↑" to { rollOp("transpose", selected, "dir" to 12)?.let { selected = it } },
+                        "Cut" to { if (selected.isNotEmpty()) { rollOp("cut", selected); selected = emptySet() } },
+                        "Copy" to { if (selected.isNotEmpty()) rollOp("copy", selected) },
+                        "Paste" to { rollOp("paste", selected, "grid" to grid, "at" to view.start.toInt())?.let { selected = it } },
+                        "Q" to { rollOp("quantize", selected, "grid" to grid)?.let { selected = it } },
+                    ).forEach { (label, action) ->
+                        Box(Modifier.weight(1f).height(32.dp).clip(RoundedCornerShape(9.dp)).background(C.control).clickable(onClick = action),
+                            contentAlignment = Alignment.Center) {
+                            Text(label, color = C.text, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
+                        }
+                    }
                 }
                 Spacer(Modifier.height(6.dp))
                 Canvas(
@@ -253,7 +272,7 @@ fun PianoRoll(color: Color) {
                                 if (x0 < keysW) {   // the keys: scroll the rows, or hear a note on a tap
                                     val startLow = view.low
                                     follow { p -> view.low = (startLow + (p.y - y0) / rowH()).coerceIn(0f, max(0f, rowsNow.size - view.rows)) }
-                                    if (!moved && !pinched) { val n = noteAtY(y0); Native.noteOn(track, n, 0.8f); Native.noteOff(track, n) }
+                                    if (!moved && !pinched) audition(track, noteAtY(y0))
                                     return@awaitEachGesture
                                 }
                                 if (y0 < rulerH) {   // the ruler: scroll time
@@ -298,7 +317,7 @@ fun PianoRoll(color: Color) {
                                         val p = previews.firstOrNull()
                                         previews = emptyList()
                                         if (!ok || p == null) return@awaitEachGesture
-                                        Native.noteOn(track, p.note, 0.8f); Native.noteOff(track, p.note)
+                                        audition(track, p.note)
                                         val id = Seq.edit("clipAdd", "start" to p.start, "length" to p.length, "note" to p.note, "velocity" to p.velocity)
                                         selected = id.trim().toIntOrNull()?.let { setOf(it) } ?: emptySet()
                                         lastLength = p.length
@@ -416,44 +435,6 @@ fun PianoRoll(color: Color) {
     }
 }
 
-/** Tools: the desktop roll's functions (paged; nothing scrolls), on the selection or every note. */
-@Composable
-private fun RollTools(modifier: Modifier, selected: Set<Int>, select: (Set<Int>) -> Unit, stepT: Int, grid: Int, at: Int) {
-    val seq by Seq.data
-    Column(modifier) {
-        Text(if (selected.isEmpty()) "On every note (nothing selected)" else "On ${selected.size} selected", color = C.faint,
-            fontSize = 11.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(6.dp))
-        Box(Modifier.weight(1f).fillMaxWidth()) {
-            Paged(TOOLS, columns = 3, rows = 12, rowHeight = 40.dp, key = "tools") { _, (label, args) ->
-                Box(Modifier.fillMaxWidth().height(40.dp).clip(RoundedCornerShape(10.dp)).background(C.control).clickable {
-                    val clip = Seq.data.value.clip
-                    when (args.first().second) {
-                        "all" -> select(clip.map { it.id }.toSet())
-                        "invert" -> select(clip.map { it.id }.toSet() - selected)
-                        "chords" -> {
-                            val starts = clip.filter { it.id in selected }.map { it.start }
-                            val tol = maxOf(1, stepT / 16)
-                            select(selected + clip.filter { n -> starts.any { abs(it - n.start) <= tol } }.map { it.id })
-                        }
-                        "loop" -> Seq.edit("loop", "on" to !Seq.data.value.loopOn)
-                        else -> {
-                            val ids = JSONArray(); selected.forEach { ids.put(it) }
-                            val extra = args.drop(1).toMutableList<Pair<String, Any?>>()
-                            if (label == "Up" || label == "Down") extra += "scale" to true   // in key
-                            val r = Seq.edit("clipOp", "fn" to args.first().second, "ids" to ids, "grid" to grid, "at" to at, *extra.toTypedArray())
-                            runCatching { JSONArray(r) }.getOrNull()?.let { a -> select(List(a.length()) { a.getInt(it) }.toSet()) }
-                        }
-                    }
-                }.padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
-                    val on = label == "Loop on / off" && seq.loopOn
-                    Text(label, color = if (on) C.pattern else C.text, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                }
-            }
-        }
-    }
-}
-
 /** Velocity: the notes in view as stalks (drag one; a selected note moves the whole selection), and lanes for
     accent and slide (tap a note's dot to toggle it, for the selection when it is in it). */
 @Composable
@@ -464,6 +445,20 @@ private fun VelocityPanel(modifier: Modifier, view: RollView, color: Color, sele
     val keysW = 40.dp
     fun inView(n: ClipNote) = n.start >= view.start && n.start < view.start + view.ticks
     fun ensureClip() { if (!Seq.data.value.pianoRoll) Seq.edit("toRoll") }
+    /** Each note's stalk position: a chord's notes side by side (lowest left), so every one can be seen and taken. */
+    fun stalks(notes: List<ClipNote>, kw: Float, tickW: Float, apart: Float): List<Pair<ClipNote, Float>> {
+        val tol = maxOf(1, seq.stepTicks / 16)
+        val out = mutableListOf<Pair<ClipNote, Float>>()
+        val byStart = notes.sortedBy { it.start }.fold(mutableListOf<MutableList<ClipNote>>()) { groups, n ->
+            if (groups.isNotEmpty() && abs(groups.last().first().start - n.start) <= tol) groups.last().add(n) else groups.add(mutableListOf(n))
+            groups
+        }
+        for (g in byStart) {
+            val sorted = g.sortedBy { it.note }
+            sorted.forEachIndexed { i, n -> out += n to (kw + (g.first().start - view.start) * tickW + 6f + i * apart) }
+        }
+        return out
+    }
     Column(modifier) {
         Canvas(
             Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(C.surface)
@@ -474,7 +469,12 @@ private fun VelocityPanel(modifier: Modifier, view: RollView, color: Color, sele
                         ensureClip()
                         val tickW = (size.width - kw) / view.ticks
                         val notes = Seq.data.value.clip.filter { inView(it) }
-                        val nearest = notes.minByOrNull { abs(kw + (it.start - view.start) * tickW - down.position.x) } ?: return@awaitEachGesture
+                        fun headY(v: Int) = 8f + (size.height - 16f) * (1 - v / 127f)
+                        // the stalk whose head is nearest the finger (a chord's notes stand side by side)
+                        val nearest = stalks(notes, kw, tickW, 16.dp.toPx()).minByOrNull { (n, x) ->
+                            val dx = x - down.position.x; val dy = (headY(n.velocity) - down.position.y) * 0.3f
+                            dx * dx + dy * dy
+                        }?.first ?: return@awaitEachGesture
                         val ids = if (nearest.id in sel) sel else setOf(nearest.id)
                         fun velAt(y: Float) = (127 * (1 - (y - 8f) / (size.height - 16f))).roundToInt().coerceIn(1, 127)
                         drag = ids to velAt(down.position.y)
@@ -499,9 +499,8 @@ private fun VelocityPanel(modifier: Modifier, view: RollView, color: Color, sele
             val tickW = (size.width - kw) / view.ticks
             drawContext.canvas.nativeCanvas.drawText("Vel", 6.dp.toPx(), 16.dp.toPx(), android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
                 this.color = Tokens.FAINT; textSize = 11.dp.toPx(); typeface = android.graphics.Typeface.DEFAULT_BOLD })
-            seq.rollNotes.filter { inView(it) }.forEach { n ->
+            stalks(seq.rollNotes.filter { inView(it) }, kw, tickW, 16.dp.toPx()).forEach { (n, x) ->
                 val v = if (drag?.first?.contains(n.id) == true) drag!!.second else n.velocity
-                val x = kw + (n.start - view.start) * tickW + 2f
                 val top = 8f + (size.height - 16f) * (1 - v / 127f)
                 val on = n.id in selected || drag?.first?.contains(n.id) == true
                 drawLine(if (on) color else C.quiet.copy(alpha = 0.6f), Offset(x, size.height - 8f), Offset(x, top), 3.dp.toPx())
@@ -532,7 +531,9 @@ private fun FlagLane(label: String, bit: Int, view: RollView, color: Color, sele
                     val notes = Seq.data.value.clip.filter { it.start >= view.start && it.start < view.start + view.ticks }
                     val nearest = notes.minByOrNull { abs(kw + (it.start - view.start) * tickW - down.position.x) } ?: return@awaitEachGesture
                     if (abs(kw + (nearest.start - view.start) * tickW - down.position.x) > 24.dp.toPx()) return@awaitEachGesture
-                    val group = if (nearest.id in sel) notes.filter { it.id in sel } else listOf(nearest)
+                    // the selection, or the whole chord at that time (accent and slide belong to the moment)
+                    val tol = maxOf(1, Seq.data.value.stepTicks / 16)
+                    val group = if (nearest.id in sel) notes.filter { it.id in sel } else notes.filter { abs(it.start - nearest.start) <= tol }
                     val on = nearest.flags and bit == 0
                     val arr = JSONArray()
                     group.forEach { arr.put(JSONObject().put("id", it.id).put("flags", if (on) it.flags or bit else it.flags and bit.inv())) }
