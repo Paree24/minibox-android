@@ -158,7 +158,8 @@ fun SoundTab(openPresets: () -> Unit) {
                 // took the room the visual (a waveform) needs
                 val cells = sec.knobs + listOfNotNull(sec.toggle)
                 for (row in cells.chunked(3)) {
-                    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                    // bottoms aligned: the switch's name sits on the knobs' names
+                    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.Bottom) {
                         row.forEach { cell ->
                             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                                 if (cell === sec.toggle) {
@@ -168,6 +169,7 @@ fun SoundTab(openPresets: () -> Unit) {
                                         Pill(if (on) "On" else "Off", on = on, color = color, height = 34.dp) { Sound.set(t.index, if (on) 0f else 1f) }
                                         Spacer(Modifier.height(6.dp))
                                         Text(t.label, color = C.quiet, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                                        Text(" ", fontSize = 10.sp, maxLines = 1)   // the knobs' value line
                                     }
                                 } else {
                                     val k = cell
