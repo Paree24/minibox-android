@@ -171,6 +171,21 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
 
     // ---------------------------------------------------------------- commands
     if (op == "play") { engine.play(); return {}; }
+    if (op == "capture")   // debug: {"seconds": s} starts recording the output; {"path": p} writes it (raw float32)
+    {
+        if (a.hasProperty ("seconds"))
+        {
+            capturing = false;
+            captureBuf.assign ((size_t) (engine.getSampleRate() * (double) a["seconds"]), 0.0f);
+            captured = 0;
+            capturing.store (true, std::memory_order_release);
+            return {};
+        }
+        // raw 32-bit float, mono, at the stream's rate
+        juce::File f (a["path"].toString());
+        f.replaceWithData (captureBuf.data(), captured.load() * sizeof (float));
+        return (int) captured.load();
+    }
     if (op == "stop") { engine.stop(); return {}; }
     if (op == "setRecord")   // the phone records live only (a project saved on the desktop in Step mode too)
     {

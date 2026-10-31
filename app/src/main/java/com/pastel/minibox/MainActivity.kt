@@ -24,6 +24,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // debug builds: `adb shell am broadcast -a com.pastel.minibox.CAPTURE --ef seconds 12` records the engine's
+        // output; `--es path <file>` writes it as a WAV (how the phone's sound is checked without a microphone)
+        if (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0)
+            androidx.core.content.ContextCompat.registerReceiver(this, object : android.content.BroadcastReceiver() {
+                override fun onReceive(c: android.content.Context, i: android.content.Intent) {
+                    if (i.hasExtra("seconds")) com.pastel.minibox.state.App.call("capture", "seconds" to i.getFloatExtra("seconds", 10f).toDouble())
+                    i.getStringExtra("path")?.let { com.pastel.minibox.state.App.call("capture", "path" to it) }
+                }
+            }, android.content.IntentFilter("com.pastel.minibox.CAPTURE"), androidx.core.content.ContextCompat.RECEIVER_EXPORTED)
         // pad touches as soon as they are read, not batched to the next frame (PLAN.md §3.3); Android 11+
         if (android.os.Build.VERSION.SDK_INT >= 30) window.decorView.requestUnbufferedDispatch(android.view.InputDevice.SOURCE_CLASS_POINTER)
         setContent {

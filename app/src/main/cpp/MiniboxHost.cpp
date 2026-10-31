@@ -195,6 +195,13 @@ oboe::DataCallbackResult MiniboxHost::onAudioReady (oboe::AudioStream*, void* au
     {
         const int n = std::min (kMaxBlock, numFrames - pos);
         engine.process (left.data(), right.data(), n, pos == 0 ? takeMidi() : nullptr);
+        if (capturing.load (std::memory_order_acquire))
+        {
+            size_t at = captured.load (std::memory_order_relaxed);
+            for (int i = 0; i < n && at < captureBuf.size(); ++i) captureBuf[at++] = left[(size_t) i];
+            captured.store (at, std::memory_order_release);
+            if (at >= captureBuf.size()) capturing = false;
+        }
         for (int i = 0; i < n; ++i)
         {
             out[(pos + i) * 2] = left[(size_t) i];

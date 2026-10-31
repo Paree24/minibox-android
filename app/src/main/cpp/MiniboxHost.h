@@ -115,6 +115,10 @@ private:
 
     static constexpr int kMaxBlock = 1024;          // the engine renders longer callbacks in pieces
     std::vector<float> left = std::vector<float> (kMaxBlock), right = std::vector<float> (kMaxBlock);
+    // debug capture (the "capture" op): the engine's left output, written by the audio thread until full
+    std::vector<float> captureBuf;
+    std::atomic<size_t> captured { 0 };
+    std::atomic<bool> capturing { false };
     std::atomic<int> lastFrames { 0 };
 };
 } // namespace mb::android
