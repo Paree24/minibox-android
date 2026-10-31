@@ -48,6 +48,12 @@ fun SoundTab(openPresets: () -> Unit) {
     val color = C.track(track)
 
     LaunchedEffect(track, fast.focusPattern, rack[track].type, selection) { Sound.refresh() }
+    // a sample still loading (a project just opened): read the editor again until its waveform is there
+    var waits by remember(track, selection) { mutableStateOf(0) }
+    LaunchedEffect(ed) {
+        val loading = ed.sections.any { sec -> sec.visual.extra?.let { it.optString("name").isNotEmpty() && (it.optJSONArray("peaks")?.length() ?: 0) == 0 } == true }
+        if (loading && waits < 20) { kotlinx.coroutines.delay(300); waits++; Sound.refresh() }
+    }
     if (rack[track].empty) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("+", color = C.faint, fontSize = 40.sp) }
         return
@@ -76,7 +82,7 @@ fun SoundTab(openPresets: () -> Unit) {
                         val dst = java.io.File(context.filesDir, "Samples/${tmp.name}").apply { parentFile?.mkdirs() }
                         tmp.copyTo(dst, overwrite = true)
                         App.call("loadSample", "track" to track, "path" to dst.absolutePath, "pad" to selection, "slice" to slice)
-                        Sound.refresh()
+                        Sound.refresh(); App.refresh()   // the pads are named after their samples
                     }
                 }
                 loadSample = { sl -> slice = sl; pick.launch(arrayOf("audio/*")) }
@@ -104,7 +110,9 @@ fun SoundTab(openPresets: () -> Unit) {
             }, Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp))
         }
         // drum part / FM operator: which one the editor shows
-        if (ed.selectionNames.isNotEmpty()) {
+        // (with the pads open on a drum device, the pads pick the part instead)
+        val drumPads = drawer && rack[track].lanes.isNotEmpty()
+        if (ed.selectionNames.isNotEmpty() && !drumPads) {
             val names = ed.selectionNames
             for (row in names.chunked(4)) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -168,7 +176,12 @@ fun SoundTab(openPresets: () -> Unit) {
             Box(Modifier.fillMaxWidth().clickable { drawer = false }.padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
                 Box(Modifier.size(40.dp, 4.dp).clip(CircleShape).background(C.faint))
             }
-            Pads()
+            // two rows (the drums' hits, a synth's lowest notes): the editor above keeps its room
+            Pads(rows = 2, aspect = 0.6f) { note, down ->
+                // a drum part's pad selects it in the editor
+                val lane = rack[track].lanes.indexOfFirst { it.note == note }
+                if (down && lane >= 0 && lane < ed.selectionNames.size) Sound.selection.intValue = lane
+            }
         } else PadsHandle(false) { drawer = true }
         Spacer(Modifier.height(12.dp))
     }

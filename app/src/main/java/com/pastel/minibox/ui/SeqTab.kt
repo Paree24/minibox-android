@@ -46,7 +46,7 @@ import com.pastel.minibox.state.Seq
 import com.pastel.minibox.state.StepData
 import kotlinx.coroutines.delay
 
-/** Seq (mockups 04, 05, 15, 16): the step editor or the piano roll, full height, with the pads in a drawer. */
+/** Seq (mockups 04, 05, 15, 16): the step editor or the piano roll, the whole page (no pads). */
 @Composable
 fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
     val track = App.focusTrack.intValue
@@ -55,7 +55,6 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
     val rack by App.rack
     var view by remember { mutableIntStateOf(0) }          // 0 Steps, 1 Roll
     var pickedBar by remember { mutableIntStateOf(0) }
-    var drawer by remember { mutableStateOf(false) }
     var part by remember { mutableIntStateOf(0) }
     val color = C.track(track)
 
@@ -74,9 +73,8 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
     val roll = !seq.drum && (view == 1 || seq.pianoRoll)
     val perPage = if (roll) barSteps else spb
     val pageCount = if (roll) seq.bars else pages
-    // the view follows the playhead only while recording a take: when editing by hand it stays where it was put,
-    // so a tap lands where the finger is (a following roll turned deletes into new notes)
-    val bar = if (fast.playing && fast.recording && fast.activePattern == fast.focusPattern) (fast.step / perPage).coerceIn(0, pageCount - 1) else pickedBar.coerceIn(0, pageCount - 1)
+    // the view never follows the playhead: it stays where it was put, so a tap lands where the finger is
+    val bar = pickedBar.coerceIn(0, pageCount - 1)
     var lengthMenu by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize()) {
@@ -85,8 +83,8 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
                 Segmented(listOf("Steps", "Roll"), if (roll) 1 else 0, C.text, { if (!seq.pianoRoll) view = it }, Modifier.width(116.dp))
                 Spacer(Modifier.width(8.dp))
             }
-            // the bar in view: ‹ 2 / 4 ›
-            Row(Modifier.height(34.dp).clip(CircleShape).background(C.control), verticalAlignment = Alignment.CenterVertically) {
+            // the bar in view: ‹ 2 / 4 › (the roll scrolls and zooms by itself)
+            if (!roll) Row(Modifier.height(34.dp).clip(CircleShape).background(C.control), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(30.dp, 34.dp).clickable(enabled = bar > 0) { pickedBar = bar - 1 }, contentAlignment = Alignment.Center) {
                     Text("‹", color = if (bar > 0) C.text else C.faint, fontSize = 16.sp, fontWeight = FontWeight.Black)
                 }
@@ -123,17 +121,10 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
         Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp)) {
             when {
                 seq.drum -> DrumEditor(bar, spb, part, color, { part = it }, { s -> openStep(s, part) })
-                roll -> PianoRoll(bar, color)
+                roll -> PianoRoll(color)
                 else -> StepEditor(bar, spb, color) { s -> openStep(s, -1) }
             }
         }
-        Spacer(Modifier.height(8.dp))
-        if (drawer) {
-            Box(Modifier.fillMaxWidth().clickable { drawer = false }.padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
-                Box(Modifier.size(40.dp, 4.dp).clip(CircleShape).background(C.faint))
-            }
-            Pads()
-        } else PadsHandle(false) { drawer = true }
         Spacer(Modifier.height(12.dp))
     }
 }

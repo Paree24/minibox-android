@@ -6,6 +6,7 @@
 #include "model/DawProject.h"
 #include "devices/sampler/SamplerDevice.h"
 #include "devices/drumsampler/DrumSamplerDevice.h"
+#include "devices/SampleSlot.h"
 #include "efx/EffectRegistry.h"
 
 namespace mb::android
@@ -72,7 +73,6 @@ juce::var MiniboxHost::projectCall (const juce::String& op, const juce::var& a, 
     {
         engine.stop(); engine.stop();
         engine.newProject();
-        p.overdub = true;   // loop recording on the phone (Extend stays in the Record sheet)
         afterProjectChange();
         return result (true);
     }
@@ -212,7 +212,10 @@ juce::var MiniboxHost::projectCall (const juce::String& op, const juce::var& a, 
         const juce::File f (a["path"].toString());
         if (d == nullptr || ! f.existsAsFile()) return result (false, "No file");
         const auto ref = refForFile (f);
-        if (auto* s = dynamic_cast<SamplerDevice*> (d)) { s->loadZone (0, ref); return result (true); }
+        // loaded before this returns: the editor's next read has the waveform (an async load left it empty)
+        const bool wasSync = forceSyncSampleLoads().exchange (true);
+        const juce::ScopeGuard restore { [wasSync] { forceSyncSampleLoads() = wasSync; } };
+        if (auto* s = dynamic_cast<SamplerDevice*> (d)) { s->loadZone (0, ref, true); return result (true); }
         if (auto* ds = dynamic_cast<DrumSamplerDevice*> (d))
         {
             if (a["slice"]) ds->sliceLoop (ref);

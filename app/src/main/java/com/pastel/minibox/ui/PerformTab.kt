@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -132,7 +133,10 @@ private fun XyPad(pad: Int, onPick: (Int) -> Unit, modifier: Modifier) {
     }
     var menu by remember { mutableStateOf(false) }
     var down by remember { mutableStateOf(false) }
-    var pos by remember(pad) { mutableStateOf(Offset(0.5f, 0.5f)) }
+    // one state for the pad's life: the touch handler (started once) writes the same state the drawing reads; a
+    // state keyed on the effect left the handler writing a stale one after a change (the dot stopped moving)
+    var pos by remember { mutableStateOf(Offset(0.5f, 0.5f)) }
+    LaunchedEffect(pad) { pos = Offset(0.5f, 0.5f) }
     val current by rememberUpdatedState(pad)
     val fx = effects.getOrNull(pad)
     Column(modifier) {

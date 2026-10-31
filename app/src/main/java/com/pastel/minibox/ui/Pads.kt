@@ -22,16 +22,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pastel.minibox.state.App
 
-/** The selected track's 16 square pads. */
+/** The selected track's pads; `rows` 2 shows only the lower 8 (an editor's drawer: drums' hits, the lowest notes). */
 @Composable
-fun Pads(modifier: Modifier = Modifier) {
+fun Pads(modifier: Modifier = Modifier, rows: Int = 4, aspect: Float = 1f, onPad: ((note: Int, down: Boolean) -> Unit)? = null) {
     val track = App.focusTrack.intValue
     val rack by App.rack
     val project by App.project
     val octaves by App.octave
     val rollBeats by App.rollBeats
     val layout = currentLayout(track, rack[track], project, octaves[track], rollBeats) ?: return
-    PadGrid(layout, App::padPressed, modifier.fillMaxWidth().padding(horizontal = 16.dp))
+    PadGrid(layout, { n, d -> App.padPressed(n, d); onPad?.invoke(n, d) }, modifier.fillMaxWidth().padding(horizontal = 16.dp), rows, aspect)
 }
 
 /** Editors keep the pads folded into this handle; tapping it pulls the 4×4 up (mockups 15–16). */

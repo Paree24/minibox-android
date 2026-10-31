@@ -34,7 +34,6 @@ void MiniboxHost::init (const juce::String& factoryDir, const juce::String& stor
         engine.setDevice (0, t, std::move (d)).reset();
     }
     engine.focusTrack = 1;
-    engine.project().overdub = true;   // the phone records in loops: a take plays back on the next pass
 }
 
 bool MiniboxHost::openStream()

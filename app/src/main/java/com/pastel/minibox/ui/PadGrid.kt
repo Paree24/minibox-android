@@ -40,7 +40,7 @@ class PadLayout(
  * pad (top = loud). Touches arrive unbuffered (MainActivity asks for it, Android 11+).
  */
 @Composable
-fun PadGrid(layout: PadLayout, onPress: (note: Int, down: Boolean) -> Unit, modifier: Modifier = Modifier) {
+fun PadGrid(layout: PadLayout, onPress: (note: Int, down: Boolean) -> Unit, modifier: Modifier = Modifier, rows: Int = 4, aspect: Float = 1f) {
     val view = LocalView.current
     val lit = remember { mutableStateListOf(*Array(16) { 0 }) }
     val held = remember { HashMap<Long, Int>() }       // pointer → pad
@@ -73,29 +73,32 @@ fun PadGrid(layout: PadLayout, onPress: (note: Int, down: Boolean) -> Unit, modi
 
     val text = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.DEFAULT_BOLD } }
     Canvas(
-        modifier.fillMaxWidth().aspectRatio(1f).pointerInput(Unit) {
+        modifier.fillMaxWidth().aspectRatio(4f / (rows * aspect)).pointerInput(rows, aspect) {
             val gap = 8.dp.toPx()
             fun padAt(o: Offset): Int {
                 val s = (size.width - 3 * gap) / 4f
+                val h = s * aspect
                 if (o.x < 0 || o.y < 0) return -1
                 val col = (o.x / (s + gap)).toInt()
-                val row = (o.y / (s + gap)).toInt()
-                if (col !in 0..3 || row !in 0..3) return -1
-                if (o.x - col * (s + gap) > s || o.y - row * (s + gap) > s) return -1   // in a gap
-                return (3 - row) * 4 + col
+                val row = (o.y / (h + gap)).toInt()
+                if (col !in 0..3 || row !in 0 until rows) return -1
+                if (o.x - col * (s + gap) > s || o.y - row * (h + gap) > h) return -1   // in a gap
+                return (rows - 1 - row) * 4 + col
             }
             // a finger already on a pad keeps it until it is clearly inside another one (6 dp past its edge): a
             // resting finger wobbling over a gap or an edge must not re-strike the note (it chopped held notes up)
             fun clearlyIn(pad: Int, o: Offset): Boolean {
                 val s = (size.width - 3 * gap) / 4f
                 val m = 6.dp.toPx()
-                val left = (pad % 4) * (s + gap); val top = (3 - pad / 4) * (s + gap)
-                return o.x > left + m && o.x < left + s - m && o.y > top + m && o.y < top + s - m
+                val h = s * aspect
+                val left = (pad % 4) * (s + gap); val top = (rows - 1 - pad / 4) * (h + gap)
+                return o.x > left + m && o.x < left + s - m && o.y > top + m && o.y < top + h - m
             }
             fun velocityAt(pad: Int, y: Float): Float {
                 val s = (size.width - 3 * gap) / 4f
-                val top = (3 - pad / 4) * (s + gap)
-                return 1f - 0.7f * ((y - top) / s).coerceIn(0f, 1f)   // top edge 1.0, bottom edge 0.3
+                val h = s * aspect
+                val top = (rows - 1 - pad / 4) * (h + gap)
+                return 1f - 0.7f * ((y - top) / h).coerceIn(0f, 1f)   // top edge 1.0, bottom edge 0.3
             }
             awaitPointerEventScope {
                 while (true) {
@@ -119,29 +122,30 @@ fun PadGrid(layout: PadLayout, onPress: (note: Int, down: Boolean) -> Unit, modi
     ) {
         val gap = 8.dp.toPx()
         val s = (size.width - 3 * gap) / 4f
+        val h = s * aspect
         val r = CornerRadius(14.dp.toPx())
         val l = layout
         val accent = Color(l.color)
         val c = drawContext.canvas.nativeCanvas
-        for (pad in 0 until 16) {
+        for (pad in 0 until rows * 4) {
             val x = (pad % 4) * (s + gap)
-            val y = (3 - pad / 4) * (s + gap)
+            val y = (rows - 1 - pad / 4) * (h + gap)
             val on = lit[pad] > 0
-            drawRoundRect(if (on) accent else C.control, Offset(x, y), Size(s, s), r)
-            if (pad in l.roots && !on) drawRoundRect(accent.copy(alpha = 0.28f), Offset(x, y), Size(s, s), r)
+            drawRoundRect(if (on) accent else C.control, Offset(x, y), Size(s, h), r)
+            if (pad in l.roots && !on) drawRoundRect(accent.copy(alpha = 0.28f), Offset(x, y), Size(s, h), r)
             val fg = if (on) Tokens.BG else Tokens.TEXT
             if (l.bigLabels) {
                 text.textAlign = Paint.Align.CENTER
                 text.textSize = 20.dp.toPx(); text.color = fg
-                c.drawText(l.labels[pad], x + s / 2, y + s / 2 + 4.dp.toPx(), text)
+                c.drawText(l.labels[pad], x + s / 2, y + h / 2 + 4.dp.toPx(), text)
                 text.textSize = 11.dp.toPx(); text.color = if (on) Tokens.BG else if (pad in l.roots) l.color else Tokens.FAINT
-                c.drawText(l.subs[pad], x + s / 2, y + s / 2 + 22.dp.toPx(), text)
+                c.drawText(l.subs[pad], x + s / 2, y + h / 2 + 22.dp.toPx(), text)
             } else {
                 text.textAlign = Paint.Align.LEFT
                 text.textSize = 13.dp.toPx(); text.color = fg
                 c.drawText(l.labels[pad], x + 12.dp.toPx(), y + 22.dp.toPx(), text)
                 text.textSize = 11.dp.toPx(); text.color = if (on) Tokens.BG else Tokens.FAINT
-                c.drawText(l.subs[pad], x + 12.dp.toPx(), y + s - 12.dp.toPx(), text)
+                c.drawText(l.subs[pad], x + 12.dp.toPx(), y + h - 12.dp.toPx(), text)
             }
             if (l.rolls[pad]) for (k in 0 until 3) {   // three bars: this pad repeats
                 drawRoundRect(if (on) C.bg else accent, Offset(x + s - 26.dp.toPx() + k * 6.dp.toPx(), y + 12.dp.toPx()),
