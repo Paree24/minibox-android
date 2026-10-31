@@ -332,18 +332,19 @@ fun PianoRoll(color: Color) {
                                         val id = Seq.edit("clipAdd", "start" to start, "length" to len, "note" to note, "velocity" to 100).trim().toIntOrNull()
                                         if (id != null) { lastTapId = id; lastTapAt = down.uptimeMillis }
                                     }
-                                    kind == 2 && h != null -> {   // hold a note: it joins (or leaves) the selection; keep dragging sideways to resize
+                                    kind == 2 && h != null -> {   // hold a note: it becomes the selection (a new one replaces the old); keep dragging sideways to resize
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         val id = h.first.id
                                         val wasSelected = id in selected
-                                        if (!wasSelected) selected = selected + id
-                                        val group = Seq.data.value.clip.filter { it.id in selNow || it.id == id }
+                                        val ids = if (wasSelected) selected else setOf(id)   // held inside a selection: that selection resizes
+                                        selected = ids
+                                        val group = Seq.data.value.clip.filter { it.id in ids }
                                         val ok = follow { p -> previews = resized (group, ((p.x - x0) / tickW()).roundToInt()) }
                                         val out = previews
                                         previews = emptyList()
                                         if (!ok) return@awaitEachGesture
                                         if (moved && out.isNotEmpty()) { editMany(out); lastLength = out.first().length }
-                                        else if (wasSelected) selected = selected - id   // held again without dragging: unselected
+                                        else if (wasSelected) selected = if (ids.size == 1) emptySet() else setOf(id)   // held again: unselected, or alone
                                     }
                                     kind == 2 -> {   // hold empty space: drag a box to select; lift without moving to clear
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -354,7 +355,7 @@ fun PianoRoll(color: Color) {
                                         if (moved && b != null) {
                                             val t0 = tickAtX(min(b.first.x, b.second.x)); val t1 = tickAtX(max(b.first.x, b.second.x))
                                             val r0 = rowAtY(max(b.first.y, b.second.y)); val r1 = rowAtY(min(b.first.y, b.second.y))
-                                            selected = selected + ensureClip().filter { it.start < t1 && it.start + it.length > t0 && rowIdx(it.note) in r0..r1 }.map { it.id }
+                                            selected = ensureClip().filter { it.start < t1 && it.start + it.length > t0 && rowIdx(it.note) in r0..r1 }.map { it.id }.toSet()
                                         } else selected = emptySet()
                                     }
                                     h == null -> {   // drag on empty space: a note as long as the drag (a pinch cancels it)
