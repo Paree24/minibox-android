@@ -54,6 +54,10 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
+/** Room after the end of the view: a note's end (its resize handle) never sits in Android's edge-swipe zone, where
+    dragging it would be taken as the system's Back gesture. The velocity lanes use the same so they line up. */
+private val END_PAD = 32.dp
+
 private val SNAPS = listOf("1/32" to 0.5f, "1/16" to 1f, "1/8" to 2f, "1/4" to 4f, "Off" to 0f)
 
 /** A note being drawn, moved or resized, before the finger lifts (one undo step per gesture). */
@@ -201,7 +205,7 @@ fun PianoRoll(color: Color) {
                             val reach = 12.dp.toPx()   // a tap this close to a note counts as on it
                             fun gridH() = size.height - rulerH
                             fun rowH() = gridH() / view.rows
-                            fun tickW() = (size.width - keysW) / view.ticks
+                            fun tickW() = (size.width - keysW - END_PAD.toPx()) / view.ticks
                             fun rowAtY(y: Float) = floor(view.low + (size.height - y) / rowH()).toInt()
                             fun noteAtY(y: Float) = rowsNow[rowAtY(y).coerceIn(0, rowsNow.size - 1)]
                             fun tickAtX(x: Float) = (view.start + (x - keysW) / tickW()).toInt()
@@ -354,7 +358,7 @@ fun PianoRoll(color: Color) {
                     val keysW = 40.dp.toPx()
                     val rulerH = 18.dp.toPx()
                     val rowH = (size.height - rulerH) / view.rows
-                    val tickW = (size.width - keysW) / view.ticks
+                    val tickW = (size.width - keysW - END_PAD.toPx()) / view.ticks
                     fun xOf(t: Int) = keysW + (t - view.start) * tickW
                     fun yOfRow(r: Int) = size.height - (r - view.low + 1) * rowH   // the row's top
                     keyLabel.textSize = min(11.dp.toPx(), rowH * 0.5f); rulerLabel.textSize = 10.dp.toPx()
@@ -467,7 +471,7 @@ private fun VelocityPanel(modifier: Modifier, view: RollView, color: Color, sele
                     awaitEachGesture {
                         val down = awaitFirstDown()
                         ensureClip()
-                        val tickW = (size.width - kw) / view.ticks
+                        val tickW = (size.width - kw - END_PAD.toPx()) / view.ticks
                         val notes = Seq.data.value.clip.filter { inView(it) }
                         fun headY(v: Int) = 8f + (size.height - 16f) * (1 - v / 127f)
                         // the stalk whose head is nearest the finger (a chord's notes stand side by side)
@@ -496,7 +500,7 @@ private fun VelocityPanel(modifier: Modifier, view: RollView, color: Color, sele
                 },
         ) {
             val kw = keysW.toPx()
-            val tickW = (size.width - kw) / view.ticks
+            val tickW = (size.width - kw - END_PAD.toPx()) / view.ticks
             drawContext.canvas.nativeCanvas.drawText("Vel", 6.dp.toPx(), 16.dp.toPx(), android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
                 this.color = Tokens.FAINT; textSize = 11.dp.toPx(); typeface = android.graphics.Typeface.DEFAULT_BOLD })
             stalks(seq.rollNotes.filter { inView(it) }, kw, tickW, 16.dp.toPx()).forEach { (n, x) ->
@@ -527,7 +531,7 @@ private fun FlagLane(label: String, bit: Int, view: RollView, color: Color, sele
                 awaitEachGesture {
                     val down = awaitFirstDown()
                     if (!Seq.data.value.pianoRoll) Seq.edit("toRoll")
-                    val tickW = (size.width - kw) / view.ticks
+                    val tickW = (size.width - kw - END_PAD.toPx()) / view.ticks
                     val notes = Seq.data.value.clip.filter { it.start >= view.start && it.start < view.start + view.ticks }
                     val nearest = notes.minByOrNull { abs(kw + (it.start - view.start) * tickW - down.position.x) } ?: return@awaitEachGesture
                     if (abs(kw + (nearest.start - view.start) * tickW - down.position.x) > 24.dp.toPx()) return@awaitEachGesture
@@ -542,7 +546,7 @@ private fun FlagLane(label: String, bit: Int, view: RollView, color: Color, sele
             },
     ) {
         val kw = keysW.toPx()
-        val tickW = (size.width - kw) / view.ticks
+        val tickW = (size.width - kw - END_PAD.toPx()) / view.ticks
         drawContext.canvas.nativeCanvas.drawText(label, 6.dp.toPx(), size.height / 2 + 4.dp.toPx(), android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
             this.color = Tokens.FAINT; textSize = 10.dp.toPx(); typeface = android.graphics.Typeface.DEFAULT_BOLD })
         seq.rollNotes.filter { it.start >= view.start && it.start < view.start + view.ticks }.forEach { n ->
