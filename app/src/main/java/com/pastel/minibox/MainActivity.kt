@@ -31,6 +31,12 @@ class MainActivity : ComponentActivity() {
                 override fun onReceive(c: android.content.Context, i: android.content.Intent) {
                     if (i.hasExtra("seconds")) com.pastel.minibox.state.App.call("capture", "seconds" to i.getFloatExtra("seconds", 10f).toDouble())
                     i.getStringExtra("path")?.let { com.pastel.minibox.state.App.call("capture", "path" to it) }
+                    // `--es op <op> --es args '<json>'`: any engine call, then the UI refreshes
+                    i.getStringExtra("op")?.let { op ->
+                        val args = org.json.JSONObject(i.getStringExtra("args") ?: "{}")
+                        android.util.Log.i("Minibox", "debug call $op -> " + com.pastel.minibox.state.App.call(op, *args.keys().asSequence().map { it to args.get(it) }.toList().toTypedArray()).take(300))
+                        com.pastel.minibox.state.App.refresh(); com.pastel.minibox.state.Sound.refresh()
+                    }
                 }
             }, android.content.IntentFilter("com.pastel.minibox.CAPTURE"), androidx.core.content.ContextCompat.RECEIVER_EXPORTED)
         // pad touches as soon as they are read, not batched to the next frame (PLAN.md §3.3); Android 11+

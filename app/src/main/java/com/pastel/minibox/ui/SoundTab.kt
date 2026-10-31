@@ -153,16 +153,26 @@ fun SoundTab(openPresets: () -> Unit) {
                         Sound.set(c.index, next / (c.options.size - 1f))
                     }
                 }
-                sec.toggle?.let { t ->
-                    Spacer(Modifier.height(10.dp))
-                    ToggleCard(t.label, t.value > 0.5f, Modifier.fillMaxWidth()) { Sound.set(t.index, if (it) 1f else 0f) }
-                }
                 Spacer(Modifier.height(12.dp))
-                for (row in sec.knobs.chunked(3)) {
+                // the section's switch (Reverse, Loop …) sits in the knob grid as one more cell: a full-width card
+                // took the room the visual (a waveform) needs
+                val cells = sec.knobs + listOfNotNull(sec.toggle)
+                for (row in cells.chunked(3)) {
                     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        row.forEach { k ->
+                        row.forEach { cell ->
                             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                                Knob(k.value, color, k.label, k.text, { Sound.set(k.index, it) }, size = 46.dp, default = k.default, bipolar = k.bipolar)
+                                if (cell === sec.toggle) {
+                                    val t = cell
+                                    val on = t.value > 0.5f
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Pill(if (on) "On" else "Off", on = on, color = color, height = 34.dp) { Sound.set(t.index, if (on) 0f else 1f) }
+                                        Spacer(Modifier.height(6.dp))
+                                        Text(t.label, color = C.quiet, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                                    }
+                                } else {
+                                    val k = cell
+                                    Knob(k.value, color, k.label, k.text, { Sound.set(k.index, it) }, size = 46.dp, default = k.default, bipolar = k.bipolar)
+                                }
                             }
                         }
                         repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
