@@ -93,7 +93,7 @@ fun MainScreen() {
                 Tab.Perform -> PerformTab(onPatternMenu = { sheet = Sheet.PatternMenu(it) })
                 Tab.Seq -> SeqTab(openStep = { s, l -> sheet = Sheet.Step(s, l) })
                 Tab.Sound -> SoundTab(openPresets = { sheet = Sheet.Presets })
-                Tab.Mix -> MixTab(openTrack = { sheet = Sheet.TrackMix(it) }, openEffects = { sheet = Sheet.MasterFx })
+                Tab.Mix -> MixTab(openTrack = { sheet = Sheet.TrackMix(it) }, openEffects = { sheet = Sheet.MasterFx }, addDevice = { sheet = Sheet.Device(it) })
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(tab.title, color = C.faint, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }

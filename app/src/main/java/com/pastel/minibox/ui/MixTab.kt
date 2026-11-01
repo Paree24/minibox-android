@@ -43,7 +43,7 @@ import kotlin.math.log10
     Tap a track's badge for its pan and sends. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MixTab(openTrack: (Int) -> Unit, openEffects: () -> Unit) {
+fun MixTab(openTrack: (Int) -> Unit, openEffects: () -> Unit, addDevice: (Int) -> Unit) {
     val rack by App.rack
     val fast by App.fast
     val project by App.project
@@ -54,8 +54,9 @@ fun MixTab(openTrack: (Int) -> Unit, openEffects: () -> Unit) {
                 val color = C.track(t)
                 Column(Modifier.weight(1f).fillMaxHeight()) {
                     if (info.empty) {
-                        Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(12.dp)).border(1.5.dp, C.faint, RoundedCornerShape(12.dp)),
-                            contentAlignment = Alignment.Center) { Text("+", color = C.faint, fontSize = 16.sp) }
+                        // an empty track: its + adds a device (the picker the track row opens)
+                        Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(12.dp)).border(1.5.dp, C.faint, RoundedCornerShape(12.dp))
+                            .clickable { addDevice(t) }, contentAlignment = Alignment.Center) { Text("+", color = C.faint, fontSize = 16.sp) }
                     } else {
                         Fader(t, info.mixer.level, fast.trackPeaks.getOrElse(t) { 0f }, color, info.mixer.mute, "${t + 1}", { openTrack(t) },
                             Modifier.weight(1f).fillMaxWidth()) { App.cmd("setMixer", "track" to t, "key" to "level", "value" to it) }
