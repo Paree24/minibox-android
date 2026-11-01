@@ -130,6 +130,10 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
                         DropdownMenuItem(text = { Text("Steps $r", color = if (i == seq.stepRes) C.pattern else C.text, fontWeight = FontWeight.Bold) },
                             onClick = { lengthMenu = false; pickedBar = 0; Seq.edit("setRes", "res" to i) })
                     }
+                    HorizontalDivider(color = C.divider)
+                    // this track's notes in this pattern, gone (undo brings them back)
+                    DropdownMenuItem(text = { Text("Clear this track", color = C.record, fontWeight = FontWeight.Bold) },
+                        onClick = { lengthMenu = false; Seq.edit("clearTrack") })
                 }
             }
             // undo / redo every sequence edit (steps, drum cells, the piano roll, the length)

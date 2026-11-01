@@ -136,6 +136,13 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
     // ---- edits
     if (op == "undo") { swapUndo (undoStack, redoStack); return {}; }
     if (op == "redo") { swapUndo (redoStack, undoStack); return {}; }
+    if (op == "clearTrack")   // everything the track plays in this pattern (undoable)
+    {
+        snapshot (pat);
+        const Engine::ScopedEdit edit (engine);
+        tr.clearAll();
+        return {};
+    }
     if (op == "setRes")   // the pattern's step resolution: 0 1/8, 1 1/16, 2 1/32 (as the desktop's Seq bar strip)
     {
         snapshot (pat);

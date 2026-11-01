@@ -193,6 +193,10 @@ fun PianoRoll(color: Color, focusBar: (@Composable () -> Unit)? = null) {
 
     // the edits, on the selection (or every note): in key, octaves, the clipboard, quantize; and delete
     val edits = listOf<Pair<String, () -> Unit>>(
+        "Sel all" to {
+            if (!Seq.data.value.pianoRoll) Seq.edit("toRoll")
+            selected = Seq.data.value.clip.map { it.id }.toSet()
+        },
         "↓" to { rollOp("transpose", selected, "dir" to -1, "scale" to true)?.let { selected = it } },
         "↑" to { rollOp("transpose", selected, "dir" to 1, "scale" to true)?.let { selected = it } },
         "8↓" to { rollOp("transpose", selected, "dir" to -12)?.let { selected = it } },
