@@ -67,6 +67,7 @@ fun ProjectSheet(done: () -> Unit) {
     var projects by remember { mutableStateOf(listProjects()) }
     var exporting by remember { mutableStateOf(false) }
     var showExport by remember { mutableStateOf(false) }
+    var audioFormat by remember { mutableIntStateOf(0) }   // WAV, FLAC, OGG
     var confirmDelete by remember { mutableStateOf<String?>(null) }
     // Save as…: the system picker chooses the name and the folder; the project is written there
     val saveAs = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
@@ -115,12 +116,19 @@ fun ProjectSheet(done: () -> Unit) {
         }
         if (showExport) {
             Spacer(Modifier.height(8.dp))
-            // audio: the pattern playing, or the song (every pattern with notes, A, B, C … in order); then the files
-            for (row in listOf(listOf("Pattern WAV" to "wav", "Song WAV" to "song"), listOf("MIDI" to "mid", "DAWproject" to "dawproject", "Project" to "minibox"))) {
+            // audio, as WAV, FLAC or OGG: the pattern playing, or the song (every pattern with notes, A, B, C … in order);
+            // then the files
+            Segmented(AUDIO_FORMATS, audioFormat, C.text, { audioFormat = it }, Modifier.fillMaxWidth(), height = 34.dp)
+            Spacer(Modifier.height(6.dp))
+            for (row in listOf(listOf("Pattern" to "wav", "Song" to "song"), listOf("MIDI" to "mid", "DAWproject" to "dawproject", "Project" to "minibox"))) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     row.forEach { (label, kind) ->
                         Pill(if (exporting) "…" else label, Modifier.weight(1f), height = 40.dp) {
-                            if (!exporting) { exporting = true; exportAndShare(context, kind, name.trim().ifEmpty { "Minibox" }) { exporting = false } }
+                            if (!exporting) {
+                                exporting = true
+                                val audioExt = AUDIO_FORMATS[audioFormat].lowercase()
+                                exportAndShare(context, kind, name.trim().ifEmpty { "Minibox" }, audioExt) { exporting = false }
+                            }
                         }
                     }
                 }
@@ -255,9 +263,11 @@ fun copyIn(context: Context, uri: Uri, fallbackName: String): File {
 }
 
 /** Renders or writes the export off the main thread, then hands it to the share sheet. */
-private fun exportAndShare(context: Context, kind: String, name: String, finished: () -> Unit) {
+private val AUDIO_FORMATS = listOf("WAV", "FLAC", "OGG")
+
+private fun exportAndShare(context: Context, kind: String, name: String, audioExt: String, finished: () -> Unit) {
     val dir = File(context.cacheDir, "exports").apply { mkdirs() }
-    val ext = if (kind == "song") "wav" else kind
+    val ext = if (kind == "song" || kind == "wav") audioExt else kind   // the engine writes the format the name ends in
     val file = File(dir, if (kind == "song") "$name - Song.$ext" else "$name.$ext")
     Thread {
         val r = JSONObject(App.call("export", "kind" to kind, "path" to file.absolutePath))
@@ -265,7 +275,7 @@ private fun exportAndShare(context: Context, kind: String, name: String, finishe
             finished()
             if (!r.optBoolean("ok") || !file.isFile) { toast(context, r.optString("error", "Export failed")); return@post }
             val uri = FileProvider.getUriForFile(context, "com.pastel.minibox.files", file)
-            val mime = when (ext) { "wav" -> "audio/wav"; "mid" -> "audio/midi"; else -> "application/octet-stream" }
+            val mime = when (ext) { "wav" -> "audio/wav"; "flac" -> "audio/flac"; "ogg" -> "audio/ogg"; "mid" -> "audio/midi"; else -> "application/octet-stream" }
             context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType(mime).putExtra(Intent.EXTRA_STREAM, uri)
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Share $name"))
         }
