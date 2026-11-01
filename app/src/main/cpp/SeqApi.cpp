@@ -439,7 +439,11 @@ juce::var MiniboxHost::clipOp (const juce::String& fn, const juce::var& a, int p
     else if (fn == "length") for (auto& x : n) x.length = std::max (std::max (1, g / 4), x.length + dir * g);
     else if (fn == "velocity") for (auto& x : n) x.vel = (uint8_t) std::clamp (x.vel + dir * 8, 1, 127);
     else if (fn == "velocitySet") for (auto& x : n) x.vel = (uint8_t) std::clamp ((int) a.getProperty ("value", 100), 1, 127);
-    else if (fn == "velocityRandom") for (auto& x : n) x.vel = (uint8_t) std::clamp (x.vel + rnd.nextInt (41) - 20, 1, 127);
+    else if (fn == "velocityRandom")   // amount: each velocity moves up to that fraction up or down (0.1: ±10 %)
+    {
+        const double amt = std::clamp ((double) a.getProperty ("amount", 0.16), 0.0, 1.0);
+        for (auto& x : n) x.vel = (uint8_t) std::clamp ((int) std::lround (x.vel * (1.0 + amt * (2.0 * rnd.nextDouble() - 1.0))), 1, 127);
+    }
     else if (fn == "velocityRamp" && ! n.empty())
     {
         const int lo = n.front().start, hi = std::max (lo + 1, n.back().start);

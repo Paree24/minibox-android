@@ -90,6 +90,7 @@ juce::var MiniboxHost::projectCall (const juce::String& op, const juce::var& a, 
         const juce::File f (a["path"].toString());
         f.deleteFile();
         if (kind == "wav") { const auto r = serializer::exportWav (engine, f, std::max (1, geti (a, "loops", 2)), engine.getSampleRate()); return result (r.ok, r.error); }
+        if (kind == "song") { const auto r = serializer::exportSongWav (engine, f, engine.getSampleRate()); return result (r.ok, r.error); }   // A, B, C … in order
         if (kind == "mid") { const auto r = midifile::exportPattern (engine, engine.activePattern(), f); return result (r.ok, r.error); }
         if (kind == "dawproject") { const auto r = dawproject::exportProject (engine, f); return result (r.ok, r.error); }
         if (kind == "minibox") { const auto r = serializer::save (engine, f); return result (r.ok, r.error); }
