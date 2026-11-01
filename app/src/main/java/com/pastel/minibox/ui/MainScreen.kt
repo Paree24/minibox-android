@@ -80,11 +80,13 @@ fun MainScreen() {
     // tablets: the phone layout, centred, at most 600 dp wide (PLAN.md §15.1)
     Box(Modifier.fillMaxSize().background(C.bg), contentAlignment = Alignment.TopCenter) {
     Column(Modifier.widthIn(max = 600.dp).fillMaxSize().background(C.bg).statusBarsPadding()) {
-        TopBar(
+        // the piano roll's full-screen layout (C, on trial) hides the app bar, the tracks and the nav
+        val rollFocus = RollUi.focus.value && tab == Tab.Seq
+        if (!rollFocus) TopBar(
             onTempo = { sheet = Sheet.Tempo }, onRecordMenu = { sheet = Sheet.Record },
             onPatterns = { tab = Tab.Perform }, onMenu = { sheet = Sheet.Project },
         )
-        if (tab != Tab.Mix && tab != Tab.Perform) TrackRow { sheet = Sheet.Device(it) }
+        if (!rollFocus && tab != Tab.Mix && tab != Tab.Perform) TrackRow { sheet = Sheet.Device(it) }
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when (tab) {
                 Tab.Play -> PlayTab(openScale = { sheet = Sheet.Scale }, openArp = { sheet = Sheet.Arp })
@@ -97,7 +99,7 @@ fun MainScreen() {
                 }
             }
         }
-        BottomNav(tab) { tab = it }
+        if (!rollFocus) BottomNav(tab) { tab = it }
     }
     }
 

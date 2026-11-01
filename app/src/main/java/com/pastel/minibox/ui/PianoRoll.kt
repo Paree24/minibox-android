@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,7 +21,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -33,9 +33,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerEvent
@@ -60,6 +62,15 @@ import kotlin.math.roundToInt
 private val END_PAD = 32.dp
 
 private val SNAPS = listOf("1/32" to 0.5f, "1/16" to 1f, "1/8" to 2f, "1/4" to 4f, "Off" to 0f)
+
+/** The roll layouts on trial (2026-11-01, mockups/png/roll_options.png): 0 A one toolbar (the edits float over the
+    roll while notes are selected), 1 B vertical (time runs down, the scale across), 2 C focus (full screen), 3 D side
+    strip (the edits down the right edge). `focus`: C's full-screen roll is open (MainScreen hides its chrome). */
+object RollUi {
+    val layout = mutableIntStateOf(0)
+    val focus = mutableStateOf(false)
+    val names = listOf("A", "B", "C", "D")
+}
 
 /** A note being drawn, moved or resized, before the finger lifts (one undo step per gesture). */
 private data class Preview(val id: Int, val start: Int, val length: Int, val note: Int, val velocity: Int)
@@ -93,8 +104,8 @@ private fun deleteMany(ids: Collection<Int>) {
     Seq.edit("clipDeleteMany", "notes" to arr)
 }
 
-/** What the roll shows: from `start` (ticks), `ticks` wide; rows of the scale from `low` (a row index, may be
-    fractional while scrolling), `rows` high. Shared by the Notes and Velocity tabs. */
+/** What the roll shows: from `start` (ticks), `ticks` long; rows of the scale from `low` (a row index, may be
+    fractional while scrolling), `rows` of them. Shared by the Notes and Velocity tabs. */
 private class RollView {
     var start by mutableFloatStateOf(0f)
     var ticks by mutableFloatStateOf(0f)
@@ -103,26 +114,59 @@ private class RollView {
 }
 
 /**
- * The piano roll (mockups 15–16), the whole Seq page: Notes, Velocity (with accent and slide) and Tools tabs.
- * Rows are the project scale (an octave in view; drag the keys or use two fingers to see more). The view never
- * moves by itself.
- * Notes: one finger edits, two fingers pinch (horizontally: time, vertically: rows) and pan; drag the ruler to
- * scroll time. Draw: tap empty space for a note (drag for its length), tap a note to select it (twice: delete it), drag it to move,
- * drag its end to resize. Select: tap notes to add / remove, drag on empty space to box them, drag selected notes
- * to move them together. Erase: tap or swipe over notes to delete them (it never adds).
+ * The roll's geometry, lying either way: time across with the keys on the left (horizontal), or time running down
+ * with the keys across the top (vertical, as the step editor). Everything is in "time" and "pitch" coordinates: the
+ * time axis starts after the keys strip and ends END_PAD short of the edge; the pitch axis starts after the ruler.
+ * Horizontal rows count up from the bottom; vertical ones from the left (low notes left, as on a keyboard).
+ */
+private class Geo(val vertical: Boolean, val w: Float, val h: Float, val view: RollView, val keys: Float, val ruler: Float, endPad: Float) {
+    val timeStart = keys
+    val timeEnd = (if (vertical) h else w) - endPad
+    val pitchStart = ruler
+    val pitchEnd = if (vertical) w else h
+    val tickW = (timeEnd - timeStart) / view.ticks
+    val rowSize = (pitchEnd - pitchStart) / view.rows
+    /** +1: rows grow with the pixel (vertical: rightwards); −1: against it (horizontal: upwards). */
+    val sign = if (vertical) 1f else -1f
+    val origin = if (vertical) pitchStart else pitchEnd
+    fun time(o: Offset) = if (vertical) o.y else o.x
+    fun pitch(o: Offset) = if (vertical) o.x else o.y
+    fun tPix(t: Float) = timeStart + (t - view.start) * tickW
+    fun tickAt(pix: Float) = (view.start + (pix - timeStart) / tickW).toInt()
+    fun rowF(pix: Float) = view.low + sign * (pix - origin) / rowSize
+    fun rowAt(pix: Float) = floor(rowF(pix)).toInt()
+    /** A row's span on the pitch axis (low, high pixel). */
+    fun rowSpan(r: Int): Pair<Float, Float> {
+        val a = origin + sign * (r - view.low) * rowSize
+        return if (vertical) a to a + rowSize else a - rowSize to a
+    }
+    fun rect(t0: Float, t1: Float, p0: Float, p1: Float) = if (vertical) Rect(p0, t0, p1, t1) else Rect(t0, p0, t1, p1)
+    fun inKeys(o: Offset) = time(o) < keys
+    fun inRuler(o: Offset) = pitch(o) < ruler
+    /** The grid's area (notes are clipped to it). */
+    val grid get() = rect(timeStart, timeEnd, pitchStart, pitchEnd)
+}
+
+/**
+ * The piano roll (mockups 15–16 and roll_options), the whole Seq page. Notes and Velocity (with accent and slide)
+ * tabs; rows are the project scale, an octave in view. The view never moves by itself.
+ * Touch: tap empty space: a note; double tap a note: delete; hold a note: select it (keep dragging sideways: length);
+ * hold empty space and drag: box select; drag a note: move it, a selected one: length (sideways) or transpose (up and
+ * down); drag the keys or the ruler to scroll; two fingers pinch (each axis on its own) and pan.
  */
 @Composable
-fun PianoRoll(color: Color) {
+fun PianoRoll(color: Color, focusBar: (@Composable () -> Unit)? = null) {
     val seq by Seq.data
     val fast by App.fast
     val project by App.project
     val track = App.focusTrack.intValue
+    val layout = RollUi.layout.intValue
+    val vertical = layout == 1
     var tab by remember { mutableIntStateOf(0) }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     var snap by remember { mutableIntStateOf(1) }
     var selected by remember(track) { mutableStateOf(setOf<Int>()) }
     var previews by remember { mutableStateOf<List<Preview>>(emptyList()) }
-    var hidden by remember { mutableStateOf(setOf<Int>()) }   // being erased by a swipe
     var box by remember { mutableStateOf<Pair<Offset, Offset>?>(null) }
     var lastLength by remember { mutableIntStateOf(0) }
     val view = remember(track) { RollView() }
@@ -146,328 +190,375 @@ fun PianoRoll(color: Color) {
     val selNow by rememberUpdatedState(selected)
     fun snapTicks() = (SNAPS[snap].second * stepT).roundToInt().coerceAtLeast(1)
     fun snapTo(t: Int) = if (SNAPS[snap].second == 0f) t else (t.toFloat() / snapTicks()).roundToInt() * snapTicks()
-    val keyLabel = remember { android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        textAlign = android.graphics.Paint.Align.RIGHT; typeface = android.graphics.Typeface.DEFAULT_BOLD } }
+    val grid = if (SNAPS[snap].second == 0f) stepT else snapTicks()
+    val keyLabel = remember { android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { typeface = android.graphics.Typeface.DEFAULT_BOLD } }
     val rulerLabel = remember { android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
         this.color = Tokens.FAINT; typeface = android.graphics.Typeface.DEFAULT_BOLD } }
 
+    // the edits, on the selection (or every note): in key, octaves, the clipboard, quantize; and delete
+    val edits = listOf<Pair<String, () -> Unit>>(
+        "↓" to { rollOp("transpose", selected, "dir" to -1, "scale" to true)?.let { selected = it } },
+        "↑" to { rollOp("transpose", selected, "dir" to 1, "scale" to true)?.let { selected = it } },
+        "8↓" to { rollOp("transpose", selected, "dir" to -12)?.let { selected = it } },
+        "8↑" to { rollOp("transpose", selected, "dir" to 12)?.let { selected = it } },
+        "Cut" to { if (selected.isNotEmpty()) { rollOp("cut", selected); selected = emptySet() } },
+        "Copy" to { if (selected.isNotEmpty()) rollOp("copy", selected) },
+        "Paste" to { rollOp("paste", selected, "grid" to grid, "at" to view.start.toInt())?.let { selected = it } },
+        "Q" to { rollOp("quantize", selected, "grid" to grid)?.let { selected = it } },
+    )
+    val selNotes = seq.clip.filter { it.id in selected }
+    val selName = when { selNotes.isEmpty() -> "All"; selNotes.size == 1 -> noteName(selNotes.first().note); else -> "${selNotes.size} notes" }
+    @Composable fun EditButton(label: String, modifier: Modifier, action: () -> Unit) {
+        Box(modifier.clip(RoundedCornerShape(9.dp)).background(C.control).clickable(onClick = action), contentAlignment = Alignment.Center) {
+            Text(label, color = C.text, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
+        }
+    }
+    @Composable fun DeleteButton(modifier: Modifier) {
+        val can = selected.isNotEmpty()
+        Box(modifier.clip(RoundedCornerShape(16.dp)).background(C.control).clickable(enabled = can) { deleteMany(selected); selected = emptySet() },
+            contentAlignment = Alignment.Center) {
+            Text("Delete", color = if (can) C.record else C.faint, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
+        }
+    }
+    @Composable fun EditRow() {   // B and C: one row of the edits, the selection's name and Delete
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(selName, color = if (selNotes.isEmpty()) C.faint else color, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1,
+                modifier = Modifier.width(40.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            edits.forEach { (l, a) -> EditButton(l, Modifier.weight(1f).height(34.dp), a) }
+            DeleteButton(Modifier.width(56.dp).height(34.dp))
+        }
+    }
+
+    @Composable fun RollCanvas(modifier: Modifier) {
+        Canvas(
+            modifier.clip(RoundedCornerShape(10.dp))
+                // one handler for every gesture: the view state is read live, so nothing restarts mid-touch
+                .pointerInput(vertical) {
+                    val keysPx = (if (vertical) 36.dp else 40.dp).toPx()
+                    val rulerPx = (if (vertical) 30.dp else 18.dp).toPx()
+                    val slop = 10.dp.toPx()
+                    val reach = 12.dp.toPx()   // a tap this close to a note counts as on it
+                    fun geo() = Geo(vertical, size.width.toFloat(), size.height.toFloat(), view, keysPx, rulerPx, END_PAD.toPx())
+                    fun rowIdx(n: Int) = rowsNow.indexOfLast { it <= n }.coerceAtLeast(0)
+                    fun noteAt(g: Geo, o: Offset) = rowsNow[g.rowAt(g.pitch(o)).coerceIn(0, rowsNow.size - 1)]
+                    /** The note under `o` or nearest to it in that row (within `reach`); and whether on its end handle. */
+                    fun hit(g: Geo, notes: List<ClipNote>, o: Offset): Pair<ClipNote, Boolean>? {
+                        val r = g.rowAt(g.pitch(o))
+                        val t = g.time(o)
+                        val found = notes.filter { rowIdx(it.note) == r }.map { n ->
+                            val a = g.tPix(n.start.toFloat()); val b = g.tPix((n.start + n.length).toFloat())
+                            n to (if (t < a) a - t else if (t > b) t - b else 0f)
+                        }.filter { it.second <= reach }.minByOrNull { it.second }?.first ?: return null
+                        val end = g.tPix((found.start + found.length).toFloat())
+                        return found to (t <= end + reach && end - t < min(14.dp.toPx(), found.length * g.tickW / 3f))
+                    }
+                    /** The notes `dt` ticks longer (shorter when negative), snapped, never under one snap. */
+                    fun resized(group: List<ClipNote>, dt: Int) = group.map { n -> Preview(n.id, n.start, max(snapTicks(), snapTo(n.length + dt)), n.note, n.velocity) }
+                    fun ensureClip(): List<ClipNote> {
+                        if (!Seq.data.value.pianoRoll) Seq.edit("toRoll")
+                        return Seq.data.value.clip
+                    }
+                    var lastTapId = -1          // double tap on a note deletes it
+                    var lastTapAt = 0L
+                    awaitEachGesture {
+                        val down = awaitFirstDown()
+                        down.consume()
+                        val g0 = geo()
+                        val p0 = down.position
+                        var moved = false
+                        var pinched = false
+                        // two fingers: pinch and pan, each axis on its own; called with every event while two are down
+                        var last: List<Offset>? = null
+                        fun pinch(e: PointerEvent): Boolean {
+                            val pts = e.changes.filter { it.pressed }.map { it.position }
+                            if (pts.size < 2) { last = null; return false }
+                            pinched = true
+                            previews = emptyList(); box = null
+                            val a = pts[0]; val b = pts[1]
+                            val l = last
+                            if (l != null) {
+                                var g = geo()
+                                val ct = (g.time(a) + g.time(b)) / 2; val pt = (g.time(l[0]) + g.time(l[1])) / 2
+                                val st = abs(g.time(a) - g.time(b)); val pst = abs(g.time(l[0]) - g.time(l[1]))
+                                val tAt = view.start + (ct - g.timeStart) / g.tickW
+                                if (st > 60f && pst > 60f) view.ticks = (view.ticks * pst / st).coerceIn(min(stepNow * 2, totalNow).toFloat(), totalNow.toFloat())
+                                g = geo()
+                                view.start = (tAt - (ct - g.timeStart) / g.tickW - (ct - pt) / g.tickW).coerceIn(0f, max(0f, totalNow - view.ticks))
+                                val cp = (g.pitch(a) + g.pitch(b)) / 2; val pp = (g.pitch(l[0]) + g.pitch(l[1])) / 2
+                                val sp = abs(g.pitch(a) - g.pitch(b)); val psp = abs(g.pitch(l[0]) - g.pitch(l[1]))
+                                val rAt = g.rowF(cp)
+                                if (sp > 60f && psp > 60f) view.rows = (view.rows * psp / sp).coerceIn(4f, 36f)
+                                g = geo()
+                                view.low = (rAt - g.sign * (cp - g.origin) / g.rowSize - g.sign * (cp - pp) / g.rowSize).coerceIn(0f, max(0f, rowsNow.size - view.rows))
+                            }
+                            last = listOf(a, b)
+                            e.changes.forEach { it.consume() }
+                            return true
+                        }
+                        /** Follows one finger until every finger lifts; false when a second finger made it a pinch. */
+                        suspend fun androidx.compose.ui.input.pointer.AwaitPointerEventScope.follow(onMove: (Offset) -> Unit): Boolean {
+                            while (true) {
+                                val e = awaitPointerEvent()
+                                if (pinch(e)) continue
+                                val c = e.changes.firstOrNull { it.id == down.id } ?: e.changes.first()
+                                if (e.changes.none { it.pressed }) break
+                                if (pinched) continue
+                                c.consume()
+                                if (abs(c.position.x - p0.x) > slop || abs(c.position.y - p0.y) > slop) moved = true
+                                if (moved) onMove(c.position)
+                            }
+                            return !pinched
+                        }
+                        if (g0.inKeys(p0)) {   // the keys: scroll the rows, or hear a note on a tap
+                            val startLow = view.low
+                            follow { p -> view.low = (startLow - g0.sign * (g0.pitch(p) - g0.pitch(p0)) / g0.rowSize).coerceIn(0f, max(0f, rowsNow.size - view.rows)) }
+                            if (!moved && !pinched) audition(track, noteAt(g0, p0))
+                            return@awaitEachGesture
+                        }
+                        if (g0.inRuler(p0)) {   // the ruler: scroll time
+                            val startT = view.start
+                            follow { p -> view.start = (startT - (g0.time(p) - g0.time(p0)) / g0.tickW).coerceIn(0f, max(0f, totalNow - view.ticks)) }
+                            return@awaitEachGesture
+                        }
+                        var notes0 = Seq.data.value.rollNotes
+                        var h = hit(g0, notes0, p0)
+                        if (h != null && h.first.id < 0) {   // a step track: becomes a clip before its notes change
+                            notes0 = ensureClip()
+                            h = hit(g0, notes0, p0)
+                        }
+                        // what this touch is: 0 a tap, 1 a drag, 2 a hold, 3 two fingers
+                        val kind = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                            var k = -1
+                            while (k < 0) {
+                                val e = awaitPointerEvent()
+                                if (pinch(e)) { k = 3; break }
+                                val c = e.changes.firstOrNull { it.id == down.id } ?: e.changes.first()
+                                if (e.changes.none { it.pressed }) { k = 0; break }
+                                c.consume()
+                                if (abs(c.position.x - p0.x) > slop || abs(c.position.y - p0.y) > slop) { moved = true; k = 1 }
+                            }
+                            k
+                        } ?: 2
+                        fun dTicks(p: Offset) = ((g0.time(p) - g0.time(p0)) / g0.tickW).roundToInt()
+                        fun dRows(p: Offset) = g0.rowAt(g0.pitch(p)) - g0.rowAt(g0.pitch(p0))
+                        fun transposed(group: List<ClipNote>, dr: Int) =
+                            group.map { n -> Preview(n.id, n.start, n.length, rowsNow[(rowIdx(n.note) + dr).coerceIn(0, rowsNow.size - 1)], n.velocity) }
+                        when {
+                            kind == 3 -> follow {}   // zoom / pan until the fingers lift
+                            kind == 0 && h != null -> {   // a tap on a note: hear it; a second tap soon after deletes it
+                                val id = h.first.id
+                                if (id == lastTapId && down.uptimeMillis - lastTapAt < 300) {
+                                    deleteMany(listOf(id))
+                                    selected = selected - id
+                                    lastTapId = -1
+                                } else {
+                                    audition(track, h.first.note)
+                                    lastTapId = id; lastTapAt = down.uptimeMillis
+                                }
+                            }
+                            kind == 0 -> {   // a tap on empty space: a note there
+                                val start = snapTo(g0.tickAt(g0.time(p0))).coerceIn(0, totalNow - 1)
+                                val len = if (lastLength > 0) lastLength else snapTicks().coerceAtLeast(stepNow)
+                                val note = noteAt(g0, p0).coerceIn(0, 127)
+                                audition(track, note)
+                                val id = Seq.edit("clipAdd", "start" to start, "length" to len, "note" to note, "velocity" to 100).trim().toIntOrNull()
+                                if (id != null) { lastTapId = id; lastTapAt = down.uptimeMillis }
+                            }
+                            kind == 2 && h != null -> {   // hold a note: it becomes the selection; keep dragging sideways to resize
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                val id = h.first.id
+                                val wasSelected = id in selected
+                                val ids = if (wasSelected) selected else setOf(id)   // held inside a selection: that selection
+                                selected = ids
+                                val group = Seq.data.value.clip.filter { it.id in ids }
+                                val ok = follow { p -> previews = resized(group, dTicks(p)) }
+                                val out = previews
+                                previews = emptyList()
+                                if (!ok) return@awaitEachGesture
+                                if (moved && out.isNotEmpty()) { editMany(out); lastLength = out.first().length }
+                                else if (wasSelected) selected = if (ids.size == 1) emptySet() else setOf(id)   // held again: unselected, or alone
+                            }
+                            kind == 2 -> {   // hold empty space: drag a box to select; lift without moving to clear
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                val ok = follow { box = p0 to it }
+                                val b = box
+                                box = null
+                                if (!ok) return@awaitEachGesture
+                                if (moved && b != null) {
+                                    val t0 = g0.tickAt(min(g0.time(b.first), g0.time(b.second))); val t1 = g0.tickAt(max(g0.time(b.first), g0.time(b.second)))
+                                    val ra = g0.rowAt(g0.pitch(b.first)); val rb = g0.rowAt(g0.pitch(b.second))
+                                    selected = ensureClip().filter { it.start < t1 && it.start + it.length > t0 && rowIdx(it.note) in min(ra, rb)..max(ra, rb) }.map { it.id }.toSet()
+                                } else selected = emptySet()
+                            }
+                            h == null -> {   // drag on empty space: a note as long as the drag (a pinch cancels it)
+                                val start = snapTo(g0.tickAt(g0.time(p0))).coerceIn(0, totalNow - 1)
+                                val note = noteAt(g0, p0).coerceIn(0, 127)
+                                val ok = follow { p -> previews = listOf(Preview(-1, start, max(snapTicks(), snapTo(g0.tickAt(g0.time(p))) - start), note, 100)) }
+                                val p = previews.firstOrNull()
+                                previews = emptyList()
+                                if (!ok || p == null) return@awaitEachGesture
+                                audition(track, p.note)
+                                Seq.edit("clipAdd", "start" to p.start, "length" to p.length, "note" to p.note, "velocity" to p.velocity)
+                                lastLength = p.length
+                            }
+                            else -> {   // drag a note. Selected: along time its length, across it a transpose (the first clear direction
+                                        // decides); unselected: move it (from its end: resize)
+                                val (n0, edge) = h
+                                val inSel = n0.id in selNow
+                                val group = if (inSel) Seq.data.value.clip.filter { it.id in selNow } else listOf(n0)
+                                var axis = if (edge) 1 else 0   // 0 undecided, 1 length, 2 pitch
+                                val ok = follow { p ->
+                                    if (!inSel || edge) {
+                                        previews = if (edge) resized(group, dTicks(p)) else group.map { n ->
+                                            Preview(n.id, (n.start + snapTo(n0.start + dTicks(p)) - n0.start).coerceIn(0, totalNow - 1), n.length,
+                                                rowsNow[(rowIdx(n.note) + dRows(p)).coerceIn(0, rowsNow.size - 1)], n.velocity)
+                                        }
+                                    } else {
+                                        if (axis == 0) axis = if (abs(g0.time(p) - g0.time(p0)) >= abs(g0.pitch(p) - g0.pitch(p0))) 1 else 2
+                                        previews = if (axis == 1) resized(group, dTicks(p)) else transposed(group, dRows(p))
+                                    }
+                                }
+                                val out = previews
+                                previews = emptyList()
+                                if (!ok || out.isEmpty()) return@awaitEachGesture
+                                editMany(out)
+                                if (axis == 1) lastLength = out.first().length
+                                if (axis == 2) audition(track, out.first().note)
+                            }
+                        }
+                    }
+                },
+        ) {
+            val g = Geo(vertical, size.width, size.height, view, (if (vertical) 36.dp else 40.dp).toPx(), (if (vertical) 30.dp else 18.dp).toPx(), END_PAD.toPx())
+            keyLabel.textSize = min(11.dp.toPx(), g.rowSize * 0.5f); rulerLabel.textSize = 10.dp.toPx()
+            drawRect(C.surface, g.grid.topLeft, g.grid.size)
+            val beatTicks = stepT * 4
+            // the ruler: bar.beat where there is room; the loop's range
+            val labelEvery = if (beatTicks * g.tickW >= 30.dp.toPx()) beatTicks else barTicks
+            var t = (view.start.toInt() / labelEvery) * labelEvery
+            while (t <= view.start + view.ticks) {
+                val tp = g.tPix(t.toFloat())
+                val label = "${t / barTicks + 1}.${(t % barTicks) / beatTicks + 1}"
+                if (tp >= g.timeStart) {
+                    if (vertical) { rulerLabel.textAlign = android.graphics.Paint.Align.RIGHT; drawContext.canvas.nativeCanvas.drawText(label, g.ruler - 4.dp.toPx(), tp + 11.dp.toPx(), rulerLabel) }
+                    else { rulerLabel.textAlign = android.graphics.Paint.Align.LEFT; drawContext.canvas.nativeCanvas.drawText(label, tp + 3.dp.toPx(), 12.dp.toPx(), rulerLabel) }
+                }
+                t += labelEvery
+            }
+            if (seq.loopOn && seq.loopEnd > seq.loopStart) {
+                val a = max(g.tPix((seq.loopStart * stepT).toFloat()), g.timeStart); val b = min(g.tPix((seq.loopEnd * stepT).toFloat()), g.timeEnd)
+                if (b > a) { val r = g.rect(a, b, g.ruler - 4.dp.toPx(), g.ruler - 1.dp.toPx()); drawRect(C.pattern.copy(alpha = 0.35f), r.topLeft, r.size) }
+            }
+            // rows: the keys and a tint on the roots
+            val first = floor(view.low).toInt()
+            for (idx in first..(first + view.rows.toInt() + 1)) {
+                if (idx >= rowNotes.size) break
+                val n = rowNotes[idx]
+                val (pa, pb) = g.rowSpan(idx)
+                val a = max(pa, g.pitchStart); val b = min(pb, g.pitchEnd)
+                if (b <= a) continue
+                val root = ((n - project.scaleRoot) % 12 + 12) % 12 == 0
+                if (root) { val r = g.rect(g.timeStart, g.timeEnd + END_PAD.toPx(), a, b); drawRect(color.copy(alpha = 0.08f), r.topLeft, r.size) }
+                val key = g.rect(0f, g.keys - 2f, a + 0.5f, b - 0.5f)
+                drawRoundRect(if (root) color else C.control, key.topLeft, key.size, CornerRadius(3.dp.toPx()))
+                keyLabel.color = if (root) Tokens.BG else Tokens.QUIET
+                if (pa >= g.pitchStart - 1f) {
+                    if (vertical) { keyLabel.textAlign = android.graphics.Paint.Align.CENTER; drawContext.canvas.nativeCanvas.drawText(noteName(n), (pa + pb) / 2, g.keys / 2 + keyLabel.textSize / 3, keyLabel) }
+                    else { keyLabel.textAlign = android.graphics.Paint.Align.RIGHT; drawContext.canvas.nativeCanvas.drawText(noteName(n), g.keys - 5.dp.toPx(), (pa + pb) / 2 + keyLabel.textSize / 3, keyLabel) }
+                }
+                val edge = if (vertical) pb else pa   // the line between this row and the next
+                val l = g.rect(g.timeStart, g.timeEnd + END_PAD.toPx(), edge, edge + 0.6f)
+                drawRect(C.divider, l.topLeft, l.size)
+            }
+            // grid: bars bright, beats faint, steps when wide enough to see
+            val stepLines = stepT * g.tickW >= 6.dp.toPx()
+            var s = (view.start.toInt() / stepT) * stepT
+            while (s <= view.start + view.ticks) {
+                val tp = g.tPix(s.toFloat())
+                val isBar = s % barTicks == 0
+                val isBeat = s % beatTicks == 0
+                if (tp >= g.timeStart && (isBar || isBeat || stepLines)) {
+                    val wdt = if (isBar) 1.6f else if (isBeat) 1.2f else 1f
+                    val r = g.rect(tp, tp + wdt, g.pitchStart, g.pitchEnd)
+                    drawRect(if (isBar) C.quiet else C.faint, r.topLeft, r.size, alpha = if (isBar) 0.7f else if (isBeat) 0.8f else 0.3f)
+                }
+                s += stepT
+            }
+            val moving = previews.map { it.id }.toSet()
+            clipRect(g.grid.left, g.grid.top, g.grid.right + (if (vertical) 0f else END_PAD.toPx()), g.grid.bottom + (if (vertical) END_PAD.toPx() else 0f)) {
+                fun drawNote(start: Int, length: Int, note: Int, vel: Int, flags: Int, sel: Boolean, muted: Boolean = false, locked: Boolean = false) {
+                    val idx = rowNotes.indexOfLast { it <= note }.coerceAtLeast(0)
+                    val (pa, pb) = g.rowSpan(idx)
+                    val r = g.rect(g.tPix(start.toFloat()) + 1f, g.tPix((start + length).toFloat()) - 1f, pa + 2f, pb - 2f)
+                    val offScale = rowNotes[idx] != note
+                    drawRoundRect(color.copy(alpha = if (muted) 0.15f else if (sel) 1f else if (offScale) 0.3f else 0.45f + 0.45f * vel / 127f),
+                        r.topLeft, r.size, CornerRadius(4.dp.toPx()))
+                    if (sel) drawRoundRect(C.text, Offset(r.left - 1.5f, r.top - 1.5f), Size(r.width + 3f, r.height + 3f), CornerRadius(5.dp.toPx()), style = Stroke(2.dp.toPx()))
+                    val mark = if (vertical) Offset(r.center.x, r.top + 6.dp.toPx()) else Offset(r.left + 6.dp.toPx(), r.center.y)
+                    if (flags and 1 != 0) drawCircle(C.bg, 2.5.dp.toPx(), mark)   // accent
+                    if (flags and 2 != 0) drawCircle(C.bg, 1.5.dp.toPx(), if (vertical) Offset(r.center.x, r.bottom - 6.dp.toPx()) else Offset(r.right - 6.dp.toPx(), r.center.y))   // slide
+                    if (locked) drawRect(C.bg, Offset(r.right - 8.dp.toPx(), r.top + 4.dp.toPx()), Size(4.dp.toPx(), 4.dp.toPx()))
+                }
+                seq.rollNotes.filter { it.id < 0 || it.id !in moving }
+                    .forEach { drawNote(it.start, it.length, it.note, it.velocity, it.flags, it.id >= 0 && it.id in selected, it.muted, it.locked) }
+                previews.forEach { drawNote(it.start, it.length, it.note, it.velocity, 0, true) }
+            }
+            box?.let { (a, b) ->
+                drawRect(C.text.copy(alpha = 0.08f), Offset(min(a.x, b.x), min(a.y, b.y)), Size(abs(a.x - b.x), abs(a.y - b.y)))
+                drawRect(C.text, Offset(min(a.x, b.x), min(a.y, b.y)), Size(abs(a.x - b.x), abs(a.y - b.y)), style = Stroke(1.dp.toPx()))
+            }
+            if (fast.playing && fast.activePattern == fast.focusPattern) {   // the playhead (the view stays put)
+                val tp = g.tPix((fast.step * stepT).toFloat())
+                if (tp >= g.timeStart && tp <= g.timeEnd + END_PAD.toPx()) { val r = g.rect(tp, tp + 2.dp.toPx(), 0f, g.pitchEnd); drawRect(C.pattern, r.topLeft, r.size) }
+            }
+        }
+    }
+
     Column(Modifier.fillMaxSize()) {
+        focusBar?.invoke()
         Row(verticalAlignment = Alignment.CenterVertically) {
             Segmented(listOf("Notes", "Velocity"), tab, C.text, { tab = it }, Modifier.weight(1f), height = 32.dp)
             Spacer(Modifier.width(6.dp))
             Pill(SNAPS[snap].first, caret = true) { snap = (snap + 1) % SNAPS.size }
+            Spacer(Modifier.width(6.dp))
+            // on trial: which layout (goes once one is chosen)
+            Pill("Layout ${RollUi.names[layout]}", caret = true) { RollUi.layout.intValue = (layout + 1) % 4; RollUi.focus.value = RollUi.layout.intValue == 2 }
+            if (layout == 2 && !RollUi.focus.value) {
+                Spacer(Modifier.width(6.dp))
+                RoundIcon("⤢") { RollUi.focus.value = true }
+            }
         }
         Spacer(Modifier.height(6.dp))
-        when (tab) {
-            1 -> VelocityPanel(Modifier.weight(1f).fillMaxWidth(), view, color, selected)
-            else -> {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // no modes: the gestures are the tools
-                    Text("Tap: add · Double tap: delete · Hold: select, then drag sideways: length", color = C.faint, fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                        maxLines = 2, modifier = Modifier.weight(1f))
-                    Spacer(Modifier.width(6.dp))
-                    // what the edits below act on
-                    val sel = seq.clip.filter { it.id in selected }
-                    Text(when { sel.isEmpty() -> "All"; sel.size == 1 -> noteName(sel.first().note); else -> "${sel.size} notes" },
-                        color = if (sel.isEmpty()) C.faint else color, fontSize = 12.sp, fontWeight = FontWeight.Black, maxLines = 1,
-                        modifier = Modifier.width(54.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                    // one clearly named button (an icon beside a ✕ was easy to mistake); holding empty space clears the selection
-                    val canDelete = selected.isNotEmpty()
-                    Box(Modifier.width(68.dp).height(32.dp).clip(RoundedCornerShape(16.dp)).background(C.control)
-                        .clickable(enabled = canDelete) { deleteMany(selected); selected = emptySet() }, contentAlignment = Alignment.Center) {
-                        Text("Delete", color = if (canDelete) C.record else C.faint, fontSize = 12.sp, fontWeight = FontWeight.Black)
-                    }
-                }
+        if (tab == 1) {
+            VelocityPanel(Modifier.weight(1f).fillMaxWidth(), view, color, selected)
+            return@Column
+        }
+        when (layout) {
+            1 -> {   // B: the edits in a row, then the roll on its side
+                EditRow()
                 Spacer(Modifier.height(6.dp))
-                // the everyday edits, on the selection (or every note): in key, octaves, the clipboard, quantize
-                val grid = if (SNAPS[snap].second == 0f) stepT else snapTicks()
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    listOf<Pair<String, () -> Unit>>(
-                        "↓" to { rollOp("transpose", selected, "dir" to -1, "scale" to true)?.let { selected = it } },
-                        "↑" to { rollOp("transpose", selected, "dir" to 1, "scale" to true)?.let { selected = it } },
-                        "8↓" to { rollOp("transpose", selected, "dir" to -12)?.let { selected = it } },
-                        "8↑" to { rollOp("transpose", selected, "dir" to 12)?.let { selected = it } },
-                        "Cut" to { if (selected.isNotEmpty()) { rollOp("cut", selected); selected = emptySet() } },
-                        "Copy" to { if (selected.isNotEmpty()) rollOp("copy", selected) },
-                        "Paste" to { rollOp("paste", selected, "grid" to grid, "at" to view.start.toInt())?.let { selected = it } },
-                        "Q" to { rollOp("quantize", selected, "grid" to grid)?.let { selected = it } },
-                    ).forEach { (label, action) ->
-                        Box(Modifier.weight(1f).height(32.dp).clip(RoundedCornerShape(9.dp)).background(C.control).clickable(onClick = action),
-                            contentAlignment = Alignment.Center) {
-                            Text(label, color = C.text, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
-                        }
-                    }
-                }
+                RollCanvas(Modifier.weight(1f).fillMaxWidth())
+            }
+            2 -> {   // C: the roll, then the edits at the bottom
+                RollCanvas(Modifier.weight(1f).fillMaxWidth())
                 Spacer(Modifier.height(6.dp))
-                Canvas(
-                    Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(10.dp))
-                        // one handler for every gesture: the view state is read live, so nothing restarts mid-touch
-                        .pointerInput(Unit) {
-                            val keysW = 40.dp.toPx()
-                            val rulerH = 18.dp.toPx()
-                            val slop = 10.dp.toPx()
-                            val reach = 12.dp.toPx()   // a tap this close to a note counts as on it
-                            fun gridH() = size.height - rulerH
-                            fun rowH() = gridH() / view.rows
-                            fun tickW() = (size.width - keysW - END_PAD.toPx()) / view.ticks
-                            fun rowAtY(y: Float) = floor(view.low + (size.height - y) / rowH()).toInt()
-                            fun noteAtY(y: Float) = rowsNow[rowAtY(y).coerceIn(0, rowsNow.size - 1)]
-                            fun tickAtX(x: Float) = (view.start + (x - keysW) / tickW()).toInt()
-                            fun xOf(t: Int) = keysW + (t - view.start) * tickW()
-                            fun rowIdx(n: Int) = rowsNow.indexOfLast { it <= n }.coerceAtLeast(0)
-                            /** The note under (x, y) or nearest to it in that row (within `reach`); and whether on its end handle. */
-                            fun hit(notes: List<ClipNote>, x: Float, y: Float): Pair<ClipNote, Boolean>? {
-                                val r = rowAtY(y)
-                                val found = notes.filter { rowIdx(it.note) == r }.map { n ->
-                                    val l = xOf(n.start); val rt = xOf(n.start + n.length)
-                                    n to (if (x < l) l - x else if (x > rt) x - rt else 0f)
-                                }.filter { it.second <= reach }.minByOrNull { it.second }?.first ?: return null
-                                val right = xOf(found.start + found.length)
-                                return found to (x <= right + reach && right - x < min(14.dp.toPx(), found.length * tickW() / 3f))
-                            }
-                            /** The notes `dt` ticks longer (shorter when negative), snapped, never under one snap. */
-                            fun resized (group: List<ClipNote>, dt: Int) = group.map { g -> Preview(g.id, g.start, max(snapTicks(), snapTo(g.length + dt)), g.note, g.velocity) }
-                            fun ensureClip(): List<ClipNote> {
-                                if (!Seq.data.value.pianoRoll) Seq.edit("toRoll")
-                                return Seq.data.value.clip
-                            }
-                            var lastTapId = -1          // double tap on a note deletes it
-                            var lastTapAt = 0L
-                            awaitEachGesture {
-                                val down = awaitFirstDown()
-                                down.consume()
-                                val x0 = down.position.x
-                                val y0 = down.position.y
-                                var moved = false
-                                var pinched = false
-                                // two fingers: pinch and pan; called with every event while two are down
-                                var last: List<Offset>? = null
-                                fun pinch(e: PointerEvent): Boolean {
-                                    val pts = e.changes.filter { it.pressed }.map { it.position }
-                                    if (pts.size < 2) { last = null; return false }
-                                    pinched = true
-                                    previews = emptyList(); box = null; hidden = emptySet()
-                                    val a = pts[0]; val b = pts[1]
-                                    val l = last
-                                    if (l != null) {
-                                        val cx = (a.x + b.x) / 2; val cy = (a.y + b.y) / 2
-                                        val px = (l[0].x + l[1].x) / 2; val py = (l[0].y + l[1].y) / 2
-                                        val sx = abs(a.x - b.x); val psx = abs(l[0].x - l[1].x)
-                                        val sy = abs(a.y - b.y); val psy = abs(l[0].y - l[1].y)
-                                        // time: zoom around the fingers, then follow them
-                                        val tAt = view.start + (cx - keysW) / tickW()
-                                        if (sx > 60f && psx > 60f) view.ticks = (view.ticks * psx / sx).coerceIn(min(stepNow * 2, totalNow).toFloat(), totalNow.toFloat())
-                                        view.start = (tAt - (cx - keysW) / tickW() - (cx - px) / tickW()).coerceIn(0f, max(0f, totalNow - view.ticks))
-                                        // rows: the same, upwards
-                                        val rAt = view.low + (size.height - cy) / rowH()
-                                        if (sy > 60f && psy > 60f) view.rows = (view.rows * psy / sy).coerceIn(4f, 36f)
-                                        view.low = (rAt - (size.height - cy) / rowH() + (cy - py) / rowH()).coerceIn(0f, max(0f, rowsNow.size - view.rows))
-                                    }
-                                    last = listOf(a, b)
-                                    e.changes.forEach { it.consume() }
-                                    return true
-                                }
-                                /** Follows one finger until every finger lifts; false when a second finger made it a pinch. */
-                                suspend fun androidx.compose.ui.input.pointer.AwaitPointerEventScope.follow(onMove: (Offset) -> Unit): Boolean {
-                                    while (true) {
-                                        val e = awaitPointerEvent()
-                                        if (pinch(e)) continue
-                                        val c = e.changes.firstOrNull { it.id == down.id } ?: e.changes.first()
-                                        if (e.changes.none { it.pressed }) break
-                                        if (pinched) continue
-                                        c.consume()
-                                        if (abs(c.position.x - x0) > slop || abs(c.position.y - y0) > slop) moved = true
-                                        if (moved) onMove(c.position)
-                                    }
-                                    return !pinched
-                                }
-                                if (x0 < keysW) {   // the keys: scroll the rows, or hear a note on a tap
-                                    val startLow = view.low
-                                    follow { p -> view.low = (startLow + (p.y - y0) / rowH()).coerceIn(0f, max(0f, rowsNow.size - view.rows)) }
-                                    if (!moved && !pinched) audition(track, noteAtY(y0))
-                                    return@awaitEachGesture
-                                }
-                                if (y0 < rulerH) {   // the ruler: scroll time
-                                    val startT = view.start
-                                    follow { p -> view.start = (startT - (p.x - x0) / tickW()).coerceIn(0f, max(0f, totalNow - view.ticks)) }
-                                    return@awaitEachGesture
-                                }
-                                var notes0 = Seq.data.value.rollNotes
-                                var h = hit(notes0, x0, y0)
-                                if (h != null && h.first.id < 0) {   // a step track: becomes a clip before its notes change
-                                    notes0 = ensureClip()
-                                    h = hit(notes0, x0, y0)
-                                }
-                                // what this touch is: 0 a tap, 1 a drag, 2 a hold, 3 two fingers
-                                val kind = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
-                                    var k = -1
-                                    while (k < 0) {
-                                        val e = awaitPointerEvent()
-                                        if (pinch(e)) { k = 3; break }
-                                        val c = e.changes.firstOrNull { it.id == down.id } ?: e.changes.first()
-                                        if (e.changes.none { it.pressed }) { k = 0; break }
-                                        c.consume()
-                                        if (abs(c.position.x - x0) > slop || abs(c.position.y - y0) > slop) { moved = true; k = 1 }
-                                    }
-                                    k
-                                } ?: 2
-                                when {
-                                    kind == 3 -> follow {}   // zoom / pan until the fingers lift
-                                    kind == 0 && h != null -> {   // a tap on a note: hear it; a second tap soon after deletes it
-                                        val id = h.first.id
-                                        if (id == lastTapId && down.uptimeMillis - lastTapAt < 300) {
-                                            deleteMany(listOf(id))
-                                            selected = selected - id
-                                            lastTapId = -1
-                                        } else {
-                                            audition(track, h.first.note)
-                                            lastTapId = id; lastTapAt = down.uptimeMillis
-                                        }
-                                    }
-                                    kind == 0 -> {   // a tap on empty space: a note there
-                                        val start = snapTo(tickAtX(x0)).coerceIn(0, totalNow - 1)
-                                        val len = if (lastLength > 0) lastLength else snapTicks().coerceAtLeast(stepNow)
-                                        val note = noteAtY(y0).coerceIn(0, 127)
-                                        audition(track, note)
-                                        val id = Seq.edit("clipAdd", "start" to start, "length" to len, "note" to note, "velocity" to 100).trim().toIntOrNull()
-                                        if (id != null) { lastTapId = id; lastTapAt = down.uptimeMillis }
-                                    }
-                                    kind == 2 && h != null -> {   // hold a note: it becomes the selection (a new one replaces the old); keep dragging sideways to resize
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        val id = h.first.id
-                                        val wasSelected = id in selected
-                                        val ids = if (wasSelected) selected else setOf(id)   // held inside a selection: that selection resizes
-                                        selected = ids
-                                        val group = Seq.data.value.clip.filter { it.id in ids }
-                                        val ok = follow { p -> previews = resized (group, ((p.x - x0) / tickW()).roundToInt()) }
-                                        val out = previews
-                                        previews = emptyList()
-                                        if (!ok) return@awaitEachGesture
-                                        if (moved && out.isNotEmpty()) { editMany(out); lastLength = out.first().length }
-                                        else if (wasSelected) selected = if (ids.size == 1) emptySet() else setOf(id)   // held again: unselected, or alone
-                                    }
-                                    kind == 2 -> {   // hold empty space: drag a box to select; lift without moving to clear
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        val ok = follow { box = Offset(x0, y0) to it }
-                                        val b = box
-                                        box = null
-                                        if (!ok) return@awaitEachGesture
-                                        if (moved && b != null) {
-                                            val t0 = tickAtX(min(b.first.x, b.second.x)); val t1 = tickAtX(max(b.first.x, b.second.x))
-                                            val r0 = rowAtY(max(b.first.y, b.second.y)); val r1 = rowAtY(min(b.first.y, b.second.y))
-                                            selected = ensureClip().filter { it.start < t1 && it.start + it.length > t0 && rowIdx(it.note) in r0..r1 }.map { it.id }.toSet()
-                                        } else selected = emptySet()
-                                    }
-                                    h == null -> {   // drag on empty space: a note as long as the drag (a pinch cancels it)
-                                        val start = snapTo(tickAtX(x0)).coerceIn(0, totalNow - 1)
-                                        val note = noteAtY(y0).coerceIn(0, 127)
-                                        val ok = follow { p -> previews = listOf(Preview(-1, start, max(snapTicks(), snapTo(tickAtX(p.x)) - start), note, 100)) }
-                                        val p = previews.firstOrNull()
-                                        previews = emptyList()
-                                        if (!ok || p == null) return@awaitEachGesture
-                                        audition(track, p.note)
-                                        Seq.edit("clipAdd", "start" to p.start, "length" to p.length, "note" to p.note, "velocity" to p.velocity)
-                                        lastLength = p.length
-                                    }
-                                    else -> {   // drag a selected note sideways: resize the selection; an unselected one: move it (from its end: resize)
-                                        val (n0, edge) = h
-                                        val resize = edge || n0.id in selNow
-                                        val group = if (n0.id in selNow) Seq.data.value.clip.filter { it.id in selNow } else listOf(n0)
-                                        val ok = follow { p ->
-                                            val dt = ((p.x - x0) / tickW()).roundToInt()
-                                            val dr = rowAtY(p.y) - rowAtY(y0)
-                                            previews = if (resize) resized (group, dt) else group.map { g ->
-                                                Preview(g.id, (g.start + snapTo(n0.start + dt) - n0.start).coerceIn(0, totalNow - 1), g.length,
-                                                    rowsNow[(rowIdx(g.note) + dr).coerceIn(0, rowsNow.size - 1)], g.velocity)
-                                            }
-                                        }
-                                        val out = previews
-                                        previews = emptyList()
-                                        if (!ok || out.isEmpty()) return@awaitEachGesture
-                                        editMany(out)
-                                        if (resize) lastLength = out.first().length
-                                    }
-                                }
-                            }
-                        },
-                ) {
-                    val keysW = 40.dp.toPx()
-                    val rulerH = 18.dp.toPx()
-                    val rowH = (size.height - rulerH) / view.rows
-                    val tickW = (size.width - keysW - END_PAD.toPx()) / view.ticks
-                    fun xOf(t: Int) = keysW + (t - view.start) * tickW
-                    fun yOfRow(r: Int) = size.height - (r - view.low + 1) * rowH   // the row's top
-                    keyLabel.textSize = min(11.dp.toPx(), rowH * 0.5f); rulerLabel.textSize = 10.dp.toPx()
-                    drawRect(C.surface, Offset(keysW, rulerH), Size(size.width - keysW, size.height - rulerH))
-                    val beatTicks = stepT * 4
-                    // the ruler: bar.beat where there is room; the loop's range
-                    val labelEvery = if (beatTicks * tickW >= 30.dp.toPx()) beatTicks else barTicks
-                    var t = (view.start.toInt() / labelEvery) * labelEvery
-                    while (t <= view.start + view.ticks) {
-                        val x = xOf(t)
-                        if (x >= keysW) drawContext.canvas.nativeCanvas.drawText("${t / barTicks + 1}.${(t % barTicks) / beatTicks + 1}", x + 3.dp.toPx(), 12.dp.toPx(), rulerLabel)
-                        t += labelEvery
-                    }
-                    if (seq.loopOn && seq.loopEnd > seq.loopStart) {
-                        val a0 = max(xOf(seq.loopStart * stepT), keysW); val a1 = min(xOf(seq.loopEnd * stepT), size.width)
-                        if (a1 > a0) drawRect(C.pattern.copy(alpha = 0.35f), Offset(a0, rulerH - 4.dp.toPx()), Size(a1 - a0, 3.dp.toPx()))
-                    }
-                    val first = floor(view.low).toInt()
-                    for (idx in first..(first + view.rows.toInt() + 1)) {
-                        if (idx >= rowNotes.size) break
-                        val n = rowNotes[idx]
-                        val y = yOfRow(idx)
-                        if (y + rowH <= rulerH) continue
-                        val root = ((n - project.scaleRoot) % 12 + 12) % 12 == 0
-                        val top = max(y, rulerH)
-                        if (root) drawRect(color.copy(alpha = 0.08f), Offset(keysW, top), Size(size.width - keysW, y + rowH - top))
-                        drawRoundRect(if (root) color else C.control, Offset(0f, top + 0.5f), Size(keysW - 2f, y + rowH - top - 1f), CornerRadius(3.dp.toPx()))
-                        keyLabel.color = if (root) Tokens.BG else Tokens.QUIET
-                        if (y >= rulerH - 1f) drawContext.canvas.nativeCanvas.drawText(noteName(n), keysW - 5.dp.toPx(), y + rowH / 2 + keyLabel.textSize / 3, keyLabel)
-                        drawLine(C.divider, Offset(keysW, y + rowH), Offset(size.width, y + rowH), 0.6f)
-                    }
-                    // grid: bars bright, beats faint, steps when wide enough to see
-                    val stepLines = stepT * tickW >= 6.dp.toPx()
-                    var g = (view.start.toInt() / stepT) * stepT
-                    while (g <= view.start + view.ticks) {
-                        val x = xOf(g)
-                        val isBar = g % barTicks == 0
-                        val isBeat = g % beatTicks == 0
-                        if (x >= keysW && (isBar || isBeat || stepLines))
-                            drawLine(if (isBar) C.quiet else C.faint, Offset(x, rulerH), Offset(x, size.height),
-                                if (isBar) 1.6f else if (isBeat) 1.2f else 1f, alpha = if (isBar) 0.7f else if (isBeat) 0.8f else 0.3f)
-                        g += stepT
-                    }
-                    val moving = previews.map { it.id }.toSet()
-                    fun drawNote(start: Int, length: Int, note: Int, vel: Int, flags: Int, sel: Boolean, muted: Boolean = false, locked: Boolean = false) {
-                        val idx = rowNotes.indexOfLast { it <= note }.coerceAtLeast(0)
-                        val y = yOfRow(idx)
-                        if (y + rowH <= rulerH || y >= size.height) return
-                        val x = xOf(start)
-                        val w = length * tickW
-                        if (x + w < keysW || x > size.width) return
-                        val left = max(x, keysW)
-                        val top = max(y, rulerH)
-                        val right = min(x + w, size.width)
-                        val offScale = rowNotes[idx] != note
-                        drawRoundRect(color.copy(alpha = if (muted) 0.15f else if (sel) 1f else if (offScale) 0.3f else 0.45f + 0.45f * vel / 127f),
-                            Offset(left + 1f, top + 2f), Size(right - left - 2f, y + rowH - top - 4f), CornerRadius(4.dp.toPx()))
-                        if (sel) drawRoundRect(C.text, Offset(left - 1f, top + 0.5f), Size(right - left + 2f, y + rowH - top - 1f),
-                            CornerRadius(5.dp.toPx()), style = Stroke(2.dp.toPx()))
-                        if (locked) drawRect(C.bg, Offset(right - 8.dp.toPx(), y + 6.dp.toPx()), Size(5.dp.toPx(), 5.dp.toPx()))
-                        if (flags and 1 != 0) drawCircle(C.bg, 2.5.dp.toPx(), Offset(left + 6.dp.toPx(), y + rowH / 2))   // accent
-                        if (flags and 2 != 0) drawLine(C.bg, Offset(x + w - 9.dp.toPx(), y + rowH - 6.dp.toPx()), Offset(x + w - 3.dp.toPx(), y + 6.dp.toPx()), 2.dp.toPx())
-                    }
-                    seq.rollNotes.filter { (it.id < 0 || it.id !in moving) && it.id !in hidden }
-                        .forEach { drawNote(it.start, it.length, it.note, it.velocity, it.flags, it.id >= 0 && it.id in selected, it.muted, it.locked) }
-                    previews.forEach { drawNote(it.start, it.length, it.note, it.velocity, 0, true) }
-                    box?.let { (a, b) ->
-                        drawRect(C.text.copy(alpha = 0.08f), Offset(min(a.x, b.x), min(a.y, b.y)), Size(abs(a.x - b.x), abs(a.y - b.y)))
-                        drawRect(C.text, Offset(min(a.x, b.x), min(a.y, b.y)), Size(abs(a.x - b.x), abs(a.y - b.y)), style = Stroke(1.dp.toPx()))
-                    }
-                    if (fast.playing && fast.activePattern == fast.focusPattern) {   // the playhead (the view stays put)
-                        val x = xOf(fast.step * stepT)
-                        if (x >= keysW && x <= size.width) drawLine(C.pattern, Offset(x, 0f), Offset(x, size.height), 2.dp.toPx())
+                EditRow()
+            }
+            3 -> Row(Modifier.weight(1f).fillMaxWidth()) {   // D: the roll, the edits stacked down the right
+                RollCanvas(Modifier.weight(1f).fillMaxHeight())
+                Spacer(Modifier.width(6.dp))
+                Column(Modifier.width(46.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(selName, color = if (selNotes.isEmpty()) C.faint else color, fontSize = 10.sp, fontWeight = FontWeight.Black, maxLines = 1,
+                        modifier = Modifier.fillMaxWidth().height(18.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    edits.forEach { (l, a) -> EditButton(l, Modifier.fillMaxWidth().weight(1f), a) }
+                    DeleteButton(Modifier.fillMaxWidth().weight(1f))
+                }
+            }
+            else -> Box(Modifier.weight(1f).fillMaxWidth()) {   // A: the roll; the edits float over its foot while notes are selected
+                RollCanvas(Modifier.fillMaxSize())
+                if (selected.isNotEmpty()) {
+                    Box(Modifier.align(Alignment.BottomCenter).padding(6.dp).clip(RoundedCornerShape(14.dp)).background(C.bg.copy(alpha = 0.94f)).padding(6.dp)) {
+                        EditRow()
                     }
                 }
             }

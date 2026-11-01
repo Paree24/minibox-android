@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -76,6 +77,25 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
     // the view never follows the playhead: it stays where it was put, so a tap lands where the finger is
     val bar = pickedBar.coerceIn(0, pageCount - 1)
     var lengthMenu by remember { mutableStateOf(false) }
+
+    // layout C on trial: the roll over everything, with its own slim bar
+    if (roll && RollUi.focus.value) {
+        Box(Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 6.dp)) {
+            PianoRoll(color) {
+                Row(Modifier.padding(bottom = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    RoundIcon("‹") { RollUi.focus.value = false }
+                    RoundIcon(if (fast.playing) "■" else "▶") { App.cmd(if (fast.playing) "stop" else "play") }
+                    Box(Modifier.height(32.dp).clip(CircleShape).background(color).padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+                        Text("${track + 1} · ${rack[track].name}", color = C.bg, fontSize = 12.sp, fontWeight = FontWeight.Black, maxLines = 1)
+                    }
+                    Spacer(Modifier.weight(1f))
+                    RoundIcon("↶", seq.canUndo) { Seq.edit("undo") }
+                    RoundIcon("↷", seq.canRedo) { Seq.edit("redo") }
+                }
+            }
+        }
+        return
+    }
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
