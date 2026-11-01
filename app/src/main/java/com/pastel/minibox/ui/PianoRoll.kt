@@ -63,13 +63,9 @@ private val END_PAD = 32.dp
 
 private val SNAPS = listOf("1/32" to 0.5f, "1/16" to 1f, "1/8" to 2f, "1/4" to 4f, "Off" to 0f)
 
-/** The roll layouts on trial (2026-11-01, mockups/png/roll_options.png): 0 A one toolbar (the edits float over the
-    roll while notes are selected), 1 B vertical (time runs down, the scale across), 2 C focus (full screen), 3 D side
-    strip (the edits down the right edge). `focus`: C's full-screen roll is open (MainScreen hides its chrome). */
+/** `focus`: the roll is open full screen (its ⤢ button; MainScreen then hides the app bar, the tracks and the nav). */
 object RollUi {
-    val layout = mutableIntStateOf(0)
     val focus = mutableStateOf(false)
-    val names = listOf("A", "B", "C", "D")
 }
 
 /** A note being drawn, moved or resized, before the finger lifts (one undo step per gesture). */
@@ -160,8 +156,8 @@ fun PianoRoll(color: Color, focusBar: (@Composable () -> Unit)? = null) {
     val fast by App.fast
     val project by App.project
     val track = App.focusTrack.intValue
-    val layout = RollUi.layout.intValue
-    val vertical = layout == 1
+    // vertical, as the step editor (roll_options B, chosen 2026-11-01): time runs down, the scale across the top
+    val vertical = true
     var tab by remember { mutableIntStateOf(0) }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     var snap by remember { mutableIntStateOf(1) }
@@ -220,15 +216,6 @@ fun PianoRoll(color: Color, focusBar: (@Composable () -> Unit)? = null) {
             Text("Delete", color = if (can) C.record else C.faint, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
         }
     }
-    @Composable fun EditRow() {   // B and C: one row of the edits, the selection's name and Delete
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(selName, color = if (selNotes.isEmpty()) C.faint else color, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1,
-                modifier = Modifier.width(40.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-            edits.forEach { (l, a) -> EditButton(l, Modifier.weight(1f).height(34.dp), a) }
-            DeleteButton(Modifier.width(56.dp).height(34.dp))
-        }
-    }
-
     @Composable fun RollCanvas(modifier: Modifier) {
         Canvas(
             modifier.clip(RoundedCornerShape(10.dp))
@@ -520,10 +507,7 @@ fun PianoRoll(color: Color, focusBar: (@Composable () -> Unit)? = null) {
             Segmented(listOf("Notes", "Velocity"), tab, C.text, { tab = it }, Modifier.weight(1f), height = 32.dp)
             Spacer(Modifier.width(6.dp))
             Pill(SNAPS[snap].first, caret = true) { snap = (snap + 1) % SNAPS.size }
-            Spacer(Modifier.width(6.dp))
-            // on trial: which layout (goes once one is chosen)
-            Pill("Layout ${RollUi.names[layout]}", caret = true) { RollUi.layout.intValue = (layout + 1) % 4; RollUi.focus.value = RollUi.layout.intValue == 2 }
-            if (layout == 2 && !RollUi.focus.value) {
+            if (focusBar == null) {   // full screen: the roll over everything (the bar above takes it back)
                 Spacer(Modifier.width(6.dp))
                 RoundIcon("⤢") { RollUi.focus.value = true }
             }
@@ -533,34 +517,15 @@ fun PianoRoll(color: Color, focusBar: (@Composable () -> Unit)? = null) {
             VelocityPanel(Modifier.weight(1f).fillMaxWidth(), view, color, selected)
             return@Column
         }
-        when (layout) {
-            1 -> {   // B: the edits in a row, then the roll on its side
-                EditRow()
-                Spacer(Modifier.height(6.dp))
-                RollCanvas(Modifier.weight(1f).fillMaxWidth())
-            }
-            2 -> {   // C: the roll, then the edits at the bottom
-                RollCanvas(Modifier.weight(1f).fillMaxWidth())
-                Spacer(Modifier.height(6.dp))
-                EditRow()
-            }
-            3 -> Row(Modifier.weight(1f).fillMaxWidth()) {   // D: the roll, the edits stacked down the right
-                RollCanvas(Modifier.weight(1f).fillMaxHeight())
-                Spacer(Modifier.width(6.dp))
-                Column(Modifier.width(46.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(selName, color = if (selNotes.isEmpty()) C.faint else color, fontSize = 10.sp, fontWeight = FontWeight.Black, maxLines = 1,
-                        modifier = Modifier.fillMaxWidth().height(18.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                    edits.forEach { (l, a) -> EditButton(l, Modifier.fillMaxWidth().weight(1f), a) }
-                    DeleteButton(Modifier.fillMaxWidth().weight(1f))
-                }
-            }
-            else -> Box(Modifier.weight(1f).fillMaxWidth()) {   // A: the roll; the edits float over its foot while notes are selected
-                RollCanvas(Modifier.fillMaxSize())
-                if (selected.isNotEmpty()) {
-                    Box(Modifier.align(Alignment.BottomCenter).padding(6.dp).clip(RoundedCornerShape(14.dp)).background(C.bg.copy(alpha = 0.94f)).padding(6.dp)) {
-                        EditRow()
-                    }
-                }
+        // the roll, and the edits stacked down its right edge (the height is the roll's)
+        Row(Modifier.weight(1f).fillMaxWidth()) {
+            RollCanvas(Modifier.weight(1f).fillMaxHeight())
+            Spacer(Modifier.width(6.dp))
+            Column(Modifier.width(48.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(selName, color = if (selNotes.isEmpty()) C.faint else color, fontSize = 10.sp, fontWeight = FontWeight.Black, maxLines = 1,
+                    modifier = Modifier.fillMaxWidth().height(18.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                edits.forEach { (l, a) -> EditButton(l, Modifier.fillMaxWidth().weight(1f), a) }
+                DeleteButton(Modifier.fillMaxWidth().weight(1f))
             }
         }
     }

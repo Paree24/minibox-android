@@ -221,7 +221,7 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
             d = createDevice (type);
             presets::loadDefault (*d);
         }
-        engine.setDevice (pat, t, std::move (d)).reset();   // the old one is freed here, outside the lock
+        engine.replaceDevice (pat, t, std::move (d)).reset();   // drum parts keep their steps; the old device is freed here, outside the lock
         if (engine.device (pat, t) != nullptr) engine.focusTrack = t;
         return {};
     }
