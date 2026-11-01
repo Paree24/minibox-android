@@ -136,6 +136,22 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
     // ---- edits
     if (op == "undo") { swapUndo (undoStack, redoStack); return {}; }
     if (op == "redo") { swapUndo (redoStack, undoStack); return {}; }
+    if (op == "velocityMany")   // several steps' velocities (a drum lane's, or the synth steps' with lane -1), one undo step
+    {
+        auto* items = a["items"].getArray();
+        if (items == nullptr) return {};
+        snapshot (pat);
+        const Engine::ScopedEdit edit (engine);
+        const int lane = geti (a, "lane", -1);
+        for (auto& v : *items)
+        {
+            const int s = std::clamp ((int) v["step"], 0, total - 1);
+            const int vel = std::clamp ((int) v["velocity"], 1, 127);
+            if (lane >= 0 && lane < kLanes) { auto& d = tr.lanes[(size_t) lane][(size_t) s]; if (d.on) d.velocity = (uint8_t) vel; }
+            else if (tr.steps[(size_t) s].noteCount > 0) tr.steps[(size_t) s].setVelocity (vel);
+        }
+        return {};
+    }
     if (op == "clearTrack")   // everything the track plays in this pattern (undoable)
     {
         snapshot (pat);

@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import kotlin.math.roundToInt
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -77,6 +80,7 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
     // the view never follows the playhead: it stays where it was put, so a tap lands where the finger is
     val bar = pickedBar.coerceIn(0, pageCount - 1)
     var lengthMenu by remember { mutableStateOf(false) }
+    var velPage by remember { mutableStateOf(false) }
 
     // layout C on trial: the roll over everything, with its own slim bar
     if (roll && RollUi.focus.value) {
@@ -142,10 +146,17 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
             Spacer(Modifier.width(4.dp))
             RoundIcon("↷", seq.canRedo) { Seq.edit("redo") }
         }
+        // the step editors: the steps, or their velocities (the roll has its own Velocity tab)
+        if (!roll) {
+            Segmented(listOf(if (seq.drum) "Hits" else "Steps", "Velocity"), if (velPage) 1 else 0, C.text, { velPage = it == 1 },
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp), height = 32.dp)
+            Spacer(Modifier.height(6.dp))
+        }
         Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp)) {
             when {
-                seq.drum -> DrumEditor(bar, spb, part, color, { part = it }, { s -> openStep(s, part) })
                 roll -> PianoRoll(color)
+                velPage -> StepVelocity(bar, spb, color, seq.drum, part) { part = it }
+                seq.drum -> DrumEditor(bar, spb, part, color, { part = it }, { s -> openStep(s, part) })
                 else -> StepEditor(bar, spb, color) { s -> openStep(s, -1) }
             }
         }
@@ -282,6 +293,106 @@ private fun DragBar(value: Float, color: Color, modifier: Modifier, onCommit: (F
     ) {
         Box(Modifier.fillMaxWidth().height(8.dp).clip(CircleShape).background(C.control))
         Box(Modifier.fillMaxWidth(shown.coerceIn(0.02f, 1f)).height(8.dp).clip(CircleShape).background(color.copy(alpha = 0.9f)))
+    }
+}
+
+/** The drum parts as chips (the one in view, or being edited, lit). */
+@Composable
+private fun PartChips(part: Int, color: Color, onPart: (Int) -> Unit) {
+    val rack by App.rack
+    val lanes = rack[App.focusTrack.intValue].lanes
+    Row(Modifier.fillMaxWidth().height(26.dp).padding(start = 30.dp)) {
+        for (c in 0 until 8) {
+            val on = c == part
+            Box(Modifier.weight(1f).fillMaxHeight().padding(horizontal = 1.dp).clip(RoundedCornerShape(8.dp))
+                .background(if (on) color else Color.Transparent).clickable { onPart(c) }, contentAlignment = Alignment.Center) {
+                Text(lanes.getOrNull(c)?.name?.replace("Cymbal", "Cym")?.replace("C Hat", "CH")?.replace("O Hat", "OH") ?: "",
+                    color = if (on) C.bg else C.quiet, fontSize = 10.sp, fontWeight = FontWeight.Black, maxLines = 1)
+            }
+        }
+    }
+}
+
+/** Velocity, a page of steps (time runs down, as the editors): each step that plays a bar across the row; tap or
+    drag along it to set the velocity. Drums: the part chosen above. Randomize ±N % moves every step of the pattern
+    (that part's, for drums) up to that much up or down, as one undo step. */
+@Composable
+private fun StepVelocity(bar: Int, spb: Int, color: Color, drum: Boolean, part: Int, onPart: (Int) -> Unit) {
+    val seq by Seq.data
+    val fast by App.fast
+    var amount by remember { mutableIntStateOf(1) }
+    val amounts = listOf(10, 20, 30, 50)
+    fun velOf(s: Int): Int? = if (drum) seq.lanes.getOrNull(part)?.get(s)?.velocity else seq.stepList[s]?.takeIf { it.notes.isNotEmpty() }?.velocity
+    fun set(s: Int, v: Float) {
+        if (drum) Seq.edit("laneSet", "lane" to part, "step" to s, "key" to "velocity", "value" to v)
+        else Seq.edit("stepSet", "step" to s, "key" to "velocity", "value" to v)
+    }
+    Column(Modifier.fillMaxSize()) {
+        if (drum) { PartChips(part, color, onPart); Spacer(Modifier.height(4.dp)) }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Randomize", color = C.quiet, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.width(8.dp))
+            Segmented(amounts.map { "±$it%" }, amount, C.text, { amount = it }, Modifier.weight(1f), height = 32.dp)
+            Spacer(Modifier.width(6.dp))
+            Pill("Apply", on = true, color = color, height = 32.dp) {
+                val r = java.util.Random()
+                val items = org.json.JSONArray()
+                for (s in 0 until seq.steps) velOf(s)?.let { v ->
+                    val nv = (v * (1.0 + amounts[amount] / 100.0 * (2.0 * r.nextDouble() - 1.0))).roundToInt().coerceIn(1, 127)
+                    items.put(org.json.JSONObject().put("step", s).put("velocity", nv))
+                }
+                Seq.edit("velocityMany", "lane" to (if (drum) part else -1), "items" to items)
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Column(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(C.surface).padding(vertical = 2.dp)) {
+            for (i in 0 until spb) {
+                val s = bar * spb + i
+                if (s >= seq.steps) { Spacer(Modifier.weight(1f)); continue }
+                val v = velOf(s)
+                val playing = fast.playing && fast.step == s && fast.activePattern == fast.focusPattern
+                Row(Modifier.weight(1f).fillMaxWidth().background(if ((i / 4) % 2 == 1) Color(0xFF23262D) else Color.Transparent)
+                    .then(if (playing) Modifier.border(1.5.dp, C.pattern, RoundedCornerShape(8.dp)) else Modifier).padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Text("${s + 1}", color = if (i % 4 == 0) C.quiet else C.faint, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.width(26.dp))
+                    if (v != null) {
+                        VelBar(v / 127f, color, Modifier.weight(1f).fillMaxHeight()) { set(s, it) }
+                        Text("$v", color = C.quiet, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.width(32.dp),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                    } else {
+                        Text("–", color = C.faint, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** A velocity bar the height of its row: tap or drag along it; the value is written when the finger lifts. */
+@Composable
+private fun VelBar(value: Float, color: Color, modifier: Modifier, onCommit: (Float) -> Unit) {
+    var drag by remember { mutableFloatStateOf(-1f) }
+    val shown = if (drag >= 0f) drag else value
+    Box(
+        modifier.pointerInput(Unit) {
+            awaitEachGesture {
+                val d = awaitFirstDown()
+                drag = (d.position.x / size.width).coerceIn(0.01f, 1f)
+                while (true) {
+                    val e = awaitPointerEvent()
+                    val c = e.changes.firstOrNull { it.id == d.id } ?: break
+                    if (!c.pressed) break
+                    c.consume()
+                    drag = (c.position.x / size.width).coerceIn(0.01f, 1f)
+                }
+                val v = drag; drag = -1f
+                if (v >= 0f) onCommit(v)
+            }
+        },
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Box(Modifier.fillMaxWidth().height(10.dp).clip(CircleShape).background(C.control))
+        Box(Modifier.fillMaxWidth(shown.coerceIn(0.02f, 1f)).height(10.dp).clip(CircleShape).background(color.copy(alpha = 0.9f)))
     }
 }
 
