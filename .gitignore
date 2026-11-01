@@ -6,3 +6,8 @@ local.properties
 .idea/
 *.iml
 .kotlin/
+
+# local test material (screen recordings, audio renders) and Python caches
+*.mp4
+*.wav
+__pycache__/
