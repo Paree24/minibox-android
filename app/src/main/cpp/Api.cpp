@@ -19,14 +19,33 @@ bool getb (const juce::var& a, const char* k) { return a.hasProperty (k) && (boo
 const char* kTypeIds[] = { "mono", "poly", "acid", "fm", "sampler", "drums", "drumsampler" };
 } // namespace
 
+namespace
+{
+/** A timed effect's Div (1/1, 1/2, 1/2D, 1/2T … 1/16T, 1/32, 1/64) from the XY pad: X one of 6 straight divisions,
+    Y dotted (low), straight or triplet (high); 1/1 and 1/32 have no dotted or triplet. The choice index. */
+int divFromXY (float x, float y, juce::String& name)
+{
+    static const char* const straight[6] = { "1/1", "1/2", "1/4", "1/8", "1/16", "1/32" };
+    static const char* const all[15] = { "1/1", "1/2", "1/2D", "1/2T", "1/4", "1/4D", "1/4T", "1/8", "1/8D", "1/8T", "1/16", "1/16D", "1/16T", "1/32", "1/64" };
+    const int col = std::clamp ((int) (x * 6.0f), 0, 5);
+    const int feel = y < 1.0f / 3.0f ? 1 : (y > 2.0f / 3.0f ? 2 : 0);   // 0 straight, 1 dotted, 2 triplet
+    name = juce::String (straight[col]) + (feel == 1 ? "D" : feel == 2 ? "T" : "");
+    for (int i = 0; i < 15; ++i) if (name == all[i]) return i;
+    name = straight[col];   // no dotted / triplet of this one
+    for (int i = 0; i < 15; ++i) if (name == all[i]) return i;
+    return 7;
+}
+} // namespace
+
 /** The two parameters a performance effect's XY pad plays (indices into the effect's controls): X then Y. */
 std::pair<int, int> MiniboxHost::performAxes (int pad)
 {
     static const std::pair<const char*, std::pair<int, int>> axes[] = {
-        { "Stutter", { 0, 9 } },            // Div × Filter
-        { "Glitch", { 0, 2 } },             // Density × Repeat
-        { "Buffer Shuffler", { 0, 1 } },    // Div × Chance
-        { "Slicer", { 0, 7 } },             // Div × Depth
+        // the timed effects: X the division, Y its feel (dotted · straight · triplet): kFeel, not a control of its own
+        { "Stutter", { 0, kFeel } },
+        { "Glitch", { 1, kFeel } },
+        { "Buffer Shuffler", { 0, kFeel } },
+        { "Slicer", { 0, kFeel } },
         { "Bitcrusher", { 1, 0 } },         // Rate × Bits
         { "Multimode Filter", { 0, 1 } },   // Cutoff × Reso
         { "Soft Clip Drive", { 0, 3 } },    // Drive × Tone
@@ -148,7 +167,8 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
             put (o, "name", juce::String (MasterFx::padName (i)));
             put (o, "x", xi); put (o, "y", yi);
             put (o, "xName", d != nullptr ? juce::String (d->p[xi].name) : juce::String());
-            put (o, "yName", d != nullptr ? juce::String (d->p[yi].name) : juce::String());
+            put (o, "yName", yi == kFeel ? juce::String ("Dotted · Straight · Triplet") : d != nullptr ? juce::String (d->p[yi].name) : juce::String());
+            put (o, "grid", yi == kFeel);   // the pad shows its 6 divisions × 3 feels
             list.add (o);
         }
         return list;
@@ -158,8 +178,15 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
         const int pad = std::clamp (geti (a, "pad"), 0, kPerformFx - 1);
         const auto [xi, yi] = performAxes (pad);
         auto& fx = p.performFx[(size_t) pad];
-        fx.norm[(size_t) xi] = juce::jlimit (0.0f, 1.0f, (float) getd (a, "x"));
-        fx.norm[(size_t) yi] = juce::jlimit (0.0f, 1.0f, (float) getd (a, "y"));
+        const float x = juce::jlimit (0.0f, 1.0f, (float) getd (a, "x")), y = juce::jlimit (0.0f, 1.0f, (float) getd (a, "y"));
+        if (yi == kFeel)   // a timed effect: its division, quantized
+        {
+            juce::String name;
+            fx.norm[(size_t) xi] = (float) divFromXY (x, y, name) / 14.0f;
+            return name;
+        }
+        fx.norm[(size_t) xi] = x;
+        fx.norm[(size_t) yi] = y;
         return {};
     }
     if (op == "fxPads")

@@ -120,7 +120,7 @@ private fun PatternPad(i: Int, any: Boolean, bars: Int, used: List<Boolean>, cur
     }
 }
 
-private data class XyEffect(val name: String, val xName: String, val yName: String)
+private data class XyEffect(val name: String, val xName: String, val yName: String, val grid: Boolean)
 
 /** An XY pad: the dropdown picks one of the 8 performance effects; a finger on the pad engages it and moves its two
     main controls (X across, Y up). The dot stays where the finger left it. */
@@ -128,7 +128,7 @@ private data class XyEffect(val name: String, val xName: String, val yName: Stri
 private fun XyPad(pad: Int, onPick: (Int) -> Unit, modifier: Modifier) {
     val effects = remember {
         org.json.JSONArray(App.call("performXY")).let { a ->
-            List(a.length()) { a.getJSONObject(it).let { o -> XyEffect(o.getString("name"), o.getString("xName"), o.getString("yName")) } }
+            List(a.length()) { a.getJSONObject(it).let { o -> XyEffect(o.getString("name"), o.getString("xName"), o.getString("yName"), o.optBoolean("grid")) } }
         }
     }
     var menu by remember { mutableStateOf(false) }
@@ -136,6 +136,7 @@ private fun XyPad(pad: Int, onPick: (Int) -> Unit, modifier: Modifier) {
     // one state for the pad's life: the touch handler (started once) writes the same state the drawing reads; a
     // state keyed on the effect left the handler writing a stale one after a change (the dot stopped moving)
     var pos by remember { mutableStateOf(Offset(0.5f, 0.5f)) }
+    var division by remember { mutableStateOf("") }   // the timed effects: the division the finger is on (1/8T …)
     LaunchedEffect(pad) { pos = Offset(0.5f, 0.5f) }
     val current by rememberUpdatedState(pad)
     val fx = effects.getOrNull(pad)
@@ -158,7 +159,7 @@ private fun XyPad(pad: Int, onPick: (Int) -> Unit, modifier: Modifier) {
                         d.consume()
                         fun set(o: Offset) {
                             pos = Offset((o.x / size.width).coerceIn(0f, 1f), (o.y / size.height).coerceIn(0f, 1f))
-                            App.call("setPerformXY", "pad" to current, "x" to pos.x, "y" to 1f - pos.y)
+                            division = App.call("setPerformXY", "pad" to current, "x" to pos.x, "y" to 1f - pos.y).trim().removeSurrounding("\"").takeIf { it != "null" } ?: ""
                         }
                         set(d.position)
                         val p = current
@@ -177,10 +178,11 @@ private fun XyPad(pad: Int, onPick: (Int) -> Unit, modifier: Modifier) {
                 },
         ) {
             val stroke = 1.dp.toPx()
-            for (k in 1..3) {
-                drawLine(C.divider, Offset(size.width * k / 4, 0f), Offset(size.width * k / 4, size.height), stroke)
-                drawLine(C.divider, Offset(0f, size.height * k / 4), Offset(size.width, size.height * k / 4), stroke)
-            }
+            // a timed effect's zones: 6 divisions across (1/1 … 1/32), dotted · straight · triplet up; others a plain grid
+            val cols = if (fx?.grid == true) 6 else 4
+            val rows = if (fx?.grid == true) 3 else 4
+            for (k in 1 until cols) drawLine(C.divider, Offset(size.width * k / cols, 0f), Offset(size.width * k / cols, size.height), stroke)
+            for (k in 1 until rows) drawLine(C.divider, Offset(0f, size.height * k / rows), Offset(size.width, size.height * k / rows), stroke)
             val c = Offset(pos.x * size.width, pos.y * size.height)
             drawLine(C.pattern.copy(alpha = 0.5f), Offset(c.x, 0f), Offset(c.x, size.height), stroke)
             drawLine(C.pattern.copy(alpha = 0.5f), Offset(0f, c.y), Offset(size.width, c.y), stroke)
@@ -190,7 +192,14 @@ private fun XyPad(pad: Int, onPick: (Int) -> Unit, modifier: Modifier) {
             }
             fx?.let {
                 drawContext.canvas.nativeCanvas.drawText("${it.xName} →", 10.dp.toPx(), size.height - 10.dp.toPx(), paint)
-                drawContext.canvas.nativeCanvas.drawText("↑ ${it.yName}", 10.dp.toPx(), 18.dp.toPx(), paint)
+                if (it.grid) {   // the feels by their band, and the division held
+                    listOf("Triplet" to 1f / 6f, "Straight" to 0.5f, "Dotted" to 5f / 6f).forEach { (t, f) ->
+                        drawContext.canvas.nativeCanvas.drawText(t, 10.dp.toPx(), size.height * f + 4.dp.toPx(), paint) }
+                    if (division.isNotEmpty()) {
+                        val big = android.graphics.Paint(paint).apply { textSize = 22.dp.toPx(); color = Tokens.TEXT; textAlign = android.graphics.Paint.Align.RIGHT }
+                        drawContext.canvas.nativeCanvas.drawText(division, size.width - 10.dp.toPx(), 28.dp.toPx(), big)
+                    }
+                } else drawContext.canvas.nativeCanvas.drawText("↑ ${it.yName}", 10.dp.toPx(), 18.dp.toPx(), paint)
             }
         }
     }

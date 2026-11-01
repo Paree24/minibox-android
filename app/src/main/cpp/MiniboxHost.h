@@ -90,7 +90,8 @@ private:
     void pushMidiBytes (const uint8_t*, int);
     const juce::MidiBuffer* takeMidi();
     juce::var soundCall (const juce::String& op, const juce::var& args, bool& handled);   // SoundApi.cpp
-    std::pair<int, int> performAxes (int pad);   // Api.cpp
+    std::pair<int, int> performAxes (int pad);
+    static constexpr int kFeel = -1;   // performAxes' Y for the timed effects: the division's feel   // Api.cpp
     juce::var visualExtra (const DeviceProcessor&, const ui::VisualSpec&, int selection);   // SoundApi.cpp
 
     // undo / redo of sequence edits: a snapshot of the pattern's tracks before each edit (as the desktop)
