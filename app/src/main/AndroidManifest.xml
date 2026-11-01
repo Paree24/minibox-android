@@ -12,7 +12,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
 
     <application
-        android:label="Minibox"
+        android:label="Pastel Minibox"
         android:icon="@drawable/ic_launcher"
         android:theme="@style/Theme.Minibox"
         android:extractNativeLibs="false"

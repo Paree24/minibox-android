@@ -31,7 +31,7 @@ class PlaybackService : Service() {
         val stop = PendingIntent.getService(this, 1, Intent(this, PlaybackService::class.java).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE)
         val n = Notification.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_launcher)
-            .setContentTitle("Minibox")
+            .setContentTitle("Pastel Minibox")
             .setContentText("Playing")
             .setContentIntent(open)
             .setOngoing(true)

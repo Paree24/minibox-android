@@ -181,6 +181,15 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
         const float x = juce::jlimit (0.0f, 1.0f, (float) getd (a, "x")), y = juce::jlimit (0.0f, 1.0f, (float) getd (a, "y"));
         if (yi == kFeel)   // a timed effect: its division, quantized
         {
+            // the rest at the pad's own settings: values an earlier XY layout left (Stutter's Filter, Shuffle's Chance,
+            // Slicer's Depth on Y) must not stay in the saved project and colour the effect
+            FxSlot def;
+            MasterFx::defaultPad (def, pad);
+            if (def.effect == fx.effect)
+            {
+                for (int k = 0; k < FxSlot::kParams; ++k) if (k != xi) fx.norm[(size_t) k] = def.norm[(size_t) k];
+                fx.mode = def.mode; fx.mix = def.mix;
+            }
             juce::String name;
             fx.norm[(size_t) xi] = (float) divFromXY (x, y, name) / 14.0f;
             return name;
