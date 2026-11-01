@@ -49,8 +49,10 @@ fun PlayTab(openScale: () -> Unit, openArp: () -> Unit) {
         while (true) { App.refreshMacros(); delay(200) }
     }
 
+    // a synth's pads can expand to 24 (6 rows, a wider range); the macros fold away meanwhile, the app bar stays
+    val expanded = PadsUi.expanded.value && !info.drums && !info.empty
     Column(Modifier.fillMaxSize()) {
-        Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp)) {
+        Column((if (expanded) Modifier else Modifier.weight(1f)).fillMaxWidth().padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(8.dp))
             when {
                 info.empty -> {}
@@ -101,15 +103,39 @@ fun PlayTab(openScale: () -> Unit, openArp: () -> Unit) {
                     }
                 }
             }
-            Spacer(Modifier.height(10.dp))
-            MacroCard(track, Modifier.weight(1f).fillMaxWidth())
-            Spacer(Modifier.height(12.dp))
+            if (!expanded) {
+                Spacer(Modifier.height(10.dp))
+                MacroCard(track, Modifier.weight(1f).fillMaxWidth())
+            }
+            Spacer(Modifier.height(if (expanded) 6.dp else 8.dp))
         }
         if (info.empty) Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(200.dp), contentAlignment = Alignment.Center) {
             Text("+", color = C.faint, fontSize = 40.sp)
-        } else Pads()
+        } else {
+            if (!info.drums) PadsExpandHandle(expanded) { PadsUi.expanded.value = !expanded }
+            if (expanded) androidx.compose.foundation.layout.BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
+                // 6 rows in the room left: the pads as square as fits
+                val padW = (maxWidth - 32.dp - 24.dp) / 4
+                val padH = (maxHeight - 40.dp) / 6
+                Pads(rows = 6, aspect = (padH / padW).coerceIn(0.5f, 1f))
+            } else Pads()
+        }
         Spacer(Modifier.height(12.dp))
     }
+}
+
+/** The bar above a synth's pads: 16 pads, or 24 (a wider range). */
+@Composable
+private fun PadsExpandHandle(expanded: Boolean, onToggle: () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(26.dp).clip(RoundedCornerShape(10.dp)).clickable(onClick = onToggle),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+        Box(Modifier.size(28.dp, 4.dp).clip(RoundedCornerShape(2.dp)).background(C.faint))
+        Spacer(Modifier.width(10.dp))
+        Text(if (expanded) "16 pads ▾" else "24 pads ▴", color = C.quiet, fontSize = 11.sp, fontWeight = FontWeight.Black)
+        Spacer(Modifier.width(10.dp))
+        Box(Modifier.size(28.dp, 4.dp).clip(RoundedCornerShape(2.dp)).background(C.faint))
+    }
+    Spacer(Modifier.height(4.dp))
 }
 
 /** One of the two octave buttons beside the scale (the pads' labels show where they are). */

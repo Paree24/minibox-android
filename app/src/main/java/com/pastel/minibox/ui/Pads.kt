@@ -30,8 +30,14 @@ fun Pads(modifier: Modifier = Modifier, rows: Int = 4, aspect: Float = 1f, onPad
     val project by App.project
     val octaves by App.octave
     val rollBeats by App.rollBeats
-    val layout = currentLayout(track, rack[track], project, octaves[track], rollBeats) ?: return
+    // the layout has as many pads as the grid shows (drums are always 16)
+    val layout = currentLayout(track, rack[track], project, octaves[track], rollBeats, rows * 4) ?: return
     PadGrid(layout, { n, d -> App.padPressed(n, d); onPad?.invoke(n, d) }, modifier.fillMaxWidth().padding(horizontal = 16.dp), rows, aspect)
+}
+
+/** The Play tab's pads expanded to 24 (6 rows) for a synth: a wider range; the macros fold away meanwhile. */
+object PadsUi {
+    val expanded = androidx.compose.runtime.mutableStateOf(false)
 }
 
 /** Editors keep the pads folded into this handle; tapping it pulls the 4×4 up (mockups 15–16). */

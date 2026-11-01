@@ -11,6 +11,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import kotlin.math.roundToInt
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -26,7 +28,7 @@ import com.pastel.minibox.engine.Native
     `subs` is a second, quieter label (a chord's degree, a roll's rate). */
 class PadLayout(
     val track: Int, val color: Int, val notes: IntArray, val labels: Array<String>, val roots: Set<Int>,
-    val subs: Array<String> = Array(16) { "" }, val rolls: BooleanArray = BooleanArray(16), val rollBeats: Float = 0.25f,
+    val subs: Array<String> = Array(notes.size) { "" }, val rolls: BooleanArray = BooleanArray(notes.size), val rollBeats: Float = 0.25f,
     val bigLabels: Boolean = false,
 ) {
     /** Changes only when the pads mean other notes (a redraw hands an equal layout, which must not cut notes). */
@@ -42,7 +44,7 @@ class PadLayout(
 @Composable
 fun PadGrid(layout: PadLayout, onPress: (note: Int, down: Boolean) -> Unit, modifier: Modifier = Modifier, rows: Int = 4, aspect: Float = 1f) {
     val view = LocalView.current
-    val lit = remember { mutableStateListOf(*Array(16) { 0 }) }
+    val lit = remember { mutableStateListOf(*Array(24) { 0 }) }   // up to 24 pads (a synth's expanded grid)
     val held = remember { HashMap<Long, Int>() }       // pointer → pad
     val current = remember { arrayOf(layout) }
 
@@ -73,7 +75,14 @@ fun PadGrid(layout: PadLayout, onPress: (note: Int, down: Boolean) -> Unit, modi
 
     val text = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.DEFAULT_BOLD } }
     Canvas(
-        modifier.fillMaxWidth().aspectRatio(4f / (rows * aspect)).pointerInput(rows, aspect) {
+        // exactly the rows' height: pads (width × aspect) and the 8 dp gaps between them
+        modifier.fillMaxWidth().layout { m, c ->
+            val gap = 8.dp.roundToPx()
+            val w = c.maxWidth
+            val h = (rows * (w - 3 * gap) / 4f * aspect + (rows - 1) * gap).roundToInt()
+            val p = m.measure(androidx.compose.ui.unit.Constraints.fixed(w, h))
+            layout(w, h) { p.place(0, 0) }
+        }.pointerInput(rows, aspect) {
             val gap = 8.dp.toPx()
             fun padAt(o: Offset): Int {
                 val s = (size.width - 3 * gap) / 4f

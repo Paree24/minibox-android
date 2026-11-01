@@ -14,35 +14,36 @@ private val THUMB_ORDER = intArrayOf(36, 38, 42, 46, 45, 39, 37, 49)
 /** Base octave of a synth's pads (C2 for the basses, C3 for the rest), before the track's octave shift. */
 private fun baseOctave(type: String) = if (type == "mono" || type == "acid") 2 else 3
 
-/** The in-scale pads: 16 consecutive scale notes from the root, left to right and bottom to top, each once. */
-private fun scaleNotes(p: ProjectInfo, type: String, octave: Int): IntArray {
+/** The in-scale pads: `count` (16, or 24 expanded) consecutive scale notes from the root, left to right and bottom to
+    top, each once. */
+private fun scaleNotes(p: ProjectInfo, type: String, octave: Int, count: Int = 16): IntArray {
     val iv = p.scaleIntervals.ifEmpty { listOf(0, 2, 4, 5, 7, 9, 11) }
     val n = iv.size
     val rowStep = 4
     val base = 12 * (baseOctave(type) + octave + 1) + p.scaleRoot
-    return IntArray(16) { pad ->
+    return IntArray(count) { pad ->
         val deg = (pad / 4) * rowStep + pad % 4
         base + 12 * (deg / n) + iv[deg % n]
     }
 }
 
-fun notesLayout(track: Int, info: TrackInfo, p: ProjectInfo, octave: Int): PadLayout {
-    val notes = scaleNotes(p, info.type, octave)
-    val roots = (0 until 16).filter { ((notes[it] - p.scaleRoot) % 12 + 12) % 12 == 0 }.toSet()
-    return PadLayout(track, Tokens.TRACK[track], notes, Array(16) { noteName(notes[it]) }, roots)
+fun notesLayout(track: Int, info: TrackInfo, p: ProjectInfo, octave: Int, count: Int = 16): PadLayout {
+    val notes = scaleNotes(p, info.type, octave, count)
+    val roots = notes.indices.filter { ((notes[it] - p.scaleRoot) % 12 + 12) % 12 == 0 }.toSet()
+    return PadLayout(track, Tokens.TRACK[track], notes, Array(count) { noteName(notes[it]) }, roots)
 }
 
 /** Chords mode: the same in-scale pads, each playing the engine's diatonic chord on that degree (NoteInput's Auto
     chords follow the project scale); the pads show the chord's name and its degree. */
-fun chordsLayout(track: Int, info: TrackInfo, p: ProjectInfo, octave: Int): PadLayout {
+fun chordsLayout(track: Int, info: TrackInfo, p: ProjectInfo, octave: Int, count: Int = 16): PadLayout {
     val iv = p.scaleIntervals.ifEmpty { listOf(0, 2, 4, 5, 7, 9, 11) }
     val n = iv.size
-    val notes = scaleNotes(p, info.type, octave)
+    val notes = scaleNotes(p, info.type, octave, count)
     val rowStep = 4
-    val labels = Array(16) { "" }
-    val subs = Array(16) { "" }
+    val labels = Array(count) { "" }
+    val subs = Array(count) { "" }
     val roots = mutableSetOf<Int>()
-    for (pad in 0 until 16) {
+    for (pad in 0 until count) {
         val deg = (pad / 4) * rowStep + pad % 4
         val d = deg % n
         fun at(k: Int) = iv[(d + k) % n] + 12 * ((d + k) / n)
@@ -85,9 +86,9 @@ fun drumsLayout(track: Int, info: TrackInfo, rollBeats: Float): PadLayout? {
 }
 
 /** The pads for the selected track as Play shows them (Seq and Sound reuse them in their drawer). */
-fun currentLayout(track: Int, info: com.pastel.minibox.state.TrackInfo, p: ProjectInfo, octave: Int, rollBeats: Float): PadLayout? = when {
+fun currentLayout(track: Int, info: com.pastel.minibox.state.TrackInfo, p: ProjectInfo, octave: Int, rollBeats: Float, count: Int = 16): PadLayout? = when {
     info.empty -> null
-    info.drums -> drumsLayout(track, info, rollBeats)
-    info.play.chordOn && !info.play.arpOn -> chordsLayout(track, info, p, octave)
-    else -> notesLayout(track, info, p, octave)
+    info.drums -> drumsLayout(track, info, rollBeats)   // always the 16 (8 hits, 8 rolls)
+    info.play.chordOn && !info.play.arpOn -> chordsLayout(track, info, p, octave, count)
+    else -> notesLayout(track, info, p, octave, count)
 }
