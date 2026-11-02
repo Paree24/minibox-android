@@ -36,10 +36,18 @@ juce::Array<juce::var> peaksOf (const SamplePtr& data)
     return out;
 }
 
+/** The name of the sample a pad or zone is set to (its file), not of the one loaded: a kit loads in the background. */
 juce::String sampleName (const juce::String& ref, const SamplePtr& data)
 {
-    if (data) return data->name;
-    return ref.isEmpty() ? juce::String() : ref.fromLastOccurrenceOf ("/", false, false).fromFirstOccurrenceOf ("factory:", false, false);
+    if (ref.isEmpty()) return data ? data->name : juce::String();
+    auto n = ref.fromLastOccurrenceOf ("/", false, false).fromLastOccurrenceOf ("factory:", false, false);
+    return n.containsChar ('.') ? n.upToLastOccurrenceOf (".", false, false) : n;
+}
+
+/** The loaded sample when it is the one set (else null: still loading, the previous one is in its place). */
+SamplePtr current (const juce::String& ref, const SamplePtr& data)
+{
+    return data && (ref.isEmpty() || data->name == sampleName (ref, data)) ? data : SamplePtr();
 }
 } // namespace
 
@@ -95,7 +103,7 @@ juce::var MiniboxHost::visualExtra (const DeviceProcessor& dev, const ui::Visual
             const auto data = sd->zone[std::clamp (sel, 0, SamplerDevice::kZones - 1)].get();
             const auto reg = sd->region (0);
             const bool loop = (int) sd->get (SamplerDevice::playMode) == 2;
-            put (o, "peaks", peaksOf (data)); put (o, "name", sampleName (sd->zoneRef (sel), data));
+            put (o, "peaks", peaksOf (current (sd->zoneRef (sel), data))); put (o, "name", sampleName (sd->zoneRef (sel), data));
             put (o, "s", reg.s); put (o, "e", reg.e); put (o, "ls", loop ? reg.ls : -1.0); put (o, "le", loop ? reg.le : -1.0);
             juce::Array<juce::var> zones;
             for (int z = 0; z < SamplerDevice::kZones; ++z)
@@ -113,7 +121,7 @@ juce::var MiniboxHost::visualExtra (const DeviceProcessor& dev, const ui::Visual
             const int p = std::clamp (sel, 0, 7);
             const auto data = ds->pad[p].get();
             const float st = ds->get (ds->padParam (p, DrumSamplerDevice::Start));
-            put (o, "peaks", peaksOf (data)); put (o, "name", sampleName (ds->padRef (p), data));
+            put (o, "peaks", peaksOf (current (ds->padRef (p), data))); put (o, "name", sampleName (ds->padRef (p), data));
             put (o, "s", st); put (o, "e", st + ds->get (ds->padParam (p, DrumSamplerDevice::Length)) * (1.0f - st));
             put (o, "ls", -1.0); put (o, "le", -1.0);
         }
@@ -125,7 +133,7 @@ juce::var MiniboxHost::visualExtra (const DeviceProcessor& dev, const ui::Visual
             const auto data = ds->pad[0].get();
             bool shared = data != nullptr;
             for (int p = 1; p < 8 && shared; ++p) shared = ds->padRef (p) == ds->padRef (0);
-            put (o, "peaks", shared ? peaksOf (data) : juce::Array<juce::var>());
+            put (o, "peaks", shared ? peaksOf (current (ds->padRef (0), data)) : juce::Array<juce::var>());
             put (o, "name", shared ? sampleName (ds->padRef (0), data) : juce::String());
             juce::Array<juce::var> starts, ends;
             for (int p = 0; p < 8; ++p)
