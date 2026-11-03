@@ -77,7 +77,7 @@ fun MixTab(openTrack: (Int) -> Unit, openEffects: () -> Unit, addDevice: (Int) -
             Spacer(Modifier.height(6.dp))
             Row(Modifier.fillMaxWidth()) {
                 listOf(Triple("Delay", "delayReturn", project.master.delayReturn), Triple("Reverb", "reverbReturn", project.master.reverbReturn),
-                    Triple("Glue", "glue", project.master.glue)).forEach { (name, key, v) ->
+                    Triple("Glue", "glue", project.master.glue), Triple("Sidechain", "duck", project.master.duck)).forEach { (name, key, v) ->
                     Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         Knob(v, C.pattern, name, "${(v * 100).toInt()}%", { App.call("set", "key" to key, "value" to it) }, size = 38.dp,
                             onEnd = { App.refresh() })

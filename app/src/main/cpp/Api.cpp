@@ -82,7 +82,7 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
         put (o, "scaleName", juce::String (Scales::factoryScales()[(size_t) std::clamp (p.scale.scale, 0, (int) Scales::factoryScales().size() - 1)].name));
         auto m = obj();
         put (m, "volume", p.master.volume); put (m, "delayReturn", p.master.delayReturn); put (m, "reverbReturn", p.master.reverbReturn);
-        put (m, "glue", p.master.glue); put (m, "limitDb", p.master.limitDb);
+        put (m, "glue", p.master.glue); put (m, "duck", p.master.duck); put (m, "limitDb", p.master.limitDb);
         put (o, "master", m);
         return o;
     }
@@ -309,6 +309,7 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
         else if (k == "delayReturn") p.master.delayReturn = juce::jlimit (0.0f, 1.0f, (float) v);
         else if (k == "reverbReturn") p.master.reverbReturn = juce::jlimit (0.0f, 1.0f, (float) v);
         else if (k == "glue") p.master.glue = juce::jlimit (0.0f, 1.0f, (float) v);
+        else if (k == "duck") p.master.duck = juce::jlimit (0.0f, 1.0f, (float) v);   // sidechain: the drums' kick ducks the rest
         else if (k == "quality") qualitySetting() = (int) v == 1 ? (int) Quality::Eco : (int) Quality::Full;
         return {};
     }

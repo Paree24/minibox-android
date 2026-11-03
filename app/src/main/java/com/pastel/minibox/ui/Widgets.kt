@@ -53,11 +53,12 @@ import kotlin.math.sin
 @Composable
 fun Knob(value: Float, color: Color, label: String, text: String, onChange: (Float) -> Unit,
          modifier: Modifier = Modifier, size: Dp = 46.dp, default: Float? = null, bipolar: Boolean = false,
-         onEnd: (() -> Unit)? = null) {
+         onEnd: (() -> Unit)? = null, onLongPress: (() -> Unit)? = null) {
     var drag by remember { mutableFloatStateOf(value) }
     var dragging by remember { mutableStateOf(false) }
     val change by rememberUpdatedState(onChange)
     val end by rememberUpdatedState(onEnd)
+    val longPress by rememberUpdatedState(onLongPress)
     val current by rememberUpdatedState(value)
     val shown = if (dragging) drag else value
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -74,7 +75,10 @@ fun Knob(value: Float, color: Color, label: String, text: String, onChange: (Flo
                         change(drag)
                     }
                 }
-                .pointerInput(default) { if (default != null) detectTapGestures(onDoubleTap = { change(default) }) },
+                .pointerInput(default, onLongPress != null) {
+                    if (default != null || onLongPress != null)
+                        detectTapGestures(onDoubleTap = default?.let { d -> { _ -> change(d) } }, onLongPress = if (onLongPress != null) { _ -> longPress?.invoke() } else null)
+                },
         ) {
             val r = this.size.minDimension / 2f - 4.dp.toPx()
             val c = center
@@ -219,4 +223,25 @@ fun Toggle(on: Boolean, color: Color = C.text, onChange: (Boolean) -> Unit) {
             .border(0.dp, Color.Transparent, CircleShape),
         contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart,
     ) { Box(Modifier.padding(3.dp).size(18.dp).clip(CircleShape).background(if (on) C.bg else C.quiet)) }
+}
+
+
+/** Long-press on a knob (Play's macros, Sound's parameters): its recorded automation, cleared from a small menu
+    (one undo step); a control without any says so. `key`: "macro" or "param". */
+@Composable
+fun AutomationMenu(open: Boolean, name: String, onDismiss: () -> Unit, onClear: () -> Unit) {
+    androidx.compose.material3.DropdownMenu(open, onDismiss, containerColor = C.surface) {
+        androidx.compose.material3.DropdownMenuItem(
+            text = { Text("Clear $name automation", color = C.text, fontSize = 13.sp, fontWeight = FontWeight.Bold) },
+            onClick = { onClear(); onDismiss() })
+    }
+}
+
+/** Whether a control has recorded automation; asks the engine (cpp/SeqApi.cpp "automation"). */
+fun hasAutomation(track: Int, key: String, index: Int): Boolean =
+    com.pastel.minibox.state.App.call("automation", "track" to track, key to index).trim() == "true"
+
+fun clearAutomation(track: Int, key: String, index: Int) {
+    com.pastel.minibox.state.App.call("automation", "track" to track, key to index, "clear" to true)
+    com.pastel.minibox.state.Seq.refresh()
 }

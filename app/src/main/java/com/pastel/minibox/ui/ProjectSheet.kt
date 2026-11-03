@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -85,13 +86,19 @@ fun ProjectSheet(done: () -> Unit) {
             App.refresh(); done()
         }
     }
-    var confirmNew by remember { mutableStateOf(false) }
+    // Save names the project the first time (and when its name is new, or reserved); after that it saves in place
+    var askName by remember { mutableStateOf<(() -> Unit)?>(null) }   // the name prompt is open: what follows the save
+    var nameDraft by remember { mutableStateOf("") }
+    // New / open another: save this one first? (what follows, and its wording)
+    var leave by remember { mutableStateOf<Pair<String, () -> Unit>?>(null) }
+    fun reserved(n: String) = n.equals("Untitled", true) || n.equals("Autosave", true)
+    fun needsName(n: String) = n.isBlank() || reserved(n) || !File(context.filesDir, "Projects/${n}.minibox").exists()
     // the app's working copy, then the same file in Documents/Minibox (the Files app shows it there)
-    fun save(): Boolean {
-        val n = name.trim()
+    fun doSave(n: String): Boolean {
         val r = JSONObject(App.call("saveProject", "name" to n))
         val ok = r.optBoolean("ok")
         if (ok) {
+            name = n
             Prefs.setLastProject(context, n)
             val f = File(context.filesDir, "Projects/${n}.minibox")
             if (android.os.Build.VERSION.SDK_INT < 29 && context.checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -103,10 +110,21 @@ fun ProjectSheet(done: () -> Unit) {
         App.refresh(); projects = listProjects()
         return ok
     }
-    fun startNew() {
-        App.autosave(context)   // the Autosave safety copy either way
-        App.call("newProject"); App.refresh(); Prefs.setLastProject(context, null); confirmNew = false; done()
+    fun save(then: () -> Unit = {}) {
+        val n = name.trim()
+        if (needsName(n)) { nameDraft = if (reserved(n)) "" else n; askName = then }
+        else if (doSave(n)) then()
     }
+    // a new project, or another one opened: the recovery copy follows (it is never a saved project's file)
+    fun startNew() {
+        App.call("newProject"); App.refresh(); App.autosave(context); Prefs.setLastProject(context, null); leave = null; done()
+    }
+    fun open(p: String) {
+        val r = JSONObject(App.call("openProject", "name" to p))
+        if (r.optBoolean("ok")) { Prefs.setLastProject(context, p); App.autosave(context) }
+        App.refresh(); leave = null; done()
+    }
+    val empty = App.rack.value.all { it.empty }
     Column {
         BasicTextField(name, { name = it }, singleLine = true,
             textStyle = TextStyle(color = C.text, fontSize = 20.sp, fontWeight = FontWeight.Black), cursorBrush = SolidColor(C.text),
@@ -114,22 +132,45 @@ fun ProjectSheet(done: () -> Unit) {
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             // asks first what happens to this one (an empty project just goes)
-            ActionPad("New", Modifier.weight(1f)) { if (App.rack.value.all { it.empty }) startNew() else confirmNew = true }
+            ActionPad("New", Modifier.weight(1f)) { if (empty) startNew() else leave = "New project" to { startNew() } }
             ActionPad("Save", Modifier.weight(1f)) { save() }
             ActionPad("Save as", Modifier.weight(1f)) { saveAs.launch("${name.trim().ifEmpty { "Minibox" }}.minibox") }
             ActionPad("Export", Modifier.weight(1f)) { showExport = !showExport }
             ActionPad("Open file", Modifier.weight(1f)) { import.launch(arrayOf("*/*")) }
         }
-        if (confirmNew) {
+        askName?.let { then ->
+            // the project's name (a new file in Projects); Save there, then what was waiting (New, open)
             Row(Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCornerShape(12.dp)).background(C.control)
                 .padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("New project: save \"${name.trim()}\" first?", color = C.text, fontSize = 13.sp, fontWeight = FontWeight.Black,
+                val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+                LaunchedEffect(Unit) { focus.requestFocus() }
+                Box(Modifier.weight(1f)) {
+                    if (nameDraft.isEmpty()) Text("Project name", color = C.faint, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    BasicTextField(nameDraft, { nameDraft = it }, singleLine = true,
+                        textStyle = TextStyle(color = C.text, fontSize = 15.sp, fontWeight = FontWeight.Black), cursorBrush = SolidColor(C.text),
+                        modifier = Modifier.fillMaxWidth().focusRequester(focus))
+                }
+                val n = nameDraft.trim()
+                val taken = n.isNotEmpty() && !reserved(n) && File(context.filesDir, "Projects/${n}.minibox").exists() && n != project.name
+                Pill(if (taken) "Replace" else "Save", on = n.isNotEmpty() && !reserved(n), color = if (taken) C.record else C.text) {
+                    if (n.isEmpty()) return@Pill
+                    if (reserved(n)) { toast(context, "\"$n\" is reserved: pick another name"); return@Pill }
+                    if (doSave(n)) { askName = null; then() }
+                }
+                Spacer(Modifier.width(6.dp))
+                Pill("Cancel") { askName = null }
+            }
+        }
+        leave?.let { (what, action) ->
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCornerShape(12.dp)).background(C.control)
+                .padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("$what: save \"${name.trim()}\" first?", color = C.text, fontSize = 13.sp, fontWeight = FontWeight.Black,
                     modifier = Modifier.weight(1f), maxLines = 2)
-                Pill("Save", on = true) { if (save()) startNew() }
+                Pill("Save", on = true) { leave = null; save(action) }
                 Spacer(Modifier.width(6.dp))
-                Pill("Don't save", on = true, color = C.record) { startNew() }
+                Pill("Don't save", on = true, color = C.record) { action() }
                 Spacer(Modifier.width(6.dp))
-                Pill("Cancel") { confirmNew = false }
+                Pill("Cancel") { leave = null }
             }
         }
         if (showExport) {
@@ -162,10 +203,8 @@ fun ProjectSheet(done: () -> Unit) {
                     .background(if (p == project.name) C.text else C.control)
                     .combinedClickable(
                         onClick = {
-                            App.autosave(context)
-                            val r = JSONObject(App.call("openProject", "name" to p))
-                            if (r.optBoolean("ok")) Prefs.setLastProject(context, p)
-                            App.refresh(); done()
+                            if (p == project.name) done()
+                            else if (empty) open(p) else leave = "Open \"$p\"" to { open(p) }
                         },
                         onLongClick = { confirmDelete = p },   // asks first (below)
                     ).padding(horizontal = 12.dp),

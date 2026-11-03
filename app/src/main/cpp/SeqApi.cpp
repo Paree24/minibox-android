@@ -255,7 +255,7 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
     {
         const int l = std::clamp (geti (a, "lane"), 0, kLanes - 1), s = geti (a, "step");
         if (s < 0 || s >= total) return {};
-        snapshot (pat);
+        if (! getb (a, "more")) snapshot (pat);   // "more": the rest of one painting stroke (a single undo step)
         const Engine::ScopedEdit edit (engine);
         auto& d = tr.lanes[(size_t) l][(size_t) s];
         if (op == "laneToggle")
@@ -322,6 +322,18 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
         const Engine::ScopedEdit edit (engine);
         tr.convertToSteps (stepT, total);
         return res;
+    }
+    // recorded automation of a control: {"macro": m} (Play's knobs) or {"param": i} (Sound's); "clear" removes it
+    if (op == "automation")
+    {
+        const bool macro = a.hasProperty ("macro");
+        const int k = macro ? std::clamp (geti (a, "macro"), 0, 7) : geti (a, "param", -1);
+        if (dev == nullptr || k < 0) return false;
+        const bool has = macro ? engine.hasMacroAutomation (dev, k) : engine.hasAutomation (pat, t, k);
+        if (! getb (a, "clear") || ! has) return has;
+        snapshot (pat);   // one undo step
+        if (macro) engine.clearMacroAutomation (dev, k); else engine.clearAutomation (pat, t, k);
+        return true;
     }
     if (op == "setArp")   // the track's notes play through its arpeggiator (its Arp settings, live); the notes stay
     {

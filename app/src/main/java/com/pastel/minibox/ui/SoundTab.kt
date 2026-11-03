@@ -173,7 +173,18 @@ fun SoundTab(openPresets: () -> Unit) {
                                     }
                                 } else {
                                     val k = cell
-                                    Knob(k.value, color, k.label, k.text, { Sound.set(k.index, it) }, size = 46.dp, default = k.default, bipolar = k.bipolar)
+                                    // long-press: clear what was recorded on this parameter
+                                    var menu by remember { mutableStateOf(false) }
+                                    val context = androidx.compose.ui.platform.LocalContext.current
+                                    val tr = App.focusTrack.intValue
+                                    Box {
+                                        Knob(k.value, color, k.label, k.text, { Sound.set(k.index, it) }, size = 46.dp, default = k.default, bipolar = k.bipolar,
+                                            onLongPress = {
+                                                if (hasAutomation(tr, "param", k.index)) menu = true
+                                                else android.widget.Toast.makeText(context, "No automation on ${k.label}", android.widget.Toast.LENGTH_SHORT).show()
+                                            })
+                                        AutomationMenu(menu, k.label, { menu = false }) { clearAutomation(tr, "param", k.index) }
+                                    }
                                 }
                             }
                         }

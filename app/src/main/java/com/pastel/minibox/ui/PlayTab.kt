@@ -20,6 +20,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -169,8 +172,16 @@ fun MacroCard(track: Int, modifier: Modifier = Modifier) {
                         val m = row * 4 + c
                         val info = macros.getOrNull(m)
                         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                            if (info != null && info.name.isNotEmpty())
-                                Knob(info.value, color, info.name, info.text, { App.setMacro(m, it) }, size = knob)
+                            if (info != null && info.name.isNotEmpty()) {
+                                // long-press: clear what was recorded on this knob
+                                var menu by remember { mutableStateOf(false) }
+                                val context = androidx.compose.ui.platform.LocalContext.current
+                                Knob(info.value, color, info.name, info.text, { App.setMacro(m, it) }, size = knob, onLongPress = {
+                                    if (hasAutomation(track, "macro", m)) menu = true
+                                    else android.widget.Toast.makeText(context, "No automation on ${info.name}", android.widget.Toast.LENGTH_SHORT).show()
+                                })
+                                AutomationMenu(menu, info.name, { menu = false }) { clearAutomation(track, "macro", m) }
+                            }
                         }
                     }
                 }

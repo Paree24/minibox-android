@@ -50,7 +50,9 @@ class MainActivity : ComponentActivity() {
             runOnUiThread {
                 Native.nativeInit(applicationContext, factory.absolutePath, filesDir.absolutePath)
                 Native.setLatencyMode(Prefs.latencyMode(this), Prefs.lowBursts(this))
-                Prefs.lastProject(this)?.let { App.call("openProject", "name" to it) }   // carry on where we were
+                // carry on where we were: the session's recovery copy (unsaved edits too), else the last saved project
+                if (!org.json.JSONObject(App.call("openAutosave")).optBoolean("ok"))
+                    Prefs.lastProject(this)?.let { App.call("openProject", "name" to it) }
                 App.init()
                 Midi.start(applicationContext)
                 Device.start(applicationContext)

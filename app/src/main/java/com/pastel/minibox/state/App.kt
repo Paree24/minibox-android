@@ -44,7 +44,8 @@ data class TrackInfo(val type: String = "", val name: String = "", val preset: S
 }
 data class PatternInfo(val used: List<Boolean> = List(8) { false }, val any: Boolean = false, val bars: Int = 1)
 data class MacroInfo(val name: String, val value: Float, val text: String)
-data class MasterInfo(val volume: Float = 0.8f, val delayReturn: Float = 0.8f, val reverbReturn: Float = 0.8f, val glue: Float = 0.3f)
+data class MasterInfo(val volume: Float = 0.8f, val delayReturn: Float = 0.8f, val reverbReturn: Float = 0.8f, val glue: Float = 0.3f,
+                      val duck: Float = 0f)   // sidechain: the drums' kick ducks the other tracks by up to this
 data class ProjectInfo(
     val name: String = "Untitled", val bpm: Double = 120.0, val beats: Int = 4, val unit: Int = 4, val swing: Float = 0.5f,
     val metronome: Boolean = false, val countIn: Boolean = true, val recordMode: Int = 0, val overdub: Boolean = false,
@@ -136,12 +137,10 @@ object App {
         refreshMacros()
     }
 
-    /** Saves the project under its name (an untitled one as "Autosave") and remembers it for the next launch. */
-    fun autosave(context: android.content.Context) {
-        val name = project.value.name.takeIf { it.isNotBlank() && it != "Untitled" } ?: "Autosave"
-        val ok = JSONObject(call("saveProject", "name" to name)).optBoolean("ok")
-        if (ok) com.pastel.minibox.engine.Prefs.setLastProject(context, name)
-    }
+    /** The session's recovery copy (cpp/ProjectApi.cpp): never a saved project's file, so nothing is written over;
+        the next launch carries on from it. */
+    @Suppress("UNUSED_PARAMETER")
+    fun autosave(context: android.content.Context) { call("autosave") }
 
     fun setOctave(track: Int, oct: Int) {
         octave.value = octave.value.toMutableList().also { it[track] = oct.coerceIn(-2, 3) }
@@ -156,7 +155,7 @@ object App {
             o.getInt("scaleRoot"), o.getInt("scaleIndex"), o.getString("scaleName"),
             o.getJSONArray("scaleIntervals").let { a -> List(a.length()) { a.getInt(it) } },
             MasterInfo(m.getDouble("volume").toFloat(), m.getDouble("delayReturn").toFloat(),
-                m.getDouble("reverbReturn").toFloat(), m.getDouble("glue").toFloat()),
+                m.getDouble("reverbReturn").toFloat(), m.getDouble("glue").toFloat(), m.optDouble("duck", 0.0).toFloat()),
             o.optBoolean("channelPerTrack"), o.optInt("stepLength"), o.optInt("swingGrid"),
         )
     }

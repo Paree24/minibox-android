@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.systemGestureExclusion
 import kotlin.math.roundToInt
@@ -459,7 +461,61 @@ private fun DrumEditor(bar: Int, spb: Int, part: Int, color: Color, onPart: (Int
             }
         }
         Spacer(Modifier.height(4.dp))
-        Column(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(C.surface).padding(vertical = 2.dp)) {
+        val seqNow by rememberUpdatedState(seq)
+        val partNow by rememberUpdatedState(onPart)
+        val openNow by rememberUpdatedState(openStep)
+        Column(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(C.surface).padding(vertical = 2.dp)
+            // one gesture for the whole grid: a tap toggles a cell, a long-press opens its step, a slide paints the cells
+            // it passes (from an empty one) or erases them (from a filled one), in the part it started on
+            .pointerInput(bar, spb) {
+                val labelW = 30.dp.toPx()
+                fun cellAt(o: Offset): Pair<Int, Int>? {
+                    val row = (o.y / (size.height / spb.toFloat())).toInt()
+                    val col = ((o.x - labelW) / ((size.width - labelW) / 8f)).toInt()
+                    if (o.x < labelW || row !in 0 until spb || col !in 0..7) return null
+                    val s = bar * spb + row
+                    return if (s < seqNow.steps) s to col else null
+                }
+                awaitEachGesture {
+                    val down = awaitFirstDown()
+                    val first = cellAt(down.position) ?: return@awaitEachGesture
+                    val (s0, c0) = first
+                    val paint = seqNow.lanes.getOrNull(c0)?.get(s0) == null   // the first cell decides: paint or erase
+                    var moved = false
+                    val done = mutableSetOf<Int>()
+                    fun apply(s: Int) {
+                        if (!done.add(s)) return
+                        Seq.edit("laneToggle", "lane" to c0, "step" to s, "on" to paint, "more" to (done.size > 1))
+                    }
+                    val longPress = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                        while (true) {
+                            val e = awaitPointerEvent()
+                            val ch = e.changes.firstOrNull { it.id == down.id } ?: break
+                            if (!ch.pressed) break
+                            if ((ch.position - down.position).getDistance() > viewConfiguration.touchSlop) { moved = true; break }
+                        }
+                    } == null
+                    if (longPress && !moved) {   // held still: the step's sheet (a filled cell)
+                        partNow(c0)
+                        if (seqNow.lanes.getOrNull(c0)?.get(s0) != null) openNow(s0)
+                        do { val e = awaitPointerEvent() } while (e.changes.any { it.pressed })
+                        return@awaitEachGesture
+                    }
+                    partNow(c0)
+                    apply(s0)   // the tap, or the stroke's first cell
+                    if (!moved) return@awaitEachGesture
+                    while (true) {
+                        val e = awaitPointerEvent()
+                        val ch = e.changes.firstOrNull { it.id == down.id } ?: break
+                        if (!ch.pressed) break
+                        ch.consume()
+                        // the column stays the one the stroke started in; the row follows the finger
+                        val row = (ch.position.y / (size.height / spb.toFloat())).toInt().coerceIn(0, spb - 1)
+                        val s = bar * spb + row
+                        if (s < seqNow.steps) apply(s)
+                    }
+                }
+            }) {
             for (i in 0 until spb) {
                 val s = bar * spb + i
                 if (s >= seq.steps) { Spacer(Modifier.weight(1f)); continue }
@@ -475,11 +531,7 @@ private fun DrumEditor(bar: Int, spb: Int, part: Int, color: Color, onPart: (Int
                         val cell = seq.lanes.getOrNull(c)?.get(s)
                         Box(
                             Modifier.weight(1f).fillMaxHeight().padding(3.dp).clip(RoundedCornerShape(7.dp))
-                                .background(if (cell != null) color.copy(alpha = 0.45f + 0.55f * cell.velocity / 127f) else C.control.copy(alpha = 0.6f))
-                                .combinedClickable(
-                                    onClick = { onPart(c); Seq.edit("laneToggle", "lane" to c, "step" to s) },
-                                    onLongClick = { if (cell != null) { onPart(c); openStep(s) } },
-                                ),
+                                .background(if (cell != null) color.copy(alpha = 0.45f + 0.55f * cell.velocity / 127f) else C.control.copy(alpha = 0.6f)),
                             contentAlignment = Alignment.BottomStart,
                         ) {
                             if (cell != null && cell.ratchet > 1) Row(Modifier.padding(4.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {

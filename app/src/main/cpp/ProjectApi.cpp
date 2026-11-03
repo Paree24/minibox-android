@@ -48,10 +48,27 @@ juce::var MiniboxHost::projectCall (const juce::String& op, const juce::var& a, 
         }
         return list;
     }
+    // the session's recovery copy (on leaving the app, before New or Open): outside Projects, so it never writes over
+    // a saved project and never shows in the list; the next launch carries on from it
+    const auto recovery = storage.getChildFile ("Recovery").getChildFile ("session.minibox");
+    if (op == "autosave")
+    {
+        recovery.getParentDirectory().createDirectory();
+        const auto r = serializer::save (engine, recovery);
+        return result (r.ok, r.error);
+    }
+    if (op == "openAutosave")
+    {
+        if (! recovery.existsAsFile()) return result (false, "No recovery copy");
+        const auto r = serializer::load (engine, recovery);
+        if (r.ok) afterProjectChange();
+        return result (r.ok, r.error);
+    }
     if (op == "saveProject")
     {
         const auto name = a["name"].toString().trim();
         if (name.isEmpty()) return result (false, "No name");
+        if (name.equalsIgnoreCase ("Autosave") || name.equalsIgnoreCase ("Untitled")) return result (false, "\"" + name + "\" is reserved: pick another name");
         projectsDir().createDirectory();
         p.name = name;
         const auto r = serializer::save (engine, fileFor (name));
