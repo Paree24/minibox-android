@@ -18,6 +18,20 @@ import androidx.compose.ui.unit.dp
 import com.pastel.minibox.state.App
 import com.pastel.minibox.state.Seq
 
+/** A step note's length on one bar: its first half 5–100 % of a step (a gate), the rest whole steps, 2 to 64 (a note
+    ringing over the steps after it, up to 4 bars at 1/16). Lengths are in 1/128 step. */
+private val LONG_STEPS = listOf(2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64)
+fun lengthToBar(len: Int): Float =
+    if (len <= 128) len / 256f
+    else 0.5f + 0.5f * (LONG_STEPS.indexOfFirst { it * 128 >= len }.let { if (it < 0) LONG_STEPS.size - 1 else it } + 1) / LONG_STEPS.size
+fun barToLength(v: Float): Int =
+    if (v <= 0.5f) (v * 256f).toInt().coerceIn(6, 128)
+    else LONG_STEPS[(kotlin.math.ceil((v - 0.5f) * 2f * LONG_STEPS.size).toInt() - 1).coerceIn(0, LONG_STEPS.size - 1)] * 128
+fun lengthText(len: Int): String = if (len <= 128) "${len * 100 / 128}%" else {
+    val st = len / 128f
+    if (st == st.toInt().toFloat()) "${st.toInt()} steps" else "%.1f steps".format(st)
+}
+
 /** Long-press a step (mockup 06): its velocity, gate, timing, chance, ratchet, accent / slide, and the macros' locks
     on this step (turn one to lock it, double-tap to clear). `lane` ≥ 0: a drum part's step. */
 @Composable
@@ -46,8 +60,10 @@ fun StepSheet(step: Int, lane: Int, done: () -> Unit) {
         SheetTitle("Step ${step + 1}", st.notes.joinToString(" ") { noteName(it) })
         BarSlider(st.velocity / 127f, color, "Velocity", "${st.velocity}", { Seq.edit("stepSet", "step" to step, "key" to "velocity", "value" to it) })
         Spacer(Modifier.height(8.dp))
-        BarSlider((st.length / 128f).coerceAtMost(1f), color, "Gate", "${(st.length * 100 / 128)}%",
-            { Seq.edit("stepSet", "step" to step, "key" to "gate", "value" to it.coerceAtLeast(0.05f)) })
+        ChordRow(st, color)
+        Spacer(Modifier.height(12.dp))
+        BarSlider(lengthToBar(st.length), color, "Length", lengthText(st.length),
+            { Seq.edit("stepSet", "step" to step, "key" to "gate", "value" to barToLength(it) / 128f) })
         Spacer(Modifier.height(8.dp))
         BarSlider((st.micro + 24) / 48f, color, "Micro", "${st.micro}",
             { Seq.edit("stepSet", "step" to step, "key" to "micro", "value" to (it * 48 - 24).toInt()) })
@@ -94,4 +110,31 @@ private fun Ratchet(value: Int, color: androidx.compose.ui.graphics.Color, onSet
     Spacer(Modifier.height(6.dp))
     ChoicePads(listOf("1", "2", "3", "4"), value - 1, color, { onSet(it + 1) })
     Spacer(Modifier.height(14.dp))
+}
+
+/** The step's notes as a chord: its root and the 3rd, 5th, 7th and octave above it in key, each toggled (a chord
+    keeps at least its root). */
+@Composable
+private fun ChordRow(st: com.pastel.minibox.state.StepData, color: androidx.compose.ui.graphics.Color) {
+    val project by App.project
+    val inKey = remember(project.scaleRoot, project.scaleIntervals) {
+        (0..127).filter { ((it - project.scaleRoot) % 12 + 12) % 12 in project.scaleIntervals }
+    }
+    val root = st.notes.minOrNull() ?: return
+    val row = inKey.indexOfLast { it <= root }.coerceAtLeast(0)
+    fun above(deg: Int) = inKey.getOrElse(row + deg) { root }
+    val adds = listOf("3rd" to above(2), "5th" to above(4), "7th" to above(6), "Oct" to root + 12)
+    SectionLabel("Notes  ·  " + st.notes.sorted().joinToString(" ") { noteName(it) })
+    Spacer(Modifier.height(6.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        for ((label, n) in adds) {
+            val on = n in st.notes
+            Box(Modifier.weight(1f)) {
+                ChoicePads(listOf(label), if (on) 0 else -1, color, {
+                    if (n in 0..127 && n != root && (on || st.notes.size < 6))
+                        Seq.edit("stepToggle", "step" to st.step, "note" to n, "chord" to true)
+                })
+            }
+        }
+    }
 }

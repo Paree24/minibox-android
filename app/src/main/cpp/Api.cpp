@@ -71,7 +71,7 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
         put (o, "beats", p.beats); put (o, "unit", p.unit);
         put (o, "swing", p.swing);
         put (o, "metronome", p.metronome); put (o, "countIn", p.countIn);
-        put (o, "recordMode", p.recordMode); put (o, "overdub", p.overdub); put (o, "recordQuantize", p.recordQuantize);
+        put (o, "recordMode", p.recordMode); put (o, "stepLength", p.stepLength); put (o, "overdub", p.overdub); put (o, "recordQuantize", p.recordQuantize);
         put (o, "switchQuantize", p.switchQuantize); put (o, "perform", p.perform);
         put (o, "channelPerTrack", p.channelPerTrack);
         put (o, "focusPattern", pat); put (o, "focusTrack", engine.focusTrack.load());
@@ -223,12 +223,14 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
         return (int) captured.load();
     }
     if (op == "stop") { engine.stop(); return {}; }
-    if (op == "setRecord")   // the phone records live only (a project saved on the desktop in Step mode too)
+    if (op == "setRecord")   // in the project's mode: Live, or Step (the pads write at the cursor)
     {
-        if (getb (a, "on")) engine.project().recordMode = 0;
+        if (getb (a, "on") && engine.project().recordMode == 1 && ! engine.isRecording()) engine.stepRecordCursor = 0;
         engine.setRecord (getb (a, "on"));
         return {};
     }
+    if (op == "stepRest") { engine.stepRest(); return {}; }   // step recording: a gap of the step length
+    if (op == "stepBack") { engine.stepBack(); return {}; }   // back one entry, clearing it
     if (op == "setTimeSig") { engine.setTimeSignature (geti (a, "beats", 4), geti (a, "unit", 4)); return {}; }
     if (op == "queuePattern") { engine.queuePattern (geti (a, "pattern")); return {}; }
     if (op == "copyPattern") { engine.copyPattern (geti (a, "from"), geti (a, "to")); masterFx.sync(); return {}; }   // its track effects too
@@ -293,7 +295,8 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
         else if (k == "swing") p.swing = juce::jlimit (0.5f, 0.75f, (float) v);
         else if (k == "metronome") p.metronome = (bool) v;
         else if (k == "countIn") p.countIn = (bool) v;
-        else if (k == "recordMode") p.recordMode = 0;   // live only on the phone
+        else if (k == "recordMode") p.recordMode = std::clamp ((int) v, 0, 1);   // 0 live, 1 step
+        else if (k == "stepLength") p.stepLength = std::clamp ((int) v, 0, 3);   // step recording: 1, 2, 4 or 8 steps
         else if (k == "overdub") p.overdub = (bool) v;
         else if (k == "recordQuantize") p.recordQuantize = juce::jlimit (0.0f, 1.0f, (float) v);
         else if (k == "switchQuantize") p.switchQuantize = std::clamp ((int) v, 0, 2);

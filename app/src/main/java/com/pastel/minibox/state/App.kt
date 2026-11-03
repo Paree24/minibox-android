@@ -12,6 +12,7 @@ data class Fast(
     val activePattern: Int = 0, val queuedPattern: Int = -1, val step: Int = 0, val patternSteps: Int = 16,
     val progress: Float = 0f, val bpm: Float = 120f, val beats: Int = 4, val unit: Int = 4, val stepsPerBar: Int = 16,
     val masterPeak: Float = 0f, val trackPeaks: List<Float> = List(8) { 0f }, val focusPattern: Int = 0,
+    val stepCursor: Int = 0, val stepRecording: Boolean = false,   // step recording: armed, and where the next entry goes
 ) {
     /** "bar.beat.step", as the desktop's position display. */
     val position: String
@@ -25,7 +26,7 @@ data class Fast(
     companion object {
         fun from(v: FloatArray) = Fast(
             v[0] > 0, v[1] > 0, v[2] > 0, v[3].toInt(), v[4].toInt(), v[5].toInt(), v[6].toInt(), v[7], v[8],
-            v[9].toInt(), v[10].toInt(), v[11].toInt(), v[12], List(8) { v[13 + it] }, v[21].toInt(),
+            v[9].toInt(), v[10].toInt(), v[11].toInt(), v[12], List(8) { v[13 + it] }, v[21].toInt(), v[22].toInt(), v[23] > 0,
         )
     }
 }
@@ -50,6 +51,7 @@ data class ProjectInfo(
     val recordQuantize: Float = 1f, val switchQuantize: Int = 0, val perform: Boolean = false,
     val scaleRoot: Int = 0, val scaleIndex: Int = 1, val scaleName: String = "Major", val scaleIntervals: List<Int> = listOf(0, 2, 4, 5, 7, 9, 11),
     val master: MasterInfo = MasterInfo(), val channelPerTrack: Boolean = false,
+    val stepLength: Int = 0,   // step recording: 0–3 = 1, 2, 4, 8 steps an entry
 )
 
 /**
@@ -154,7 +156,7 @@ object App {
             o.getJSONArray("scaleIntervals").let { a -> List(a.length()) { a.getInt(it) } },
             MasterInfo(m.getDouble("volume").toFloat(), m.getDouble("delayReturn").toFloat(),
                 m.getDouble("reverbReturn").toFloat(), m.getDouble("glue").toFloat()),
-            o.optBoolean("channelPerTrack"),
+            o.optBoolean("channelPerTrack"), o.optInt("stepLength"),
         )
     }
 

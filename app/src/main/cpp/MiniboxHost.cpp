@@ -162,8 +162,8 @@ void MiniboxHost::readFast (float* out)
     out[12] = std::max (engine.master().peakL.load(), engine.master().peakR.load());
     for (int t = 0; t < kTracks; ++t) out[13 + t] = engine.slotPeak[act][t].load();
     out[21] = (float) engine.focusPattern.load();
-    out[22] = (float) engine.stepRecordCursor.load();
-    out[23] = 0.0f;
+    out[22] = (float) (engine.stepRecordCursor.load() % std::max (1, p.patternSteps (engine.focusPattern.load())));
+    out[23] = engine.isRecording() && p.recordMode == 1 ? 1.0f : 0.0f;   // step recording
 }
 
 MiniboxHost::Stats MiniboxHost::stats()

@@ -209,6 +209,8 @@ fun PianoRoll(color: Color, focusBar: (@Composable () -> Unit)? = null) {
         // drag as moves again (a selected note drags as length / transpose)
         "Paste" to { rollOp("paste", emptySet(), "grid" to grid, "at" to cursor); selected = emptySet() },
         "Q" to { rollOp("quantize", selected, "grid" to grid); selected = emptySet() },
+        // each chord played in turn, with the track's Arp settings (Play → Arp: rate, mode, octaves, gate)
+        "Arp" to { rollOp("arpeggiate", selected)?.let { selected = it } },
     )
     val selNotes = seq.clip.filter { it.id in selected }
     val selName = when { selNotes.isEmpty() -> "All"; selNotes.size == 1 -> noteName(selNotes.first().note); else -> "${selNotes.size} notes" }

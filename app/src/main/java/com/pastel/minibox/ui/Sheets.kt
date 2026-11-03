@@ -106,7 +106,8 @@ fun TempoSheet() {
     }
 }
 
-/** Record (mockup 13): live recording: Extend / Overdub, quantize, count-in. */
+/** Record (mockup 13): Live (Extend / Overdub, quantize, count-in) or Step (the pads write at a cursor that moves on
+    by the step length; Play shows it with Back and Rest). */
 @Composable
 fun RecordSheet() {
     val p by App.project
@@ -121,6 +122,17 @@ fun RecordSheet() {
             ) { Box(Modifier.size(16.dp).clip(CircleShape).background(if (fast.recording) C.bg else C.record)) }
         }
         Spacer(Modifier.height(12.dp))
+        ChoicePads(listOf("Live", "Step"), p.recordMode.coerceIn(0, 1), C.text, { App.cmd("set", "key" to "recordMode", "value" to it) })
+        Spacer(Modifier.height(18.dp))
+        if (p.recordMode == 1) {
+            SectionLabel("Each entry lasts")
+            Spacer(Modifier.height(8.dp))
+            ChoicePads(listOf("1 step", "2", "4", "8"), p.stepLength, C.text, { App.cmd("set", "key" to "stepLength", "value" to it) })
+            Spacer(Modifier.height(10.dp))
+            Text("Arm, then play the pads (chords too): each press writes at the cursor and moves it on. Back and Rest are " +
+                "above the pads while it records.", color = C.quiet, fontSize = 12.sp)
+            return@Column
+        }
         run {
             SectionLabel("Takes")
             Spacer(Modifier.height(8.dp))

@@ -54,6 +54,11 @@ fun PlayTab(openScale: () -> Unit, openArp: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         Column((if (expanded) Modifier else Modifier.weight(1f)).fillMaxWidth().padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(8.dp))
+            val fast by App.fast
+            if (fast.stepRecording && !info.empty) {
+                StepRecordStrip(fast.stepCursor, fast.patternSteps, project.stepLength)
+                Spacer(Modifier.height(8.dp))
+            }
             when {
                 info.empty -> {}
                 info.drums -> Row(verticalAlignment = Alignment.CenterVertically) {
@@ -171,5 +176,20 @@ fun MacroCard(track: Int, modifier: Modifier = Modifier) {
                 }
             }
         }
+    }
+}
+
+/** Step recording (armed in Step mode): where the next entry goes, back (clears the last), rest (a gap) and the entry's
+    length. */
+@Composable
+private fun StepRecordStrip(cursor: Int, total: Int, lengthIndex: Int) {
+    Row(Modifier.fillMaxWidth().height(34.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Box(Modifier.height(34.dp).clip(RoundedCornerShape(10.dp)).background(C.record).padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {
+            Text("STEP ${cursor + 1} / $total", color = C.bg, fontSize = 12.sp, fontWeight = FontWeight.Black)
+        }
+        Pill("‹ Back", Modifier.weight(1f), height = 34.dp) { App.cmd("stepBack") }
+        Pill("Rest ›", Modifier.weight(1f), height = 34.dp) { App.cmd("stepRest") }
+        val lens = listOf("1", "2", "4", "8")
+        Pill("Len ${lens[lengthIndex.coerceIn(0, 3)]}", height = 34.dp) { App.cmd("set", "key" to "stepLength", "value" to (lengthIndex + 1) % 4) }
     }
 }

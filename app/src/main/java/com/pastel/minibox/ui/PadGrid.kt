@@ -156,8 +156,8 @@ fun PadGrid(layout: PadLayout, onPress: (note: Int, down: Boolean) -> Unit, modi
                 text.textSize = 11.dp.toPx(); text.color = if (on) Tokens.BG else Tokens.FAINT
                 c.drawText(l.subs[pad], x + 12.dp.toPx(), y + h - 12.dp.toPx(), text)
             }
-            if (l.rolls[pad]) for (k in 0 until 3) {   // three bars: this pad repeats
-                drawRoundRect(if (on) C.bg else accent, Offset(x + s - 26.dp.toPx() + k * 6.dp.toPx(), y + 12.dp.toPx()),
+            if (l.rolls[pad]) for (k in 0 until 3) {   // three bars, bottom right (on the rate's baseline): this pad repeats
+                drawRoundRect(if (on) C.bg else accent, Offset(x + s - 26.dp.toPx() + k * 6.dp.toPx(), y + h - 24.dp.toPx()),
                     Size(3.dp.toPx(), 12.dp.toPx()), CornerRadius(1.5.dp.toPx()))
             }
         }

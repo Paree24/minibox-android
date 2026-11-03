@@ -104,7 +104,15 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (!seq.drum) {
-                Segmented(listOf("Steps", "Roll"), if (roll) 1 else 0, C.text, { if (!seq.pianoRoll) view = it }, Modifier.width(116.dp))
+                val context = androidx.compose.ui.platform.LocalContext.current
+                Segmented(listOf("Steps", "Roll"), if (roll) 1 else 0, C.text, {
+                    // Steps on a clip: its notes go back to steps (each to its nearest); one steps can't hold says why
+                    if (it == 0 && seq.pianoRoll) {
+                        val r = org.json.JSONObject(Seq.edit("toSteps").ifEmpty { "{}" })
+                        if (r.optBoolean("ok")) view = 0
+                        else android.widget.Toast.makeText(context, "Can't show as steps: " + r.optString("why"), android.widget.Toast.LENGTH_LONG).show()
+                    } else view = it
+                }, Modifier.width(116.dp))
                 Spacer(Modifier.width(8.dp))
             }
             // the bar in view: ‹ 2 / 4 › (the roll scrolls and zooms by itself)
@@ -166,6 +174,18 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
 
 private val RES_NAMES = listOf("1/8", "1/16", "1/32")
 
+/** The notes a tap on an empty step writes: in Chords mode the chord the pads last played, else one note. */
+private fun inputNotes(): List<Int> {
+    val track = App.focusTrack.intValue
+    val info = App.rack.value.getOrNull(track)
+    if (info != null && info.play.chordOn && !info.play.arpOn) {
+        val a = org.json.JSONArray(App.call("lastNotes", "track" to track).ifEmpty { "[]" })
+        val notes = (0 until a.length()).map { a.getInt(it) }.distinct()
+        if (notes.size > 1) return notes.take(6)
+    }
+    return listOf(inputNote())
+}
+
 /** The note a tap on an empty step writes: a held pad's, else the last pad played. */
 private fun inputNote(): Int {
     val n = App.heldNotes.value.firstOrNull() ?: App.lastNote.intValue
@@ -182,7 +202,7 @@ private fun StepEditor(bar: Int, spb: Int, color: Color, openStep: (Int) -> Unit
     val fast by App.fast
     Column(Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)).background(C.surface)) {
         Row(Modifier.fillMaxWidth().height(22.dp).padding(start = 70.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Head("Note", 54.dp); Head("Vel", 0.dp, Modifier.weight(1.2f)); Head("Gate", 0.dp, Modifier.weight(1f))
+            Head("Note", 54.dp); Head("Vel", 0.dp, Modifier.weight(1.2f)); Head("Length", 0.dp, Modifier.weight(1f))
             Head("%", 34.dp); Head("×", 22.dp); Head("A", 22.dp); Head("S", 22.dp)
         }
         for (i in 0 until spb) {
@@ -201,7 +221,10 @@ private fun StepEditor(bar: Int, spb: Int, color: Color, openStep: (Int) -> Unit
                 Text("${s + 1}", color = if (i % 4 == 0) C.quiet else C.faint, fontSize = 11.sp, fontWeight = FontWeight.Bold,
                     modifier = Modifier.width(26.dp))
                 Box(Modifier.size(26.dp, 24.dp).clip(RoundedCornerShape(7.dp)).background(if (st != null) color else C.control)
-                    .clickable { Seq.edit("stepToggle", "step" to s, "note" to if (st != null) -1 else inputNote()) })
+                    .clickable {
+                        if (st != null) Seq.edit("stepToggle", "step" to s, "note" to -1)
+                        else Seq.edit("stepToggle", "step" to s, "notes" to org.json.JSONArray(inputNotes()))
+                    })
                 Spacer(Modifier.width(10.dp))
                 if (st == null) {
                     Text("–", color = C.faint, fontSize = 12.sp, modifier = Modifier.width(54.dp))
@@ -210,8 +233,9 @@ private fun StepEditor(bar: Int, spb: Int, color: Color, openStep: (Int) -> Unit
                     NotePill(st, color)
                     DragBar(st.velocity / 127f, color, Modifier.weight(1.2f)) { Seq.edit("stepSet", "step" to s, "key" to "velocity", "value" to it) }
                     Spacer(Modifier.width(6.dp))
-                    DragBar((st.length / 128f).coerceAtMost(1f), color, Modifier.weight(1f)) {
-                        Seq.edit("stepSet", "step" to s, "key" to "gate", "value" to it.coerceAtLeast(0.05f))
+                    // the note's length: a gate up to a whole step on the bar's first half, then steps (up to 4 bars)
+                    DragBar(lengthToBar(st.length), color, Modifier.weight(1f)) {
+                        Seq.edit("stepSet", "step" to s, "key" to "gate", "value" to barToLength(it) / 128f)
                     }
                 }
                 if (st != null) {
@@ -264,9 +288,10 @@ private fun NotePill(st: StepData, color: Color) {
             .pointerInput(st, inKey) {
                 detectVerticalDragGestures(
                     onDragEnd = {
-                        val n = moved(drag)
+                        val by = (drag / 28f).toInt()
                         drag = 0f
-                        if (n != st.notes.first()) Seq.edit("stepSet", "step" to st.step, "key" to "note", "value" to n)
+                        // the whole step moves (a chord keeps its shape in key)
+                        if (by != 0) Seq.edit("stepSet", "step" to st.step, "key" to "shift", "value" to by)
                     },
                 ) { c, dy -> c.consume(); drag -= dy }
             },

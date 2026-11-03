@@ -2,6 +2,7 @@
 // for undo (as the desktop's AppContext does) and changes the model under the engine's edit lock.
 #include "MiniboxHost.h"
 #include "seq/Scales.h"
+#include "seq/Arpeggiate.h"
 #include <map>
 
 namespace mb::android
@@ -181,13 +182,21 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
         snapshot (pat);
         const Engine::ScopedEdit edit (engine);
         auto& st = tr.steps[(size_t) s];
+        if (auto* list = a["notes"].getArray(); list != nullptr && ! list->isEmpty())   // a chord: the step becomes it
+        {
+            st.clear();
+            for (auto& v : *list) st.addNote (std::clamp ((int) v, 0, 127), juce::roundToInt (getd (a, "velocity", 0.8) * 127.0));
+            return {};
+        }
         const int note = geti (a, "note", -1);
         if (note < 0) st.clear();
         else if (st.hasNote (note)) st.removeNote (note);
         else
         {
             if (! getb (a, "chord")) st.clear();   // a plain tap replaces the step's note
-            st.addNote (note, juce::roundToInt (getd (a, "velocity", 0.8) * 127.0));
+            // a note added to a chord takes the step's velocity and length (addNote copies them)
+            const bool own = ! getb (a, "chord") || a.hasProperty ("velocity");
+            st.addNote (note, own ? juce::roundToInt (getd (a, "velocity", 0.8) * 127.0) : -1);
         }
         return {};
     }
@@ -211,6 +220,19 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
         {
             const int n = std::clamp ((int) v, 0, 127);
             if (! st.hasNote (n)) st.notes[0] = (uint8_t) n;
+        }
+        else if (k == "shift" && st.noteCount > 0)   // the whole step (a chord) up or down by notes of the scale
+        {
+            const auto& facts = Scales::factoryScales();
+            const auto& iv = facts[(size_t) std::clamp (p.scale.scale, 0, (int) facts.size() - 1)].intervals;
+            const auto pcs = Scales::pcSet (p.scale.root, iv);
+            const int by = (int) v, dir = by > 0 ? 1 : -1;
+            for (int i = 0; i < st.noteCount; ++i)
+            {
+                int m = st.notes[i];
+                for (int k2 = 0; k2 < std::abs (by); ++k2) do m += dir; while (m > 0 && m < 127 && ! pcs[(size_t) (m % 12)]);
+                st.notes[i] = (uint8_t) std::clamp (m, 0, 127);
+            }
         }
         return {};
     }
@@ -264,6 +286,27 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
         if (a.hasProperty ("on")) pt.loopOn = (bool) a["on"];
         if (a.hasProperty ("start")) { pt.loopStart = std::clamp (geti (a, "start"), 0, total - 1); pt.loopEnd = std::clamp (geti (a, "end"), pt.loopStart + 1, total); }
         return {};
+    }
+    if (op == "lastNotes")   // what the track's last key played (its chord in Chords mode)
+    {
+        juce::Array<juce::var> out;
+        const int c = engine.lastKeyCount[(size_t) t].load (std::memory_order_acquire);
+        for (int i = 0; i < c; ++i) out.add (engine.lastKeyNotes[(size_t) t][(size_t) i].load (std::memory_order_relaxed));
+        return out;
+    }
+    if (op == "toSteps")   // a clip back to steps (the Steps view): {ok} or {ok: false, why} and nothing changes
+    {
+        auto* o = new juce::DynamicObject();
+        juce::var res (o);
+        if (! tr.pianoRoll) { o->setProperty ("ok", true); return res; }
+        auto copy = tr;
+        const auto why = copy.convertToSteps (stepT, total);
+        o->setProperty ("ok", why.isEmpty());
+        if (why.isNotEmpty()) { o->setProperty ("why", why); return res; }
+        snapshot (pat);
+        const Engine::ScopedEdit edit (engine);
+        tr.convertToSteps (stepT, total);
+        return res;
     }
     if (op == "toRoll")   // steps → clip, before the piano roll edits a step track's notes
     {
@@ -537,6 +580,13 @@ juce::var MiniboxHost::clipOp (const juce::String& fn, const juce::var& a, int p
     {
         std::map<int, int> rank;
         for (auto& x : n) { const int k = rank[x.start]++; x.start += k * 3; x.vel = (uint8_t) std::max (1, x.vel - k * 6); }
+    }
+    else if (fn == "arpeggiate")   // each chord in turn with the track's Arp settings (as the live arpeggiator)
+    {
+        std::vector<ClipNote> in, keep;
+        for (auto& x : n) (x.muted ? keep : in).push_back (x);
+        for (auto& x : arp::arpeggiate (in, pt.slots[(size_t) track].play, kPPQ, stepT / 4)) keep.push_back (x);
+        n = keep;
     }
     else if (fn == "chordInvert")   // up: each chord's lowest note an octave up; down: its highest an octave down
     {
