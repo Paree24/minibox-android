@@ -69,7 +69,7 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
         put (o, "name", p.name);
         put (o, "bpm", p.bpm);
         put (o, "beats", p.beats); put (o, "unit", p.unit);
-        put (o, "swing", p.swing);
+        put (o, "swing", p.swing); put (o, "swingGrid", p.swingGrid);
         put (o, "metronome", p.metronome); put (o, "countIn", p.countIn);
         put (o, "recordMode", p.recordMode); put (o, "stepLength", p.stepLength); put (o, "overdub", p.overdub); put (o, "recordQuantize", p.recordQuantize);
         put (o, "switchQuantize", p.switchQuantize); put (o, "perform", p.perform);
@@ -293,6 +293,7 @@ juce::var MiniboxHost::call (const juce::String& op, const juce::var& a)
         const auto v = a["value"];
         if (k == "bpm") p.bpm = juce::jlimit (30.0, 300.0, std::round ((double) v * 10.0) / 10.0);
         else if (k == "swing") p.swing = juce::jlimit (0.5f, 0.75f, (float) v);
+        else if (k == "swingGrid") p.swingGrid = std::clamp ((int) v, 0, 1);   // 0 = 1/16 notes, 1 = 1/8 notes
         else if (k == "metronome") p.metronome = (bool) v;
         else if (k == "countIn") p.countIn = (bool) v;
         else if (k == "recordMode") p.recordMode = std::clamp ((int) v, 0, 1);   // 0 live, 1 step

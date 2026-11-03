@@ -98,6 +98,10 @@ fun TempoSheet() {
         Spacer(Modifier.height(14.dp))
         BarSlider((p.swing - 0.5f) / 0.25f, C.text, "Swing", "${(p.swing * 100).toInt()}%",
             { App.cmd("set", "key" to "swing", "value" to 0.5f + it * 0.25f) })
+        Spacer(Modifier.height(8.dp))
+        // what swings: the off-beat 1/16s, or the off-beat 1/8s (1/8 hats only swing on 1/8)
+        ChoicePads(listOf("Swing 1/16", "Swing 1/8"), p.swingGrid.coerceIn(0, 1), C.text,
+            { App.cmd("set", "key" to "swingGrid", "value" to it) }, height = 38.dp)
         Spacer(Modifier.height(14.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ToggleCard("Click", p.metronome, Modifier.weight(1f)) { App.cmd("set", "key" to "metronome", "value" to it) }

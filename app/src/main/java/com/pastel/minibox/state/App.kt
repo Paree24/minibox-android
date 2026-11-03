@@ -52,6 +52,7 @@ data class ProjectInfo(
     val scaleRoot: Int = 0, val scaleIndex: Int = 1, val scaleName: String = "Major", val scaleIntervals: List<Int> = listOf(0, 2, 4, 5, 7, 9, 11),
     val master: MasterInfo = MasterInfo(), val channelPerTrack: Boolean = false,
     val stepLength: Int = 0,   // step recording: 0–3 = 1, 2, 4, 8 steps an entry
+    val swingGrid: Int = 0,    // what swings: 0 = 1/16 notes, 1 = 1/8 notes
 )
 
 /**
@@ -156,7 +157,7 @@ object App {
             o.getJSONArray("scaleIntervals").let { a -> List(a.length()) { a.getInt(it) } },
             MasterInfo(m.getDouble("volume").toFloat(), m.getDouble("delayReturn").toFloat(),
                 m.getDouble("reverbReturn").toFloat(), m.getDouble("glue").toFloat()),
-            o.optBoolean("channelPerTrack"), o.optInt("stepLength"),
+            o.optBoolean("channelPerTrack"), o.optInt("stepLength"), o.optInt("swingGrid"),
         )
     }
 
