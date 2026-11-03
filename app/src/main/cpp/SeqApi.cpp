@@ -221,6 +221,21 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
             const int n = std::clamp ((int) v, 0, 127);
             if (! st.hasNote (n)) st.notes[0] = (uint8_t) n;
         }
+        else if (k == "chord" && st.noteCount > 0)   // the step becomes a chord on its lowest note (semitones up from it)
+        {
+            if (auto* iv = v.getArray(); iv != nullptr && ! iv->isEmpty())
+            {
+                int root = 127;
+                for (int i = 0; i < st.noteCount; ++i) root = std::min (root, (int) st.notes[i]);
+                const auto vel = st.vel[0]; const auto len = st.len[0]; const auto off = st.off[0];
+                const auto flags = st.flags, prob = st.probability, rat = st.ratchet, cond = st.cond;
+                const auto micro = st.microTiming;
+                st.clear();
+                for (auto& x : *iv) st.addNote (std::clamp (root + (int) x, 0, 127), vel, len);
+                for (int i = 0; i < st.noteCount; ++i) st.off[i] = off;
+                st.flags = flags; st.probability = prob; st.ratchet = rat; st.cond = cond; st.microTiming = micro;
+            }
+        }
         else if (k == "shift" && st.noteCount > 0)   // the whole step (a chord) up or down by notes of the scale
         {
             const auto& facts = Scales::factoryScales();

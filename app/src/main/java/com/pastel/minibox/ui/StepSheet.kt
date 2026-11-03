@@ -112,28 +112,30 @@ private fun Ratchet(value: Int, color: androidx.compose.ui.graphics.Color, onSet
     Spacer(Modifier.height(14.dp))
 }
 
-/** The step's notes as a chord: its root and the 3rd, 5th, 7th and octave above it in key, each toggled (a chord
-    keeps at least its root). */
+/** Chord shapes for a step, in semitones from its lowest note. */
+private val CHORDS = listOf(
+    "Single" to listOf(0), "Maj" to listOf(0, 4, 7), "Min" to listOf(0, 3, 7), "Dim" to listOf(0, 3, 6),
+    "Aug" to listOf(0, 4, 8), "Sus2" to listOf(0, 2, 7), "Sus4" to listOf(0, 5, 7),
+    "Maj7" to listOf(0, 4, 7, 11), "7" to listOf(0, 4, 7, 10), "m7" to listOf(0, 3, 7, 10), "mMaj7" to listOf(0, 3, 7, 11),
+    "dim7" to listOf(0, 3, 6, 9), "m7♭5" to listOf(0, 3, 6, 10), "Aug7" to listOf(0, 4, 8, 10), "AugMaj7" to listOf(0, 4, 8, 11),
+    "7sus2" to listOf(0, 2, 7, 10), "7sus4" to listOf(0, 5, 7, 10),
+    "Power" to listOf(0, 7), "Octave" to listOf(0, 12),
+)
+
+/** The step's chord: one dropdown (its shape on the lowest note; velocity and length stay). */
 @Composable
 private fun ChordRow(st: com.pastel.minibox.state.StepData, color: androidx.compose.ui.graphics.Color) {
-    val project by App.project
-    val inKey = remember(project.scaleRoot, project.scaleIntervals) {
-        (0..127).filter { ((it - project.scaleRoot) % 12 + 12) % 12 in project.scaleIntervals }
-    }
     val root = st.notes.minOrNull() ?: return
-    val row = inKey.indexOfLast { it <= root }.coerceAtLeast(0)
-    fun above(deg: Int) = inKey.getOrElse(row + deg) { root }
-    val adds = listOf("3rd" to above(2), "5th" to above(4), "7th" to above(6), "Oct" to root + 12)
-    SectionLabel("Notes  ·  " + st.notes.sorted().joinToString(" ") { noteName(it) })
-    Spacer(Modifier.height(6.dp))
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        for ((label, n) in adds) {
-            val on = n in st.notes
-            Box(Modifier.weight(1f)) {
-                ChoicePads(listOf(label), if (on) 0 else -1, color, {
-                    if (n in 0..127 && n != root && (on || st.notes.size < 6))
-                        Seq.edit("stepToggle", "step" to st.step, "note" to n, "chord" to true)
-                })
+    val shape = st.notes.map { it - root }.sorted()
+    val name = CHORDS.firstOrNull { it.second == shape }?.first ?: "${st.notes.size} notes"
+    var open by remember { mutableStateOf(false) }
+    Box {
+        Pill("Chord · ${noteName(root)} $name", Modifier.fillMaxWidth(), caret = true, height = 40.dp) { open = true }
+        androidx.compose.material3.DropdownMenu(open, { open = false }, containerColor = C.surface) {
+            CHORDS.forEach { (n, iv) ->
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { androidx.compose.material3.Text(n, color = if (n == name) color else C.text, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) },
+                    onClick = { open = false; Seq.edit("stepSet", "step" to st.step, "key" to "chord", "value" to org.json.JSONArray(iv)) })
             }
         }
     }
