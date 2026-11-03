@@ -26,7 +26,7 @@ fun lengthToBar(len: Int): Float =
     else 0.5f + 0.5f * (LONG_STEPS.indexOfFirst { it * 128 >= len }.let { if (it < 0) LONG_STEPS.size - 1 else it } + 1) / LONG_STEPS.size
 fun barToLength(v: Float): Int =
     if (v <= 0.5f) (v * 256f).toInt().coerceIn(6, 128)
-    else LONG_STEPS[(kotlin.math.ceil((v - 0.5f) * 2f * LONG_STEPS.size).toInt() - 1).coerceIn(0, LONG_STEPS.size - 1)] * 128
+    else LONG_STEPS[(kotlin.math.ceil((v - 0.5f) * 2f * LONG_STEPS.size - 1e-3f).toInt() - 1).coerceIn(0, LONG_STEPS.size - 1)] * 128
 fun lengthText(len: Int): String = if (len <= 128) "${len * 100 / 128}%" else {
     val st = len / 128f
     if (st == st.toInt().toFloat()) "${st.toInt()} steps" else "%.1f steps".format(st)

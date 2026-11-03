@@ -1,5 +1,7 @@
 package com.pastel.minibox.ui
 
+import androidx.compose.foundation.systemGestureExclusion
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -106,8 +108,12 @@ fun BarSlider(value: Float, color: Color, name: String, text: String, onChange: 
     val end by rememberUpdatedState(onEnd)
     var drag by remember { mutableFloatStateOf(-1f) }   // the finger's value while it moves (the model catches up)
     val shown = if (drag >= 0f) drag else value
+    val margin = with(androidx.compose.ui.platform.LocalDensity.current) { 24.dp.toPx() }
     Box(
-        modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(12.dp)).background(C.control)
+        // its ends reach the screen's edges, where a drag would be the system's Back gesture (it closed the sheet):
+        // the bar takes its own drags there
+        modifier.fillMaxWidth().height(height).systemGestureExclusion { androidx.compose.ui.geometry.Rect(-margin, 0f, it.size.width + margin, it.size.height.toFloat()) }   // the sheet's margins too
+            .clip(RoundedCornerShape(12.dp)).background(C.control)
             .pointerInput(Unit) {
                 detectTapGestures { change((it.x / size.width).coerceIn(0f, 1f)); end?.invoke() }
             }

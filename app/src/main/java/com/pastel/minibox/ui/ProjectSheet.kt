@@ -85,34 +85,52 @@ fun ProjectSheet(done: () -> Unit) {
             App.refresh(); done()
         }
     }
+    var confirmNew by remember { mutableStateOf(false) }
+    // the app's working copy, then the same file in Documents/Minibox (the Files app shows it there)
+    fun save(): Boolean {
+        val n = name.trim()
+        val r = JSONObject(App.call("saveProject", "name" to n))
+        val ok = r.optBoolean("ok")
+        if (ok) {
+            Prefs.setLastProject(context, n)
+            val f = File(context.filesDir, "Projects/${n}.minibox")
+            if (android.os.Build.VERSION.SDK_INT < 29 && context.checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                (context as? android.app.Activity)?.requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), 2)
+                toast(context, "Saved in the app; allow storage and save again for Documents/Minibox")
+            } else toast(context, if (PublicFiles.save(context, f, "$n.minibox")) "Saved to ${PublicFiles.FOLDER}" else "Saved in the app")
+        } else toast(context, r.optString("error"))
+        App.refresh(); projects = listProjects()
+        return ok
+    }
+    fun startNew() {
+        App.autosave(context)   // the Autosave safety copy either way
+        App.call("newProject"); App.refresh(); Prefs.setLastProject(context, null); confirmNew = false; done()
+    }
     Column {
         BasicTextField(name, { name = it }, singleLine = true,
             textStyle = TextStyle(color = C.text, fontSize = 20.sp, fontWeight = FontWeight.Black), cursorBrush = SolidColor(C.text),
             modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp))
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ActionPad("New", Modifier.weight(1f)) {
-                App.autosave(context)
-                App.call("newProject"); App.refresh(); Prefs.setLastProject(context, null); done()
-            }
-            ActionPad("Save", Modifier.weight(1f)) {
-                // the app's working copy, then the same file in Documents/Minibox (the Files app shows it there)
-                val n = name.trim()
-                val r = JSONObject(App.call("saveProject", "name" to n))
-                if (r.optBoolean("ok")) {
-                    Prefs.setLastProject(context, n)
-                    val f = File(context.filesDir, "Projects/${n}.minibox")
-                    if (android.os.Build.VERSION.SDK_INT < 29 && context.checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                        (context as? android.app.Activity)?.requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), 2)
-                        toast(context, "Saved in the app; allow storage and save again for Documents/Minibox")
-                    } else toast(context, if (PublicFiles.save(context, f, "$n.minibox")) "Saved to ${PublicFiles.FOLDER}" else "Saved in the app")
-                } else toast(context, r.optString("error"))
-                App.refresh(); projects = listProjects()
-            }
+            // asks first what happens to this one (an empty project just goes)
+            ActionPad("New", Modifier.weight(1f)) { if (App.rack.value.all { it.empty }) startNew() else confirmNew = true }
+            ActionPad("Save", Modifier.weight(1f)) { save() }
             ActionPad("Save as", Modifier.weight(1f)) { saveAs.launch("${name.trim().ifEmpty { "Minibox" }}.minibox") }
             ActionPad("Export", Modifier.weight(1f)) { showExport = !showExport }
             ActionPad("Open file", Modifier.weight(1f)) { import.launch(arrayOf("*/*")) }
+        }
+        if (confirmNew) {
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCornerShape(12.dp)).background(C.control)
+                .padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("New project: save \"${name.trim()}\" first?", color = C.text, fontSize = 13.sp, fontWeight = FontWeight.Black,
+                    modifier = Modifier.weight(1f), maxLines = 2)
+                Pill("Save", on = true) { if (save()) startNew() }
+                Spacer(Modifier.width(6.dp))
+                Pill("Don't save", on = true, color = C.record) { startNew() }
+                Spacer(Modifier.width(6.dp))
+                Pill("Cancel") { confirmNew = false }
+            }
         }
         if (showExport) {
             Spacer(Modifier.height(8.dp))

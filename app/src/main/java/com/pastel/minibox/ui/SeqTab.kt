@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.systemGestureExclusion
 import kotlin.math.roundToInt
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -226,7 +228,16 @@ private fun StepEditor(bar: Int, spb: Int, color: Color, openStep: (Int) -> Unit
                         else Seq.edit("stepToggle", "step" to s, "notes" to org.json.JSONArray(inputNotes()))
                     })
                 Spacer(Modifier.width(10.dp))
-                if (st == null) {
+                // an empty step a longer note is still sounding over (recorded or set long): its name and a tail, as
+                // the piano roll shows it
+                val holder = if (st != null) null else (s - 1 downTo maxOf(0, s - 64)).firstNotNullOfOrNull { t ->
+                    seq.stepList[t]?.takeIf { it.length > (s - t) * 128 }
+                }
+                if (st == null && holder != null) {
+                    Text("╰ " + noteName(holder.notes.first()), color = color.copy(alpha = 0.7f), fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                        maxLines = 1, modifier = Modifier.width(54.dp))
+                    Box(Modifier.weight(2.2f).height(4.dp).clip(CircleShape).background(color.copy(alpha = 0.35f)))
+                } else if (st == null) {
                     Text("–", color = C.faint, fontSize = 12.sp, modifier = Modifier.width(54.dp))
                     Spacer(Modifier.weight(2.2f))
                 } else {
@@ -234,7 +245,11 @@ private fun StepEditor(bar: Int, spb: Int, color: Color, openStep: (Int) -> Unit
                     DragBar(st.velocity / 127f, color, Modifier.weight(1.2f)) { Seq.edit("stepSet", "step" to s, "key" to "velocity", "value" to it) }
                     Spacer(Modifier.width(6.dp))
                     // the note's length: a gate up to a whole step on the bar's first half, then steps (up to 4 bars)
-                    DragBar(lengthToBar(st.length), color, Modifier.weight(1f)) {
+                    DragBar(lengthToBar(st.length), color, Modifier.weight(1f), label = { v ->
+                        // the step's own length; while dragging, where the finger is
+                        val len = if (v == null) st.length else barToLength(v)
+                        if (len > 128) lengthText(len).replace(" steps", " st") else null
+                    }) {
                         Seq.edit("stepSet", "step" to s, "key" to "gate", "value" to barToLength(it) / 128f)
                     }
                 }
@@ -303,11 +318,11 @@ private fun NotePill(st: StepData, color: Color) {
 
 /** A small horizontal bar dragged sideways; the edit is written when the finger lifts (one undo step). */
 @Composable
-private fun DragBar(value: Float, color: Color, modifier: Modifier, onCommit: (Float) -> Unit) {
+private fun DragBar(value: Float, color: Color, modifier: Modifier, label: ((Float?) -> String?)? = null, onCommit: (Float) -> Unit) {
     var drag by remember { mutableFloatStateOf(-1f) }
     val shown = if (drag >= 0f) drag else value
     Box(
-        modifier.height(24.dp).pointerInput(Unit) {
+        modifier.height(24.dp).systemGestureExclusion().pointerInput(Unit) {   // not the system's Back gesture
             detectHorizontalDragGestures(
                 onDragStart = { drag = (it.x / size.width).coerceIn(0f, 1f) },
                 onDragEnd = { val v = drag; drag = -1f; if (v >= 0f) onCommit(v) },
@@ -318,6 +333,9 @@ private fun DragBar(value: Float, color: Color, modifier: Modifier, onCommit: (F
     ) {
         Box(Modifier.fillMaxWidth().height(8.dp).clip(CircleShape).background(C.control))
         Box(Modifier.fillMaxWidth(shown.coerceIn(0.02f, 1f)).height(8.dp).clip(CircleShape).background(color.copy(alpha = 0.9f)))
+        // a value worth reading (a note longer than a step): above the bar, live while dragging
+        label?.invoke(if (drag >= 0f) drag else null)?.let { Text(it, color = C.text, fontSize = 9.sp, fontWeight = FontWeight.Black, maxLines = 1,
+            modifier = Modifier.align(Alignment.TopEnd).offset(y = (-6).dp)) }
     }
 }
 
