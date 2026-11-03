@@ -91,7 +91,7 @@ fun MainScreen() {
             when (tab) {
                 Tab.Play -> PlayTab(openScale = { sheet = Sheet.Scale }, openArp = { sheet = Sheet.Arp })
                 Tab.Perform -> PerformTab(onPatternMenu = { sheet = Sheet.PatternMenu(it) })
-                Tab.Seq -> SeqTab(openStep = { s, l -> sheet = Sheet.Step(s, l) })
+                Tab.Seq -> SeqTab(openStep = { s, l -> sheet = Sheet.Step(s, l) }, openArp = { sheet = Sheet.Arp })
                 Tab.Sound -> SoundTab(openPresets = { sheet = Sheet.Presets })
                 Tab.Mix -> MixTab(openTrack = { sheet = Sheet.TrackMix(it) }, openEffects = { sheet = Sheet.MasterFx }, addDevice = { sheet = Sheet.Device(it) })
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

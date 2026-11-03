@@ -67,7 +67,7 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
         put (o, "bars", pt.lengthBars); put (o, "maxBars", p.maxBarsFor (pat));
         put (o, "stepsPerBar", p.stepsPerBar (pat)); put (o, "steps", total); put (o, "stepRes", pt.stepRes);
         put (o, "loopOn", pt.loopOn); put (o, "loopStart", pt.loopStart); put (o, "loopEnd", pt.loopEnd);
-        put (o, "stepTicks", stepT); put (o, "pianoRoll", tr.pianoRoll);
+        put (o, "stepTicks", stepT); put (o, "pianoRoll", tr.pianoRoll); put (o, "arp", tr.arp);
         put (o, "canUndo", ! undoStack.empty()); put (o, "canRedo", ! redoStack.empty());
         const bool drum = dev != nullptr && dev->laneCount() > 0;
         put (o, "drum", drum);
@@ -322,6 +322,12 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
         const Engine::ScopedEdit edit (engine);
         tr.convertToSteps (stepT, total);
         return res;
+    }
+    if (op == "setArp")   // the track's notes play through its arpeggiator (its Arp settings, live); the notes stay
+    {
+        const Engine::ScopedEdit edit (engine);
+        tr.arp = getb (a, "on");
+        return {};
     }
     if (op == "toRoll")   // steps → clip, before the piano roll edits a step track's notes
     {

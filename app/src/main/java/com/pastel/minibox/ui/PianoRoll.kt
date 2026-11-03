@@ -151,7 +151,7 @@ private class Geo(val vertical: Boolean, val w: Float, val h: Float, val view: R
  * down); drag the keys or the ruler to scroll; two fingers pinch (each axis on its own) and pan.
  */
 @Composable
-fun PianoRoll(color: Color, focusBar: (@Composable () -> Unit)? = null) {
+fun PianoRoll(color: Color, openArp: () -> Unit = {}, focusBar: (@Composable () -> Unit)? = null) {
     val seq by Seq.data
     val fast by App.fast
     val project by App.project
@@ -209,14 +209,16 @@ fun PianoRoll(color: Color, focusBar: (@Composable () -> Unit)? = null) {
         // drag as moves again (a selected note drags as length / transpose)
         "Paste" to { rollOp("paste", emptySet(), "grid" to grid, "at" to cursor); selected = emptySet() },
         "Q" to { rollOp("quantize", selected, "grid" to grid); selected = emptySet() },
-        // each chord played in turn, with the track's Arp settings (Play → Arp: rate, mode, octaves, gate)
-        "Arp" to { rollOp("arpeggiate", selected)?.let { selected = it } },
+        // the Arp sheet: its switch plays the notes through the arpeggiator as they are (nothing is rewritten), and
+        // its settings are heard at once; the button is lit while it is on
+        "Arp" to openArp,
     )
     val selNotes = seq.clip.filter { it.id in selected }
     val selName = when { selNotes.isEmpty() -> "All"; selNotes.size == 1 -> noteName(selNotes.first().note); else -> "${selNotes.size} notes" }
     @Composable fun EditButton(label: String, modifier: Modifier, action: () -> Unit) {
-        Box(modifier.clip(RoundedCornerShape(9.dp)).background(C.control).clickable(onClick = action), contentAlignment = Alignment.Center) {
-            Text(label, color = C.text, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
+        val lit = label == "Arp" && seq.arp
+        Box(modifier.clip(RoundedCornerShape(9.dp)).background(if (lit) color else C.control).clickable(onClick = action), contentAlignment = Alignment.Center) {
+            Text(label, color = if (lit) C.bg else C.text, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
         }
     }
     @Composable fun DeleteButton(modifier: Modifier) {

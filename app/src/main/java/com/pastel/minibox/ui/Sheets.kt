@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.pastel.minibox.engine.AudioStats
 import com.pastel.minibox.engine.Native
 import com.pastel.minibox.state.App
+import com.pastel.minibox.state.Seq
 import kotlinx.coroutines.delay
 
 @Composable
@@ -279,6 +280,14 @@ fun ArpSheet() {
     fun set(key: String, v: Any) = App.cmd("setPlay", "track" to track, "key" to key, "value" to v)
     Column {
         SheetTitle("Arp", "${ARP_RATES[pl.arpRate.coerceIn(0, 14)]} · ${ARP_MODES[pl.arpMode]}")
+        val seq by Seq.data
+        androidx.compose.runtime.LaunchedEffect(track) { Seq.refresh() }   // opened from Play too: this track's sequence
+        if (!seq.drum && !rack[track].empty) {
+            // the track's written notes (steps or piano roll) play through the arp while it plays: the notes stay
+            // as written, and every setting below is heard at once
+            ToggleCard("Arp the sequence", seq.arp, Modifier.fillMaxWidth()) { Seq.edit("setArp", "on" to it) }
+            Spacer(Modifier.height(12.dp))
+        }
         SectionLabel("Rate")
         Spacer(Modifier.height(6.dp))
         for (row in 0 until 5) {   // 1/4 … 1/64, each straight, dotted, triplet

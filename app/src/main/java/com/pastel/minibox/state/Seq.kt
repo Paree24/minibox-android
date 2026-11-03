@@ -18,6 +18,7 @@ data class SeqData(
     val stepRes: Int = 1, val loopOn: Boolean = false, val loopStart: Int = 0, val loopEnd: Int = 0,
     val stepList: Map<Int, StepData> = emptyMap(), val lanes: List<Map<Int, Cell>> = List(8) { emptyMap() },
     val clip: List<ClipNote> = emptyList(),
+    val arp: Boolean = false,   // the notes play through the track's arpeggiator (Play → Arp settings, live)
 ) {
     /** The notes as the piano roll shows them: the clip, or a step track's notes at their positions. */
     val rollNotes: List<ClipNote>
@@ -54,7 +55,7 @@ object Seq {
                 List(a.length()) { a.getJSONArray(it) }.map { r ->
                     ClipNote(r.getInt(0), r.getInt(1), r.getInt(2), r.getInt(3), r.getInt(4), r.getInt(5), r.optBoolean(6), r.optBoolean(7))
                 }
-            } ?: emptyList(),
+            } ?: emptyList(),            o.optBoolean("arp"),
         )
     }
 

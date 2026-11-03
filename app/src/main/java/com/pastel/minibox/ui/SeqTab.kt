@@ -52,7 +52,7 @@ import kotlinx.coroutines.delay
 
 /** Seq (mockups 04, 05, 15, 16): the step editor or the piano roll, the whole page (no pads). */
 @Composable
-fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
+fun SeqTab(openStep: (step: Int, lane: Int) -> Unit, openArp: () -> Unit = {}) {
     val track = App.focusTrack.intValue
     val fast by App.fast
     val seq by Seq.data
@@ -85,7 +85,7 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
     // layout C on trial: the roll over everything, with its own slim bar
     if (roll && RollUi.focus.value) {
         Box(Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 6.dp)) {
-            PianoRoll(color) {
+            PianoRoll(color, openArp = openArp) {
                 Row(Modifier.padding(bottom = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     RoundIcon("‹") { RollUi.focus.value = false }
                     RoundIcon(if (fast.playing) "■" else "▶") { App.cmd(if (fast.playing) "stop" else "play") }
@@ -162,7 +162,7 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit) {
         }
         Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp)) {
             when {
-                roll -> PianoRoll(color)
+                roll -> PianoRoll(color, openArp = openArp)
                 velPage -> StepVelocity(bar, spb, color, seq.drum, part) { part = it }
                 seq.drum -> DrumEditor(bar, spb, part, color, { part = it }, { s -> openStep(s, part) })
                 else -> StepEditor(bar, spb, color) { s -> openStep(s, -1) }
