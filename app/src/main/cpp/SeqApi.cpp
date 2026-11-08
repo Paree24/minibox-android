@@ -1,6 +1,7 @@
 // Seq: the step editor, drum steps and the piano roll (mockups 04–06, 15–16). Every edit takes a pattern snapshot
 // for undo (as the desktop's AppContext does) and changes the model under the engine's edit lock.
 #include "seq/Chords.h"
+#include "seq/StepGrid.h"
 #include "MiniboxHost.h"
 #include "seq/Scales.h"
 #include "seq/Arpeggiate.h"
@@ -174,6 +175,38 @@ juce::var MiniboxHost::seqCall (const juce::String& op, const juce::var& a, bool
         snapshot (pat);
         const Engine::ScopedEdit edit (engine);
         p.setLengthBars (pat, geti (a, "bars", 1));
+        return {};
+    }
+    // the synth step grid (seq/StepGrid.h): steps × the scale's notes, an octave per step, length in steps, accent,
+    // glide. "more": the rest of one stroke (a single undo step)
+    if (op == "grid" || op == "gridOctave" || op == "gridLength" || op == "gridFlag" || op == "gridShift")
+    {
+        if (tr.pianoRoll || dev == nullptr || dev->laneCount() > 0) return {};
+        const stepgrid::Scale sc (p.scale);
+        if (! getb (a, "more")) snapshot (pat);
+        const Engine::ScopedEdit edit (engine);
+        if (op == "gridShift") { stepgrid::shiftAll (tr, total, geti (a, "dir") > 0 ? 1 : -1, sc); return {}; }
+        const int s = geti (a, "step");
+        if (s < 0 || s >= total) return {};
+        auto& st = tr.steps[(size_t) s];
+        if (op == "grid")
+        {
+            const int d = geti (a, "degree");
+            const bool mono = dev->type() == DeviceType::Mono || dev->type() == DeviceType::Acid;
+            const bool there = stepgrid::noteOnDegree (st, d, sc) >= 0;
+            // a tap toggles; a stroke paints ("on": what its first cell did)
+            if (! a.hasProperty ("on") || (bool) a["on"] != there)
+                stepgrid::toggle (st, d, geti (a, "octave", 3), sc, mono, juce::roundToInt (getd (a, "velocity", 100.0 / 127.0) * 127.0));
+            return stepgrid::noteOnDegree (st, d, sc) >= 0;
+        }
+        if (st.noteCount == 0) return {};
+        if (op == "gridOctave") stepgrid::setOctave (st, geti (a, "octave"), sc);
+        else if (op == "gridLength") stepgrid::setLengthSteps (st, geti (a, "steps", 1));
+        else
+        {
+            const uint8_t f = a["key"].toString() == "glide" ? kSlideFlag : kAccentFlag;
+            st.flags = (uint8_t) (getb (a, "value") ? (st.flags | f) : (st.flags & ~f));
+        }
         return {};
     }
     if (op == "stepToggle")   // a synth step: add the note, or remove it (note −1: clear the step)

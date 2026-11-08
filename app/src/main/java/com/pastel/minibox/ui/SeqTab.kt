@@ -85,6 +85,7 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit, openArp: () -> Unit = {}) {
     val bar = pickedBar.coerceIn(0, pageCount - 1)
     var lengthMenu by remember { mutableStateOf(false) }
     var velPage by remember { mutableStateOf(false) }
+    var gridMode by remember { mutableIntStateOf(0) }   // synth steps: Notes, Length, Octave, Accent, Glide, Vel
 
     // layout C on trial: the roll over everything, with its own slim bar
     if (roll && RollUi.focus.value) {
@@ -159,17 +160,22 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit, openArp: () -> Unit = {}) {
             RoundIcon("↷", seq.canRedo) { Seq.edit("redo") }
         }
         // the step editors: the steps, or their velocities (the roll has its own Velocity tab)
-        if (!roll) {
-            Segmented(listOf(if (seq.drum) "Hits" else "Steps", "Velocity"), if (velPage) 1 else 0, C.text, { velPage = it == 1 },
+        if (!roll && seq.drum) {
+            Segmented(listOf("Hits", "Velocity"), if (velPage) 1 else 0, C.text, { velPage = it == 1 },
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp), height = 32.dp)
+            Spacer(Modifier.height(6.dp))
+        } else if (!roll) {
+            // the synth step grid's modes (as the drums' Hits / Velocity)
+            Segmented(GRID_MODES, gridMode, C.text, { gridMode = it }, Modifier.fillMaxWidth().padding(horizontal = 16.dp), height = 32.dp)
             Spacer(Modifier.height(6.dp))
         }
         Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp)) {
             when {
                 roll -> PianoRoll(color, openArp = openArp)
-                velPage -> StepVelocity(bar, spb, color, seq.drum, part) { part = it }
+                seq.drum && velPage -> StepVelocity(bar, spb, color, true, part) { part = it }
                 seq.drum -> DrumEditor(bar, spb, part, color, { part = it }, { s -> openStep(s, part) })
-                else -> StepEditor(bar, spb, color) { s -> openStep(s, -1) }
+                gridMode == 5 -> StepVelocity(bar, spb, color, false, part) { part = it }
+                else -> SynthGrid(bar, spb, color, gridMode) { s -> openStep(s, -1) }
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -177,169 +183,6 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit, openArp: () -> Unit = {}) {
 }
 
 private val RES_NAMES = listOf("1/8", "1/16", "1/32")
-
-/** The notes a tap on an empty step writes: in Chords mode the chord the pads last played, else one note. */
-private fun inputNotes(): List<Int> {
-    val track = App.focusTrack.intValue
-    val info = App.rack.value.getOrNull(track)
-    if (info != null && info.play.chordOn && !info.play.arpOn) {
-        val a = org.json.JSONArray(App.call("lastNotes", "track" to track).ifEmpty { "[]" })
-        val notes = (0 until a.length()).map { a.getInt(it) }.distinct()
-        if (notes.size > 1) return notes.take(6)
-    }
-    return listOf(inputNote())
-}
-
-/** The note a tap on an empty step writes: a held pad's, else the last pad played. */
-private fun inputNote(): Int {
-    val n = App.heldNotes.value.firstOrNull() ?: App.lastNote.intValue
-    val p = App.project.value
-    // in key, as everything else in Seq: a note off the scale moves down onto it
-    return (n downTo maxOf(0, n - 11)).firstOrNull { ((it - p.scaleRoot) % 12 + 12) % 12 in p.scaleIntervals } ?: n
-}
-
-/** Synth steps as rows (time runs down): on, note, velocity, gate, chance, ratchet, accent, slide. */
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun StepEditor(bar: Int, spb: Int, color: Color, openStep: (Int) -> Unit) {
-    val seq by Seq.data
-    val fast by App.fast
-    Column(Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)).background(C.surface)) {
-        Row(Modifier.fillMaxWidth().height(22.dp).padding(start = 70.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Head("Note", 54.dp); Head("Vel", 0.dp, Modifier.weight(1.2f)); Head("Length", 0.dp, Modifier.weight(1f))
-            Head("%", 34.dp); Head("×", 22.dp); Head("A", 22.dp); Head("S", 22.dp)
-        }
-        for (i in 0 until spb) {
-            val s = bar * spb + i
-            if (s >= seq.steps) { Spacer(Modifier.weight(1f)); continue }   // an odd meter's last half bar
-            val st = seq.stepList[s]
-            val playing = fast.playing && fast.step == s && fast.activePattern == fast.focusPattern
-            Row(
-                Modifier.weight(1f).fillMaxWidth()
-                    .background(if ((i / 4) % 2 == 1) Color(0xFF23262D) else Color.Transparent)
-                    .then(if (playing) Modifier.border(1.5.dp, C.pattern, RoundedCornerShape(8.dp)) else Modifier)
-                    .combinedClickable(onClick = {}, onLongClick = { if (st != null) openStep(s) })
-                    .padding(horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("${s + 1}", color = if (i % 4 == 0) C.quiet else C.faint, fontSize = 11.sp, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.width(26.dp))
-                Box(Modifier.size(26.dp, 24.dp).clip(RoundedCornerShape(7.dp)).background(if (st != null) color else C.control)
-                    .clickable {
-                        if (st != null) Seq.edit("stepToggle", "step" to s, "note" to -1)
-                        else Seq.edit("stepToggle", "step" to s, "notes" to org.json.JSONArray(inputNotes()))
-                    })
-                Spacer(Modifier.width(10.dp))
-                // an empty step a longer note is still sounding over (recorded or set long): its name and a tail, as
-                // the piano roll shows it
-                val holder = if (st != null) null else (s - 1 downTo maxOf(0, s - 64)).firstNotNullOfOrNull { t ->
-                    seq.stepList[t]?.takeIf { it.length > (s - t) * 128 }
-                }
-                if (st == null && holder != null) {
-                    Text("╰ " + noteName(holder.notes.first()), color = color.copy(alpha = 0.7f), fontSize = 11.sp, fontWeight = FontWeight.Bold,
-                        maxLines = 1, modifier = Modifier.width(54.dp))
-                    Box(Modifier.weight(2.2f).height(4.dp).clip(CircleShape).background(color.copy(alpha = 0.35f)))
-                } else if (st == null) {
-                    Text("–", color = C.faint, fontSize = 12.sp, modifier = Modifier.width(54.dp))
-                    Spacer(Modifier.weight(2.2f))
-                } else {
-                    NotePill(st, color)
-                    DragBar(st.velocity / 127f, color, Modifier.weight(1.2f)) { Seq.edit("stepSet", "step" to s, "key" to "velocity", "value" to it) }
-                    Spacer(Modifier.width(6.dp))
-                    // the note's length: a gate up to a whole step on the bar's first half, then steps (up to 4 bars)
-                    DragBar(lengthToBar(st.length), color, Modifier.weight(1f), label = { v ->
-                        // the step's own length; while dragging, where the finger is
-                        val len = if (v == null) st.length else barToLength(v)
-                        if (len > 128) lengthText(len).replace(" steps", " st") else null
-                    }) {
-                        Seq.edit("stepSet", "step" to s, "key" to "gate", "value" to barToLength(it) / 128f)
-                    }
-                }
-                if (st != null) {
-                    TapText("${st.probability}", st.probability < 100, 34.dp) {
-                        val next = listOf(100, 75, 50, 25).let { l -> l[(l.indexOf(st.probability).coerceAtLeast(0) + 1) % l.size] }
-                        Seq.edit("stepSet", "step" to s, "key" to "probability", "value" to next)
-                    }
-                    TapText("${st.ratchet}", st.ratchet > 1, 22.dp) { Seq.edit("stepSet", "step" to s, "key" to "ratchet", "value" to st.ratchet % 4 + 1) }
-                    Box(Modifier.size(22.dp).clickable { Seq.edit("stepSet", "step" to s, "key" to "accent", "value" to !st.accent) },
-                        contentAlignment = Alignment.Center) { Box(Modifier.size(10.dp).clip(CircleShape).background(if (st.accent) color else C.control)) }
-                    Box(Modifier.size(22.dp).clickable { Seq.edit("stepSet", "step" to s, "key" to "slide", "value" to !st.slide) },
-                        contentAlignment = Alignment.Center) { Text("↗", color = if (st.slide) color else C.faint, fontSize = 13.sp, fontWeight = FontWeight.Black) }
-                } else Spacer(Modifier.width(100.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun Head(text: String, width: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
-    Text(text.uppercase(), color = C.faint, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
-        modifier = if (width > 0.dp) modifier.width(width) else modifier)
-}
-
-@Composable
-private fun TapText(text: String, strong: Boolean, width: androidx.compose.ui.unit.Dp, onTap: () -> Unit) {
-    Box(Modifier.width(width).fillMaxHeight().clickable(onClick = onTap), contentAlignment = Alignment.Center) {
-        Text(text, color = if (strong) C.text else C.faint, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-    }
-}
-
-/** The step's note: drag up or down to change it, a note of the project scale per notch (in key, as the pads and the
-    piano roll); a note off the scale moves onto it. A chord shows its size. */
-@Composable
-private fun NotePill(st: StepData, color: Color) {
-    val project by App.project
-    val inKey = remember(project.scaleRoot, project.scaleIntervals) {
-        (0..127).filter { ((it - project.scaleRoot) % 12 + 12) % 12 in project.scaleIntervals }
-    }
-    var drag by remember(st) { mutableFloatStateOf(0f) }
-    fun moved(d: Float): Int {
-        val first = st.notes.first()
-        val row = inKey.indexOfLast { it <= first }.coerceAtLeast(0)
-        val steps = (d / 28f).toInt()
-        return if (steps == 0) first else inKey[(row + steps).coerceIn(0, inKey.size - 1)]
-    }
-    val shown = moved(drag)
-    Box(
-        Modifier.width(54.dp).height(24.dp).padding(end = 6.dp).clip(CircleShape).background(C.bg)
-            .pointerInput(st, inKey) {
-                detectVerticalDragGestures(
-                    onDragEnd = {
-                        val by = (drag / 28f).toInt()
-                        drag = 0f
-                        // the whole step moves (a chord keeps its shape in key)
-                        if (by != 0) Seq.edit("stepSet", "step" to st.step, "key" to "shift", "value" to by)
-                    },
-                ) { c, dy -> c.consume(); drag -= dy }
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(noteName(shown) + if (st.notes.size > 1) "+${st.notes.size - 1}" else "", color = color, fontSize = 11.sp, fontWeight = FontWeight.Black)
-    }
-}
-
-/** A small horizontal bar dragged sideways; the edit is written when the finger lifts (one undo step). */
-@Composable
-private fun DragBar(value: Float, color: Color, modifier: Modifier, label: ((Float?) -> String?)? = null, onCommit: (Float) -> Unit) {
-    var drag by remember { mutableFloatStateOf(-1f) }
-    val shown = if (drag >= 0f) drag else value
-    Box(
-        modifier.height(24.dp).systemGestureExclusion().pointerInput(Unit) {   // not the system's Back gesture
-            detectHorizontalDragGestures(
-                onDragStart = { drag = (it.x / size.width).coerceIn(0f, 1f) },
-                onDragEnd = { val v = drag; drag = -1f; if (v >= 0f) onCommit(v) },
-                onDragCancel = { drag = -1f },
-            ) { c, _ -> c.consume(); drag = (c.position.x / size.width).coerceIn(0f, 1f) }
-        },
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        Box(Modifier.fillMaxWidth().height(8.dp).clip(CircleShape).background(C.control))
-        Box(Modifier.fillMaxWidth(shown.coerceIn(0.02f, 1f)).height(8.dp).clip(CircleShape).background(color.copy(alpha = 0.9f)))
-        // a value worth reading (a note longer than a step): above the bar, live while dragging
-        label?.invoke(if (drag >= 0f) drag else null)?.let { Text(it, color = C.text, fontSize = 9.sp, fontWeight = FontWeight.Black, maxLines = 1,
-            modifier = Modifier.align(Alignment.TopEnd).offset(y = (-6).dp)) }
-    }
-}
 
 /** The drum parts as chips (the one in view, or being edited, lit). */
 @Composable
