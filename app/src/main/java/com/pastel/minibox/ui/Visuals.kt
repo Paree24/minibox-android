@@ -43,8 +43,11 @@ private object VK {
     const val PitchEnv = 7; const val Wave = 8; const val Lfo = 9; const val Algo = 10; const val Ops = 11; const val Sample = 12
     const val Slices = 13; const val Pads = 14; const val Lane = 15; const val Accent = 16; const val Ring = 17; const val Chorus = 18
     const val Delay = 19; const val Slide = 20; const val Drive = 21; const val Voices = 22; const val Arp = 23; const val Bits = 24
-    const val Reverb = 25
+    const val Reverb = 25; const val Wavetable = 26; const val Matrix = 27; const val Unison = 28
 }
+/** The Wavetable's visuals, for the Sound tab (the matrix is a panel of its own, not a drawing). */
+const val VK_WAVETABLE = 26
+const val VK_MATRIX = 27
 
 /** A section's visual: a drawing of its parameter values (never computed from audio, never touched), ported from the
     desktop's Visuals.cpp so both draw the same thing. The values are the parameters' own (Hz, seconds, choices). */
@@ -59,7 +62,10 @@ fun SectionVisual(v: Visual, color: Color, modifier: Modifier = Modifier.fillMax
         text.textSize = 10.dp.toPx()
         val e = v.extra
         when (v.kind) {
-            VK.Filter -> {
+            VK.Filter -> if (v.variant == 4) {   // the Wavetable's modes: LP 24, LP 12, HP, BP, Notch
+                val m = iv(2).coerceIn(0, 4)
+                filterCurve(color, intArrayOf(0, 0, 2, 1, 4)[m], f(0), f(1), if (m == 0) 4 else 2)
+            } else {
                 val mode = if (v.variant == 2) iv(2) else if (v.variant == 3) 3 else 0
                 filterCurve(color, mode, f(0), if (v.variant == 3) 0f else f(1), if (v.variant == 0) 4 else 2)
             }
@@ -144,8 +150,8 @@ fun SectionVisual(v: Visual, color: Color, modifier: Modifier = Modifier.fillMax
                 wave(color, fn, 2f, overlay)
             }
             VK.Lfo -> {
-                val maps = arrayOf(intArrayOf(2, 4, 6, 7, 0, 0), intArrayOf(2, 0, 4, 6, 0, 0), intArrayOf(3, 2, 0, 5, 4, 6))
-                val kind = maps[v.variant.coerceIn(0, 2)][iv(0).coerceIn(0, 5)]
+                val maps = arrayOf(intArrayOf(2, 4, 6, 7, 0, 0), intArrayOf(2, 0, 4, 6, 0, 0), intArrayOf(3, 2, 0, 5, 4, 6), intArrayOf(3, 2, 0, 4, 6, 7))
+                val kind = maps[v.variant.coerceIn(0, 3)][iv(0).coerceIn(0, 5)]
                 wave(color, { ph ->
                     when (kind) {
                         6 -> sh(ph)
@@ -248,6 +254,10 @@ fun SectionVisual(v: Visual, color: Color, modifier: Modifier = Modifier.fillMax
                             1 -> 0.85f * u / (1f + abs(u).pow(4f)).pow(0.25f)
                             else -> 0.3f * t + 0.6f * tanh(t * gain * 1.5f)
                         }
+                    } else if (v.variant == 2) when (type) {   // the Wavetable's distortion: soft, hard, tube
+                        1 -> (t * gain).coerceIn(-1f, 1f)
+                        2 -> tanh(t * gain + 0.35f) - tanh(0.35f)
+                        else -> tanh(t * gain)
                     } else when (type) {
                         2 -> sin(t * gain * 1.2f) * 0.9f
                         1 -> tanh(t * gain + 0.25f) - tanh(0.25f) * 0.8f
@@ -256,6 +266,46 @@ fun SectionVisual(v: Visual, color: Color, modifier: Modifier = Modifier.fillMax
                     Offset(cx + t * sz, cy - y.coerceIn(-1f, 1f) * sz)
                 }
                 stroke(p, color, 2.2f)
+            }
+            VK.Wavetable -> if (e != null) {
+                // the table as a stack of frames, back to front, the frame at the position lit; a bar for the position
+                val frames = e.optJSONArray("frames")
+                val lit = e.floats("lit")
+                val pos = e.optDouble("pos", 0.0).toFloat()
+                val n = frames?.length() ?: 0
+                val dx = size.width * 0.2f / max(1, n); val dy = size.height * 0.4f / max(1, n)
+                val fw = size.width * 0.72f; val fh = size.height * 0.36f
+                val x0 = 18.dp.toPx(); val y0 = size.height - fh / 2 - 22.dp.toPx()
+                fun path(pts: FloatArray, kx: Float, ky: Float) = pts.indices.map { i -> Offset(kx + fw * i / (pts.size - 1f), ky - pts[i] * fh * 0.5f) }
+                for (k in n - 1 downTo 0) {
+                    val a = frames!!.getJSONArray(k)
+                    val pts = FloatArray(a.length()) { a.getDouble(it).toFloat() }
+                    stroke(path(pts, x0 + k * dx, y0 - k * dy), color.copy(alpha = 0.14f + 0.2f * (1f - abs(k / max(1f, n - 1f) - pos))), 1.2f)
+                }
+                if (lit.isNotEmpty()) {
+                    val kf = pos * (n - 1)
+                    strokeFill(path(lit, x0 + kf * dx, y0 - kf * dy), y0 - kf * dy, color, 0.16f, 2.4f)
+                }
+                val ty = size.height - 10.dp.toPx(); val tx0 = 14.dp.toPx(); val tw = size.width - 28.dp.toPx()
+                drawLine(C.divider, Offset(tx0, ty), Offset(tx0 + tw, ty), 3.dp.toPx())
+                drawLine(color, Offset(tx0, ty), Offset(tx0 + tw * pos, ty), 3.dp.toPx())
+                drawCircle(color, 5.dp.toPx(), Offset(tx0 + tw * pos, ty))
+            }
+            VK.Unison -> {
+                // the stack across the field; the low end held in the middle (Mono Bass)
+                val n = iv(0).coerceIn(1, 16); val det = f(1); val width = f(2); val cx = size.width / 2; val half = size.width / 2 - 26.dp.toPx()
+                for (k in 0 until n) {
+                    val sp = if (n == 1) 0f else 2f * k / (n - 1) - 1f
+                    val x = cx + sp * width * half
+                    val h = (size.height - 24.dp.toPx()) * (0.55f + 0.45f * (1f - abs(sp) * det))
+                    drawLine(color.copy(alpha = 0.5f), Offset(x, size.height / 2 - h / 2), Offset(x, size.height / 2 + h / 2), 3.dp.toPx())
+                }
+                if (f(3) >= 20f) {
+                    drawRoundRect(color, Offset(cx - 10.dp.toPx(), 8.dp.toPx()), Size(20.dp.toPx(), size.height - 16.dp.toPx()), CornerRadius(6.dp.toPx()))
+                    label("S", cx, size.height / 2 + 4.dp.toPx(), C.bg, text, center = true)
+                }
+                label("L", 8.dp.toPx(), size.height - 7.dp.toPx(), C.faint, text)
+                label("R", size.width - 14.dp.toPx(), size.height - 7.dp.toPx(), C.faint, text)
             }
             VK.Voices -> {
                 val voices = max(1, v.variant)
@@ -361,7 +411,7 @@ private fun DrawScope.filterCurve(c: Color, mode: Int, cutHz: Float, res: Float,
         val fr = 20f * 1000f.pow(i.toFloat() / n)
         val xx = fr / max(20f, cutHz)
         val den = sqrt((1 - xx * xx) * (1 - xx * xx) + (xx / q) * (xx / q))
-        var mag = when (mode) { 1 -> (xx / q) / den * q * 0.6f; 2 -> xx * xx / den; 3 -> 1f / (1f + xx * xx); else -> 1f / den }
+        var mag = when (mode) { 1 -> (xx / q) / den * q * 0.6f; 2 -> xx * xx / den; 3 -> 1f / (1f + xx * xx); 4 -> abs(1 - xx * xx) / den; else -> 1f / den }
         if (poles == 4 && mode == 0) mag *= 1f / sqrt((1 - xx * xx) * (1 - xx * xx) + (xx / 0.7f) * (xx / 0.7f))
         val db = (20f * log10(max(mag, 1e-6f))).coerceIn(-48f, 18f)
         val px = 6.dp.toPx() + (size.width - 12.dp.toPx()) * i / n

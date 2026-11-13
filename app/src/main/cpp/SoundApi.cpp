@@ -7,6 +7,8 @@
 #include "devices/fm/Algorithms.h"
 #include "devices/sampler/SamplerDevice.h"
 #include "devices/drumsampler/DrumSamplerDevice.h"
+#include "devices/wavetable/WavetableDevice.h"
+#include "dsp/Wavetables.h"
 
 namespace mb::android
 {
@@ -145,6 +147,38 @@ juce::var MiniboxHost::visualExtra (const DeviceProcessor& dev, const ui::Visual
             put (o, "starts", starts); put (o, "ends", ends); put (o, "selected", sel);
         }
     }
+    else if (vs.kind == VK::Wavetable && vs.ids.size() >= 2)
+    {
+        // the table's frames, a few points each (the phone draws the stack from them)
+        const auto& bank = dsp::wt::Bank::get();
+        const int table = (int) d.get (vs.ids[0]);
+        juce::Array<juce::var> frames;
+        for (int k = 0; k < 9; ++k)
+        {
+            juce::Array<juce::var> pts;
+            for (int i = 0; i <= 64; ++i) pts.add (bank.sample (table, 3, k / 8.0f, std::min (i / 64.0f, 0.9999f)));
+            frames.add (pts);
+        }
+        juce::Array<juce::var> lit;   // the frame at the position itself
+        const float pos = d.pv (d.params().indexOf (vs.ids[1]));
+        for (int i = 0; i <= 64; ++i) lit.add (bank.sample (table, 3, pos, std::min (i / 64.0f, 0.9999f)));
+        put (o, "frames", frames); put (o, "lit", lit); put (o, "pos", pos);
+        put (o, "posIndex", d.params().indexOf (vs.ids[1]));
+    }
+    else if (vs.kind == VK::Matrix)
+    {
+        juce::Array<juce::var> slots, srcs, dsts;
+        for (int s = 0; s < WavetableDevice::kSlots; ++s)
+        {
+            auto o2 = obj();
+            put (o2, "src", (int) d.get (WavetableDevice::slotParam (s, 0))); put (o2, "dst", (int) d.get (WavetableDevice::slotParam (s, 1)));
+            put (o2, "amt", d.pv (WavetableDevice::slotParam (s, 2)));
+            slots.add (o2);
+        }
+        for (auto& n : WavetableDevice::sourceNames()) srcs.add (n);
+        for (auto& n : WavetableDevice::destNames()) dsts.add (n);
+        put (o, "slots", slots); put (o, "sources", srcs); put (o, "dests", dsts); put (o, "base", (int) WavetableDevice::mod1Src);
+    }
     else if (vs.kind == VK::Voices && vs.variant == 3 && d.params().indexOf ("stackMode") >= 0)
     {
         put (o, "stackMode", (int) d.get ("stackMode")); put (o, "stacked", d.get ("stack") > 0.5f);
@@ -173,6 +207,15 @@ juce::var MiniboxHost::soundCall (const juce::String& op, const juce::var& a, bo
                 juce::Array<juce::var> knobs;
                 for (auto& k : s.knobs)
                 {
+                    if (const int m = ui::macroIndexOf (k.id); m >= 0)   // a macro: its own value, set with setMacro
+                    {
+                        auto kv = obj();
+                        put (kv, "id", k.id); put (kv, "index", -1); put (kv, "macro", m); put (kv, "label", k.label);
+                        put (kv, "value", d->shownMacro (m)); put (kv, "text", juce::String (juce::roundToInt (d->shownMacro (m) * 100)) + "%");
+                        put (kv, "default", 0.5); put (kv, "bipolar", false);
+                        knobs.add (kv);
+                        continue;
+                    }
                     juce::String id = k.id;
                     if (k.altWhen.isNotEmpty() && d->get (k.altWhen) != 0.0f) id = k.altId;
                     const int i = d->params().indexOf (id);
@@ -182,6 +225,24 @@ juce::var MiniboxHost::soundCall (const juce::String& op, const juce::var& a, bo
                     knobs.add (kv);
                 }
                 put (o, "knobs", knobs);
+                if (const int bit = ui::uiBit (s.choiceId); bit != 0)   // which envelope / LFO: a bit of the selection
+                {
+                    auto c = obj();
+                    juce::Array<juce::var> opts;
+                    for (auto& x : ui::uiChoices (s.choiceId)) opts.add (x);
+                    put (c, "index", -1); put (c, "ui", bit); put (c, "options", opts); put (c, "selected", (sel & bit) != 0 ? 1 : 0);
+                    put (o, "choice", c);
+                }
+                if (const int mi = d->params().indexOf (s.menuId); mi >= 0)   // a wavetable: a menu, by family
+                {
+                    auto c = obj();
+                    juce::Array<juce::var> opts, fams;
+                    for (auto& x : d->params()[mi].choices) opts.add (x);
+                    for (auto& x : dsp::wt::Bank::families()) fams.add (x);
+                    put (c, "index", mi); put (c, "options", opts); put (c, "families", fams); put (c, "selected", (int) d->get (mi));
+                    put (o, "menu", c);
+                }
+                put (o, "band", s.band);
                 const int ci = s.choiceId.startsWith ("ui:") ? -1 : d->params().indexOf (s.choiceId);
                 if (ci >= 0)
                 {
@@ -222,6 +283,11 @@ juce::var MiniboxHost::soundCall (const juce::String& op, const juce::var& a, bo
         if (d->type() == DeviceType::FM) for (int op = 1; op <= 6; ++op) selNames.add ("Op " + juce::String (op));
         put (out, "selectionNames", selNames);
         return out;
+    }
+    if (op == "randomize")   // the Wavetable: new settings at random (scope: WavetableDevice::randomizeScopes)
+    {
+        if (auto* w = dynamic_cast<WavetableDevice*> (d)) w->randomize (geti (a, "scope"), (uint32_t) juce::Random::getSystemRandom().nextInt());
+        return {};
     }
     if (op == "setParamId")   // a parameter by id, in its own units (the VA's engine switch)
     {

@@ -1,0 +1,228 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="412" height="915" viewBox="0 0 412 915">
+<rect x="0" y="0" width="412" height="915" fill="#141518"/>
+<text x="20" y="19" font-family="Lato, sans-serif" font-size="12" font-weight="700" fill="#A8A49E" text-anchor="start">9:41</text>
+<rect x="338" y="15" width="3" height="4" rx="1" fill="#A8A49E"/>
+<rect x="343" y="12.5" width="3" height="6.5" rx="1" fill="#A8A49E"/>
+<rect x="348" y="10" width="3" height="9" rx="1" fill="#A8A49E"/>
+<rect x="353" y="7.5" width="3" height="11.5" rx="1" fill="#A8A49E"/>
+<rect x="368" y="9" width="22" height="11" rx="3" fill="none" stroke="#A8A49E" stroke-width="1.2"/>
+<rect x="370" y="11" width="14" height="7" rx="1.5" fill="#A8A49E"/>
+<rect x="391" y="12.5" width="2" height="4" rx="1" fill="#A8A49E"/>
+<circle cx="36" cy="60" r="20" fill="#262930"/>
+<circle cx="36" cy="60" r="6" fill="#E88A8A"/>
+<circle cx="86" cy="60" r="20" fill="#262930"/>
+<circle cx="86" cy="60" r="23.5" fill="none" stroke="#2A2D34" stroke-width="2.5"/>
+<path d="M86 36.5 A23.5 23.5 0 0 1 99.81 79.01" fill="none" stroke="#B9A7F0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M81.68 53 L94.7 60 L81.68 67 Z" fill="#B9A7F0" stroke="#B9A7F0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="136" cy="60" r="20" fill="#262930"/>
+<rect x="130" y="54" width="12" height="12" rx="2" fill="#ECE8E3"/>
+<text x="172" y="62" font-family="Lato, sans-serif" font-size="20" font-weight="900" fill="#ECE8E3" text-anchor="start">124.0</text>
+<text x="172" y="78" font-family="Lato, sans-serif" font-size="10" font-weight="700" fill="#55585E" text-anchor="start">2.3.1</text>
+<text x="206" y="78" font-family="Lato, sans-serif" font-size="10" font-weight="700" fill="#55585E" text-anchor="start">· 4/4</text>
+<rect x="264" y="40" width="44" height="40" rx="10" fill="#B9A7F0" opacity="0.18"/>
+<rect x="264" y="40" width="44" height="40" rx="10" fill="none" stroke="#B9A7F0" stroke-width="1.5"/>
+<text x="286" y="61" font-family="Lato, sans-serif" font-size="16" font-weight="900" fill="#B9A7F0" text-anchor="middle">A</text>
+<circle cx="271.3" cy="72" r="1.5" fill="#9EB9F3"/>
+<circle cx="275.5" cy="72" r="1.5" fill="#8FD0C2"/>
+<circle cx="279.7" cy="72" r="1.5" fill="#E8B86A"/>
+<circle cx="283.9" cy="72" r="1.5" fill="#E9A3B8"/>
+<circle cx="288.1" cy="72" r="1.5" fill="#A8D58A"/>
+<circle cx="292.3" cy="72" r="1.5" fill="#F0A07C"/>
+<circle cx="296.5" cy="72" r="1.5" fill="#7FC6E8"/>
+<circle cx="300.7" cy="72" r="1.5" fill="#55585E"/>
+<rect x="312" y="40" width="36" height="40" rx="10" fill="#262930"/>
+<rect x="312" y="40" width="36" height="40" rx="10" fill="none" stroke="#B9A7F0" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="330" y="61" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#B9A7F0" text-anchor="middle">B</text>
+<circle cx="315.3" cy="72" r="1.5" fill="#9EB9F3"/>
+<circle cx="319.5" cy="72" r="1.5" fill="#8FD0C2"/>
+<circle cx="323.7" cy="72" r="1.5" fill="#E8B86A"/>
+<circle cx="327.9" cy="72" r="1.5" fill="#55585E"/>
+<circle cx="332.1" cy="72" r="1.5" fill="#A8D58A"/>
+<circle cx="336.3" cy="72" r="1.5" fill="#F0A07C"/>
+<circle cx="340.5" cy="72" r="1.5" fill="#55585E"/>
+<circle cx="344.7" cy="72" r="1.5" fill="#55585E"/>
+<circle cx="376" cy="60" r="20" fill="#262930"/>
+<circle cx="371" cy="60" r="1.8" fill="#A8A49E"/>
+<circle cx="376" cy="60" r="1.8" fill="#A8A49E"/>
+<circle cx="381" cy="60" r="1.8" fill="#A8A49E"/>
+<line x1="0" y1="92" x2="412" y2="92" stroke="#2A2D34" stroke-width="1" stroke-linecap="round"/>
+<circle cx="32" cy="120" r="16" fill="#262930"/>
+<circle cx="32" cy="120" r="15" fill="none" stroke="#9EB9F3" stroke-width="2" opacity="0.55"/>
+<text x="32" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#9EB9F3" text-anchor="middle">1</text>
+<rect x="53" y="102" width="121" height="36" rx="18" fill="#8FD0C2"/>
+<circle cx="71" cy="120" r="13" fill="#141518" opacity="0.22"/>
+<text x="71" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#141518" text-anchor="middle">2</text>
+<text x="91" y="125" font-family="Lato, sans-serif" font-size="14" font-weight="900" fill="#141518" text-anchor="start"></text>
+<path d="M152.5 118.25 L156 121.75 L159.5 118.25" fill="none" stroke="#141518" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="195" cy="120" r="16" fill="#262930"/>
+<circle cx="195" cy="120" r="15" fill="none" stroke="#E8B86A" stroke-width="2" opacity="0.55"/>
+<text x="195" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#E8B86A" text-anchor="middle">3</text>
+<circle cx="232" cy="120" r="16" fill="#262930"/>
+<circle cx="232" cy="120" r="15" fill="none" stroke="#E9A3B8" stroke-width="2" opacity="0.55"/>
+<text x="232" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#E9A3B8" text-anchor="middle">4</text>
+<circle cx="269" cy="120" r="16" fill="#262930"/>
+<circle cx="269" cy="120" r="15" fill="none" stroke="#A8D58A" stroke-width="2" opacity="0.55"/>
+<text x="269" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#A8D58A" text-anchor="middle">5</text>
+<circle cx="306" cy="120" r="16" fill="#262930"/>
+<circle cx="306" cy="120" r="15" fill="none" stroke="#F0A07C" stroke-width="2" opacity="0.55"/>
+<text x="306" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#F0A07C" text-anchor="middle">6</text>
+<circle cx="343" cy="120" r="16" fill="#262930"/>
+<circle cx="343" cy="120" r="15" fill="none" stroke="#7FC6E8" stroke-width="2" opacity="0.55"/>
+<text x="343" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#7FC6E8" text-anchor="middle">7</text>
+<circle cx="380" cy="120" r="16" fill="none" stroke="#55585E" stroke-width="1.5" stroke-dasharray="3 3"/>
+<line x1="375" y1="120" x2="385" y2="120" stroke="#55585E" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="380" y1="115" x2="380" y2="125" stroke="#55585E" stroke-width="1.6" stroke-linecap="round"/>
+<text x="89" y="124.5" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#141518" text-anchor="start">Wavetable</text>
+<rect x="0" y="843" width="412" height="72" fill="#20232A"/>
+<rect x="32.2" y="858" width="8" height="8" rx="2.5" fill="#55585E"/>
+<rect x="42.2" y="858" width="8" height="8" rx="2.5" fill="#55585E"/>
+<rect x="32.2" y="868" width="8" height="8" rx="2.5" fill="#55585E"/>
+<rect x="42.2" y="868" width="8" height="8" rx="2.5" fill="#55585E"/>
+<text x="41.2" y="899" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#55585E" text-anchor="middle">Play</text>
+<rect x="114.6" y="864.75" width="3.24" height="8.1" rx="1.5" fill="#55585E"/>
+<rect x="119.28" y="860.25" width="3.24" height="8.1" rx="1.5" fill="#55585E"/>
+<rect x="123.96" y="864.75" width="3.24" height="8.1" rx="1.5" fill="#55585E"/>
+<rect x="128.64" y="860.25" width="3.24" height="8.1" rx="1.5" fill="#55585E"/>
+<text x="123.6" y="899" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#55585E" text-anchor="middle">Seq</text>
+<rect x="178" y="852" width="56" height="30" rx="15" fill="#262930"/>
+<circle cx="206" cy="867" r="8" fill="none" stroke="#ECE8E3" stroke-width="2"/>
+<line x1="206" y1="867" x2="210" y2="862" stroke="#ECE8E3" stroke-width="2" stroke-linecap="round"/>
+<path d="M197.87 875.13 A11.5 11.5 0 1 1 214.13 875.13" fill="none" stroke="#ECE8E3" stroke-width="1.5" opacity="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="206" y="899" font-family="Lato, sans-serif" font-size="11" font-weight="900" fill="#ECE8E3" text-anchor="middle">Sound</text>
+<line x1="282.1" y1="858" x2="282.1" y2="876" stroke="#55585E" stroke-width="1.6" stroke-linecap="round"/>
+<rect x="280.12" y="868.35" width="3.96" height="2.7" rx="1" fill="#55585E"/>
+<line x1="288.4" y1="858" x2="288.4" y2="876" stroke="#55585E" stroke-width="1.6" stroke-linecap="round"/>
+<rect x="286.42" y="862.05" width="3.96" height="2.7" rx="1" fill="#55585E"/>
+<line x1="294.7" y1="858" x2="294.7" y2="876" stroke="#55585E" stroke-width="1.6" stroke-linecap="round"/>
+<rect x="292.72" y="866.55" width="3.96" height="2.7" rx="1" fill="#55585E"/>
+<text x="288.4" y="899" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#55585E" text-anchor="middle">Mix</text>
+<path d="M372.8 857 L364.8 868 L370.8 868 L368.8 877 L376.8 866 L370.8 866 Z" fill="#55585E"/>
+<text x="370.8" y="899" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#55585E" text-anchor="middle">Perform</text>
+<rect x="152" y="907" width="108" height="4" rx="2" fill="#55585E"/>
+<rect x="16" y="164" width="280" height="40" rx="20" fill="#262930"/>
+<path d="M38 180 L34 184 L38 188" fill="none" stroke="#A8A49E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M274 180 L278 184 L274 188" fill="none" stroke="#A8A49E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="132" y="189.5" font-family="Lato, sans-serif" font-size="14" font-weight="900" fill="#ECE8E3" text-anchor="middle">Foghorn Reese</text>
+<rect x="194" y="173" width="44" height="22" rx="11" fill="#141518"/>
+<text x="216" y="187.6" font-family="Lato, sans-serif" font-size="10" font-weight="700" fill="#8FD0C2" text-anchor="middle">Reese</text>
+<circle cx="326" cy="184" r="20" fill="#262930"/>
+<rect x="318.5" y="176.5" width="15" height="15" rx="4" fill="none" stroke="#8FD0C2" stroke-width="1.8"/>
+<circle cx="322.96" cy="180.96" r="1.6" fill="#8FD0C2"/>
+<circle cx="329.04" cy="187.04" r="1.6" fill="#8FD0C2"/>
+<circle cx="326" cy="184" r="1.6" fill="#8FD0C2"/>
+<circle cx="329.04" cy="180.96" r="1.6" fill="#8FD0C2"/>
+<circle cx="322.96" cy="187.04" r="1.6" fill="#8FD0C2"/>
+<circle cx="376" cy="184" r="20" fill="#262930"/>
+<circle cx="371" cy="184" r="1.8" fill="#A8A49E"/>
+<circle cx="376" cy="184" r="1.8" fill="#A8A49E"/>
+<circle cx="381" cy="184" r="1.8" fill="#A8A49E"/>
+<rect x="16" y="214" width="380" height="84" rx="16" fill="#20232A"/>
+<path d="M38.44 261.56 A22 22 0 1 1 69.56 261.56" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M38.44 261.56 A22 22 0 0 1 59.14 224.61" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="54" cy="246" r="17" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="55.19" y1="241.04" x2="57.1" y2="233.11" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="54" y="282" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Wobble</text>
+<path d="M114.44 261.56 A22 22 0 1 1 145.56 261.56" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M114.44 261.56 A22 22 0 0 1 120.01 226.4" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="130" cy="246" r="17" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="127.68" y1="241.46" x2="123.98" y2="234.19" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="130" y="282" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Movement</text>
+<path d="M190.44 261.56 A22 22 0 1 1 221.56 261.56" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M190.44 261.56 A22 22 0 0 1 217.79 227.42" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="206" cy="246" r="17" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="208.73" y1="241.69" x2="213.11" y2="234.8" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="206" y="282" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Dirt</text>
+<path d="M266.44 261.56 A22 22 0 1 1 297.56 261.56" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M266.44 261.56 A22 22 0 0 1 282 224" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="282" cy="246" r="17" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="282" y1="240.9" x2="282" y2="232.74" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="282" y="282" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Bite</text>
+<path d="M342.44 261.56 A22 22 0 1 1 373.56 261.56" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M342.44 261.56 A22 22 0 1 1 375.8 233.07" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="358" cy="246" r="17" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="362.13" y1="243" x2="368.73" y2="238.21" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="358" y="282" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Width</text>
+<rect x="16" y="308" width="64.4" height="34" rx="17" fill="#262930"/>
+<text x="48.2" y="329.68" font-family="Lato, sans-serif" font-size="13" font-weight="700" fill="#A8A49E" text-anchor="middle">Osc A</text>
+<rect x="88.4" y="308" width="64.4" height="34" rx="17" fill="#8FD0C2"/>
+<text x="120.6" y="329.68" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#141518" text-anchor="middle">Osc B</text>
+<rect x="160.8" y="308" width="49.84" height="34" rx="17" fill="#262930"/>
+<text x="185.72" y="329.68" font-family="Lato, sans-serif" font-size="13" font-weight="700" fill="#A8A49E" text-anchor="middle">Sub</text>
+<rect x="218.64" y="308" width="71.68" height="34" rx="17" fill="#262930"/>
+<text x="254.48" y="329.68" font-family="Lato, sans-serif" font-size="13" font-weight="700" fill="#A8A49E" text-anchor="middle">Filter</text>
+<rect x="298.32" y="308" width="49.84" height="34" rx="17" fill="#262930"/>
+<text x="323.24" y="329.68" font-family="Lato, sans-serif" font-size="13" font-weight="700" fill="#A8A49E" text-anchor="middle">Env</text>
+<rect x="356.16" y="308" width="49.84" height="34" rx="17" fill="#262930"/>
+<text x="381.08" y="329.68" font-family="Lato, sans-serif" font-size="13" font-weight="700" fill="#A8A49E" text-anchor="middle">LFO</text>
+<rect x="16" y="354" width="380" height="427" rx="16" fill="#20232A"/>
+<rect x="16" y="791" width="380" height="40" rx="14" fill="#262930"/>
+<rect x="32" y="803" width="7" height="7" rx="2" fill="#8FD0C2"/>
+<rect x="41" y="803" width="7" height="7" rx="2" fill="#8FD0C2"/>
+<rect x="32" y="812" width="7" height="7" rx="2" fill="#8FD0C2"/>
+<rect x="41" y="812" width="7" height="7" rx="2" fill="#8FD0C2"/>
+<text x="60" y="816" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#A8A49E" text-anchor="start">Pads</text>
+<path d="M370 813 L374 809 L378 813" fill="none" stroke="#A8A49E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="28" y="366" width="71.6" height="30" rx="15" fill="#262930"/>
+<text x="56.8" y="385.32" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#8FD0C2" text-anchor="middle">Growl</text>
+<path d="M80.1 379.25 L83.6 382.75 L87.1 379.25" fill="none" stroke="#8FD0C2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="128" y="366" width="256" height="30" rx="15" fill="#262930"/>
+<text x="159.16" y="385.32" font-family="Lato, sans-serif" font-size="12" font-weight="700" fill="#A8A49E" text-anchor="middle">Off</text>
+<text x="224.84" y="385.32" font-family="Lato, sans-serif" font-size="12" font-weight="700" fill="#A8A49E" text-anchor="middle">Sync</text>
+<rect x="261.36" y="368" width="51.6" height="26" rx="13" fill="#8FD0C2"/>
+<text x="287.16" y="385.32" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#141518" text-anchor="middle">FM</text>
+<text x="349.48" y="385.32" font-family="Lato, sans-serif" font-size="12" font-weight="700" fill="#A8A49E" text-anchor="middle">Ring</text>
+<rect x="28" y="406" width="356" height="130" rx="8" fill="#141518"/>
+<path d="M109.29 417.74 L111.96 409.05 L114.63 422.37 L117.3 439.3 L119.97 436 L122.64 417.55 L125.31 407.46 L127.98 414.49 L130.65 429.82 L133.32 442.81 L135.99 444.28 L138.66 429.8 L141.33 411.31 L144 410.2 L146.67 428.8 L149.34 443.23 L152.01 435.46 L154.68 417.26 L157.35 409.08 L160.02 413.42 L162.69 423.6 L165.36 437.1 L168.03 446.14 L170.7 438.12 L173.37 417.64 L176.04 408.22 L178.71 421.86 L181.38 441.36 L184.05 443.97 L186.72 431.39 L189.39 420.58 L192.06 415.77 L194.73 412.35 L197.4 416.5 L200.07 433.34 L202.74 447.44 L205.41 440.43 L208.08 419.32 L210.75 409.08 L213.42 420.2 L216.09 436.45 L218.76 440.46 L221.43 437.77 L224.1 438.94 L226.77 435.95 L229.44 420.91 L232.11 408.82 L234.78 417.21 L237.45 438.46 L240.12 448.6 L242.79 437.07 L245.46 419.77 L248.13 417 L250.8 423.99 L253.47 423.12 L256.14 418.33 L258.81 426.82 L261.48 444.57 L264.15 449.91 L266.82 434.83 L269.49 415.38 L272.16 413.31 L274.83 430.05 L277.5 443.27 L280.17 438.81 L282.84 431.82 L285.51 439.03 L288.18 449.54 L290.85 443.74 L293.52 424.65 L296.19 413.43 L298.86 423.07 L301.53 443.84 L304.2 452.98 L306.87 441.29 L309.54 426.61 L312.21 429.41 L314.88 441.69 L317.55 439.95 L320.22 422.7 L322.89 411.42 L325.56 419.49 L328.23 438.74 L330.9 450.75 L333.57 442.85 L336.24 422.78 L338.91 414.64 L341.58 427.31 L344.25 439.7 L346.92 432.06 L349.59 414.39 L352.26 409.1 L354.93 421.6 L357.6 439.4 L360.27 447.31 L362.94 437.59 L365.61 417.74" fill="none" stroke="#8FD0C2" stroke-width="1.3" opacity="0.31" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M101.38 428.13 L104.05 420.54 L106.72 429.45 L109.39 441.2 L112.06 438.71 L114.73 424.28 L117.4 415.08 L120.07 421.24 L122.74 437.8 L125.41 451.87 L128.08 451.93 L130.75 437.23 L133.42 421.5 L136.09 420.77 L138.76 434.93 L141.43 446.48 L144.1 441.21 L146.77 425.09 L149.44 414.59 L152.11 417.62 L154.78 431.16 L157.45 447.09 L160.12 453.82 L162.79 444.08 L165.46 426.35 L168.13 418.92 L170.8 429.52 L173.47 446.3 L176.14 451.67 L178.81 441.99 L181.48 427.71 L184.15 417.89 L186.82 416.01 L189.49 425.37 L192.16 442.74 L194.83 453.36 L197.5 446.11 L200.17 428.34 L202.84 418.13 L205.51 424.82 L208.18 440.09 L210.85 450.13 L213.52 452 L216.19 449.1 L218.86 439.45 L221.53 424.27 L224.2 416.58 L226.87 426.03 L229.54 444.37 L232.21 454.2 L234.88 447.09 L237.55 431.91 L240.22 423.51 L242.89 423.65 L245.56 424.5 L248.23 427.58 L250.9 439.53 L253.57 453.8 L256.24 455.65 L258.91 441.72 L261.58 424.71 L264.25 420.74 L266.92 432.2 L269.59 444.8 L272.26 447.6 L274.93 447.21 L277.6 452.06 L280.27 455.39 L282.94 446.65 L285.61 430.01 L288.28 421.35 L290.95 430.07 L293.62 448.09 L296.29 457.8 L298.96 451.92 L301.63 441.8 L304.3 440.89 L306.97 445.19 L309.64 440.72 L312.31 427.03 L314.98 419.31 L317.65 427.83 L320.32 445.78 L322.99 456.92 L325.66 450.98 L328.33 435.05 L331 427.21 L333.67 433.67 L336.34 440.42 L339.01 434.16 L341.68 421.09 L344.35 417.61 L347.02 429.77 L349.69 447.4 L352.36 454.85 L355.03 445.39 L357.7 428.13" fill="none" stroke="#8FD0C2" stroke-width="1.3" opacity="0.33" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M93.47 441.12 L96.14 433.42 L98.81 436.27 L101.48 441.59 L104.15 438.68 L106.82 428.99 L109.49 423.98 L112.16 430.78 L114.83 445.73 L117.5 458.19 L120.17 458.58 L122.84 447.06 L125.51 434.67 L128.18 432.72 L130.85 441.05 L133.52 448.01 L136.19 443.45 L138.86 430.63 L141.53 421.9 L144.2 425.1 L146.87 438.52 L149.54 453.64 L152.21 459.43 L154.88 451.32 L157.55 437.62 L160.22 431.84 L162.89 439.21 L165.56 451.97 L168.23 456.94 L170.9 448.75 L173.57 434.16 L176.24 423.18 L178.91 422.14 L181.58 432.85 L184.25 448.94 L186.92 457.36 L189.59 451.31 L192.26 437.36 L194.93 428.32 L197.6 432.4 L200.27 446.33 L202.94 458.92 L205.61 462.94 L208.28 457.87 L210.95 444.97 L213.62 430.31 L216.29 425.33 L218.96 434.54 L221.63 449.86 L224.3 459.11 L226.97 455.31 L229.64 441.9 L232.31 429.9 L234.98 425.56 L237.65 427.58 L240.32 436.02 L242.99 450.38 L245.66 461.95 L248.33 461.24 L251 448.87 L253.67 434.24 L256.34 428.37 L259.01 435.26 L261.68 447.58 L264.35 456.41 L267.02 461.49 L269.69 464.63 L272.36 461.77 L275.03 450.05 L277.7 435.81 L280.37 429.8 L283.04 437.01 L285.71 451.88 L288.38 462.78 L291.05 463.03 L293.72 457.06 L296.39 452.52 L299.06 448.97 L301.73 440.96 L304.4 430.58 L307.07 427.59 L309.74 436.75 L312.41 451.98 L315.08 462.12 L317.75 459.89 L320.42 448.87 L323.09 440.5 L325.76 439.92 L328.43 440.11 L331.1 434.27 L333.77 426.81 L336.44 427.51 L339.11 439.28 L341.78 454.23 L344.45 460.79 L347.12 454.24 L349.79 441.12" fill="none" stroke="#8FD0C2" stroke-width="1.3" opacity="0.36" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M77.64 466.17 L80.31 457.07 L82.98 449.44 L85.65 443.82 L88.32 438.97 L90.99 436.9 L93.66 440.78 L96.33 449.87 L99 460.57 L101.67 469.32 L104.34 472.85 L107.01 470.1 L109.68 463.74 L112.35 457.7 L115.02 453.51 L117.69 449.35 L120.36 443.35 L123.03 437.88 L125.7 437.31 L128.37 442.55 L131.04 451.54 L133.71 461.46 L136.38 468.15 L139.05 468.87 L141.72 465.96 L144.39 463.81 L147.06 464.18 L149.73 465.07 L152.4 462.32 L155.07 454.49 L157.74 445.45 L160.41 439.48 L163.08 438.55 L165.75 443.6 L168.42 452.11 L171.09 457.89 L173.76 458.1 L176.43 455.46 L179.1 454.39 L181.77 458.44 L184.44 466.91 L187.11 474 L189.78 475.49 L192.45 471.43 L195.12 462.73 L197.79 453.16 L200.46 449.33 L203.13 452.8 L205.8 458.91 L208.47 462.75 L211.14 460.52 L213.81 452.01 L216.48 443.28 L219.15 439.92 L221.82 442.38 L224.49 450.37 L227.16 461.7 L229.83 469.39 L232.5 468.79 L235.17 462.12 L237.84 453.86 L240.51 449.17 L243.18 452.6 L245.85 462.46 L248.52 472.65 L251.19 479.51 L253.86 481.07 L256.53 475.26 L259.2 464.09 L261.87 454.08 L264.54 450.5 L267.21 454.59 L269.88 464.36 L272.55 474.77 L275.22 479.92 L277.89 477.69 L280.56 470.33 L283.23 460.31 L285.9 449.66 L288.57 442.91 L291.24 444.38 L293.91 452.92 L296.58 463.86 L299.25 472.89 L301.92 475.94 L304.59 471.16 L307.26 461.93 L309.93 452.64 L312.6 444.53 L315.27 438.76 L317.94 438.52 L320.61 445.23 L323.28 456.23 L325.95 466.83 L328.62 473.02 L331.29 472.66 L333.96 466.17" fill="none" stroke="#8FD0C2" stroke-width="1.3" opacity="0.36" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M69.73 473.06 L72.4 464.53 L75.07 456.2 L77.74 449.67 L80.41 444.88 L83.08 443.89 L85.75 448.69 L88.42 457.46 L91.09 466.95 L93.76 475.05 L96.43 479.61 L99.1 478.98 L101.77 473.95 L104.44 466.97 L107.11 460.02 L109.78 453.33 L112.45 446.85 L115.12 442.88 L117.79 444.06 L120.46 449.55 L123.13 457.27 L125.8 466.19 L128.47 474.01 L131.14 478.08 L133.81 478.69 L136.48 477.65 L139.15 475.78 L141.82 472.6 L144.49 466.71 L147.16 458.48 L149.83 451.16 L152.5 446.71 L155.17 445.03 L157.84 447.09 L160.51 452.54 L163.18 457.91 L165.85 461.37 L168.52 464.09 L171.19 467.38 L173.86 472.45 L176.53 478.62 L179.2 482.33 L181.87 482.16 L184.54 479.47 L187.21 474.12 L189.88 467.2 L192.55 462.88 L195.22 462.3 L197.89 462.75 L200.56 462.4 L203.23 459.57 L205.9 453.9 L208.57 449.3 L211.24 448.67 L213.91 450.81 L216.58 455.72 L219.25 463.24 L221.92 468.96 L224.59 469.84 L227.26 467.62 L229.93 464.57 L232.6 463.24 L235.27 466.79 L237.94 473.99 L240.61 480.46 L243.28 484.56 L245.95 485.73 L248.62 482.15 L251.29 474.82 L253.96 468.27 L256.63 465.85 L259.3 468.17 L261.97 474.24 L264.64 480.96 L267.31 483.94 L269.98 481.55 L272.65 475.67 L275.32 468.05 L277.99 459.87 L280.66 454.61 L283.33 455.66 L286 461.84 L288.67 469.64 L291.34 476.44 L294.01 479.1 L296.68 475.38 L299.35 467.57 L302.02 459.42 L304.69 452.23 L307.36 447.37 L310.03 447.62 L312.7 453.71 L315.37 462.96 L318.04 471.74 L320.71 477.38 L323.38 478.04 L326.05 473.06" fill="none" stroke="#8FD0C2" stroke-width="1.3" opacity="0.33" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M61.82 475.07 L64.49 468.93 L67.16 463.21 L69.83 458.89 L72.5 455.51 L75.17 454.78 L77.84 458.56 L80.51 465.28 L83.18 472.39 L85.85 478.7 L88.52 482.64 L91.19 482.5 L93.86 478.53 L96.53 472.61 L99.2 466.52 L101.87 460.63 L104.54 455 L107.21 451.76 L109.88 453.06 L112.55 457.8 L115.22 464.23 L117.89 472.09 L120.56 479.78 L123.23 484.66 L125.9 486.33 L128.57 485.76 L131.24 483.43 L133.91 479.3 L136.58 472.81 L139.25 464.78 L141.92 458.14 L144.59 453.97 L147.26 451.54 L149.93 452.02 L152.6 456.1 L155.27 461.42 L157.94 466.52 L160.61 471.81 L163.28 477.27 L165.95 483.04 L168.62 488.47 L171.29 491.04 L173.96 490.56 L176.63 488.93 L179.3 485.36 L181.97 479.49 L184.64 474.31 L187.31 470.82 L189.98 467.51 L192.65 464.29 L195.32 460.76 L197.99 456.51 L200.66 454.18 L203.33 454.95 L206 456.57 L208.67 459.26 L211.34 464.33 L214.01 469.14 L216.68 471.67 L219.35 473.3 L222.02 474.68 L224.69 476.43 L227.36 480.46 L230.03 485.69 L232.7 489.13 L235.37 491.04 L238.04 492.27 L240.71 491.2 L243.38 487.7 L246.05 484.44 L248.72 483.1 L251.39 483.65 L254.06 485.83 L256.73 488.18 L259.4 488.14 L262.07 485.22 L264.74 481.31 L267.41 477.15 L270.08 472.27 L272.75 468.59 L275.42 468.68 L278.09 471.63 L280.76 475.18 L283.43 478.34 L286.1 479.26 L288.77 476.2 L291.44 470.99 L294.11 466.35 L296.78 462.34 L299.45 459.25 L302.12 459.26 L304.79 463.18 L307.46 469.09 L310.13 474.62 L312.8 478.21 L315.47 478.64 L318.14 475.07" fill="none" stroke="#8FD0C2" stroke-width="1.3" opacity="0.31" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M53.91 475.53 L56.58 472.29 L59.25 470.11 L61.92 468.96 L64.59 467.51 L67.26 466.95 L69.93 469.14 L72.6 472.96 L75.27 476.68 L77.94 480.02 L80.61 482.16 L83.28 481.78 L85.95 479.13 L88.62 475.7 L91.29 472.69 L93.96 469.81 L96.63 466.51 L99.3 464.44 L101.97 465.55 L104.64 468.86 L107.31 473.01 L109.98 478.31 L112.65 483.72 L115.32 486.99 L117.99 487.9 L120.66 487.4 L123.33 485.86 L126 483.12 L128.67 478.41 L131.34 472.27 L134.01 467.25 L136.68 464.12 L139.35 461.96 L142.02 462.04 L144.69 465.35 L147.36 469.86 L150.03 474.3 L152.7 479.1 L155.37 484.08 L158.04 489.33 L160.71 494.28 L163.38 496.65 L166.05 496.47 L168.72 495.59 L171.39 492.93 L174.06 487.68 L176.73 482.49 L179.4 478.35 L182.07 474.11 L184.74 470.14 L187.41 466.36 L190.08 462.34 L192.75 460.33 L195.42 461.04 L198.09 462.03 L200.76 463.7 L203.43 467.92 L206.1 472.66 L208.77 476.18 L211.44 479.67 L214.11 483.1 L216.78 486.35 L219.45 490.86 L222.12 495.65 L224.79 498.33 L227.46 499.93 L230.13 501.86 L232.8 502.51 L235.47 501.16 L238.14 499.58 L240.81 498.66 L243.48 498.09 L246.15 498 L248.82 497.84 L251.49 496.07 L254.16 492.85 L256.83 490.11 L259.5 487.93 L262.17 484.81 L264.84 481.69 L267.51 480.64 L270.18 480.95 L272.85 481.16 L275.52 481.44 L278.19 480.91 L280.86 478.29 L283.53 475.2 L286.2 473.51 L288.87 472.17 L291.54 470.45 L294.21 469.98 L296.88 471.64 L299.55 474.23 L302.22 476.42 L304.89 477.76 L307.56 477.69 L310.23 475.53" fill="none" stroke="#8FD0C2" stroke-width="1.3" opacity="0.28" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M46 478.84 L48.67 477.19 L51.34 476.89 L54.01 477.38 L56.68 476.82 L59.35 476.12 L62.02 477.11 L64.69 478.96 L67.36 480.42 L70.03 481.79 L72.7 482.75 L75.37 482.33 L78.04 480.81 L80.71 479.49 L83.38 479.13 L86.05 478.86 L88.72 477.59 L91.39 476.54 L94.06 477.45 L96.73 479.37 L99.4 481.22 L102.07 483.76 L104.74 486.47 L107.41 487.61 L110.08 487.32 L112.75 486.75 L115.42 486.29 L118.09 485.59 L120.76 483.54 L123.43 480.26 L126.1 477.88 L128.77 476.78 L131.44 475.79 L134.11 476.07 L136.78 478.63 L139.45 481.61 L142.12 483.98 L144.79 486.44 L147.46 489.11 L150.13 492.33 L152.8 495.78 L155.47 497.29 L158.14 496.96 L160.81 496.6 L163.48 494.99 L166.15 491.14 L168.82 487.5 L171.49 484.93 L174.16 482.15 L176.83 479.46 L179.5 476.69 L182.17 473.36 L184.84 471.66 L187.51 472.3 L190.18 472.85 L192.85 473.87 L195.52 477.36 L198.19 481.44 L200.86 484.48 L203.53 487.64 L206.2 490.85 L208.87 493.9 L211.54 498.22 L214.21 502.85 L216.88 505.51 L219.55 507.36 L222.22 509.83 L224.89 511.25 L227.56 510.72 L230.23 509.8 L232.9 509.21 L235.57 508.62 L238.24 508.26 L240.91 507.8 L243.58 505.9 L246.25 502.86 L248.92 500.56 L251.59 498.88 L254.26 496.04 L256.93 492.75 L259.6 490.98 L262.27 490.13 L264.94 489.05 L267.61 488.26 L270.28 487.19 L272.95 484.69 L275.62 482.25 L278.29 481.45 L280.96 480.8 L283.63 479.2 L286.3 478.09 L288.97 478.43 L291.64 479.35 L294.31 479.97 L296.98 480.3 L299.65 480.13 L302.32 478.84" fill="none" stroke="#8FD0C2" stroke-width="1.3" opacity="0.26" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M85.56 454.71 L88.23 446.29 L90.9 442.9 L93.57 441.71 L96.24 437.73 L98.91 432.65 L101.58 432.89 L104.25 441 L106.92 453.42 L109.59 463.51 L112.26 465.32 L114.93 458.53 L117.6 449.63 L120.27 445.64 L122.94 447.22 L125.61 448.29 L128.28 443.22 L130.95 434.47 L133.62 429.99 L136.29 434.23 L138.96 445.43 L141.63 457.78 L144.3 463.62 L146.97 459.63 L149.64 451.32 L152.31 447.38 L154.98 451.19 L157.65 458.19 L160.32 459.83 L162.99 452.14 L165.66 439.98 L168.33 431.08 L171 430.34 L173.67 438.97 L176.34 451.69 L179.01 458.6 L181.68 455.25 L184.35 446.41 L187.02 440.56 L189.69 444 L192.36 455.56 L195.03 466.61 L197.7 470.12 L200.37 464.93 L203.04 452.83 L205.71 440.13 L208.38 436.17 L211.05 443.3 L213.72 454.76 L216.39 462.2 L219.06 459.9 L221.73 448.54 L224.4 436.52 L227.07 431.21 L229.74 433.72 L232.41 443.6 L235.08 457.79 L237.75 467.44 L240.42 466.06 L243.09 455.9 L245.76 443.76 L248.43 437.36 L251.1 441.63 L253.77 453.3 L256.44 464.82 L259.11 472.47 L261.78 474.6 L264.45 468.58 L267.12 455.73 L269.79 443.39 L272.46 438.9 L275.13 444.57 L277.8 456.94 L280.47 468.57 L283.14 472.95 L285.81 469.71 L288.48 462.73 L291.15 453.88 L293.82 443.33 L296.49 435.2 L299.16 435.6 L301.83 445.01 L304.5 457.93 L307.17 467.59 L309.84 468.85 L312.51 461.83 L315.18 452.71 L317.85 446.18 L320.52 440.74 L323.19 434.87 L325.86 432.17 L328.53 436.94 L331.2 448.44 L333.87 460.68 L336.54 466.78 L339.21 463.81 L341.88 454.71 L341.9 450.6 L85.6 450.6 Z" fill="#8FD0C2" fill-opacity="0.16"/>
+<path d="M85.56 454.71 L88.23 446.29 L90.9 442.9 L93.57 441.71 L96.24 437.73 L98.91 432.65 L101.58 432.89 L104.25 441 L106.92 453.42 L109.59 463.51 L112.26 465.32 L114.93 458.53 L117.6 449.63 L120.27 445.64 L122.94 447.22 L125.61 448.29 L128.28 443.22 L130.95 434.47 L133.62 429.99 L136.29 434.23 L138.96 445.43 L141.63 457.78 L144.3 463.62 L146.97 459.63 L149.64 451.32 L152.31 447.38 L154.98 451.19 L157.65 458.19 L160.32 459.83 L162.99 452.14 L165.66 439.98 L168.33 431.08 L171 430.34 L173.67 438.97 L176.34 451.69 L179.01 458.6 L181.68 455.25 L184.35 446.41 L187.02 440.56 L189.69 444 L192.36 455.56 L195.03 466.61 L197.7 470.12 L200.37 464.93 L203.04 452.83 L205.71 440.13 L208.38 436.17 L211.05 443.3 L213.72 454.76 L216.39 462.2 L219.06 459.9 L221.73 448.54 L224.4 436.52 L227.07 431.21 L229.74 433.72 L232.41 443.6 L235.08 457.79 L237.75 467.44 L240.42 466.06 L243.09 455.9 L245.76 443.76 L248.43 437.36 L251.1 441.63 L253.77 453.3 L256.44 464.82 L259.11 472.47 L261.78 474.6 L264.45 468.58 L267.12 455.73 L269.79 443.39 L272.46 438.9 L275.13 444.57 L277.8 456.94 L280.47 468.57 L283.14 472.95 L285.81 469.71 L288.48 462.73 L291.15 453.88 L293.82 443.33 L296.49 435.2 L299.16 435.6 L301.83 445.01 L304.5 457.93 L307.17 467.59 L309.84 468.85 L312.51 461.83 L315.18 452.71 L317.85 446.18 L320.52 440.74 L323.19 434.87 L325.86 432.17 L328.53 436.94 L331.2 448.44 L333.87 460.68 L336.54 466.78 L339.21 463.81 L341.88 454.71" fill="none" stroke="#8FD0C2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="42" y1="526" x2="370" y2="526" stroke="#2A2D34" stroke-width="3" stroke-linecap="round"/>
+<line x1="42" y1="526" x2="245.36" y2="526" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round"/>
+<circle cx="245.36" cy="526" r="5" fill="#8FD0C2"/>
+<path d="M55.53 589.97 A24 24 0 1 1 89.47 589.97" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M55.53 589.97 A24 24 0 0 1 85.36 552.74" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="72.5" cy="573" r="19" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="75.55" y1="568.19" x2="80.44" y2="560.49" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="72.5" y="611" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Position</text>
+<text x="72.5" y="625" font-family="Lato, sans-serif" font-size="10" font-weight="400" fill="#55585E" text-anchor="middle">62%</text>
+<path d="M144.53 589.97 A24 24 0 1 1 178.47 589.97" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M144.53 589.97 A24 24 0 0 1 155.9 549.66" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="161.5" cy="573" r="19" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="160.17" y1="567.46" x2="158.04" y2="558.59" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="161.5" y="611" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">FM</text>
+<text x="161.5" y="625" font-family="Lato, sans-serif" font-size="10" font-weight="400" fill="#55585E" text-anchor="middle">45%</text>
+<path d="M233.53 589.97 A24 24 0 1 1 267.47 589.97" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="250.5" cy="573" r="19" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="250.5" y1="567.3" x2="250.5" y2="558.18" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="250.5" y="611" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Octave</text>
+<text x="250.5" y="625" font-family="Lato, sans-serif" font-size="10" font-weight="400" fill="#55585E" text-anchor="middle">0</text>
+<path d="M322.53 589.97 A24 24 0 1 1 356.47 589.97" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="339.5" cy="573" r="19" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="339.5" y1="567.3" x2="339.5" y2="558.18" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="339.5" y="611" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Semi</text>
+<text x="339.5" y="625" font-family="Lato, sans-serif" font-size="10" font-weight="400" fill="#55585E" text-anchor="middle">+7</text>
+<path d="M100.03 675.97 A24 24 0 1 1 133.97 675.97" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M117 635 A24 24 0 0 1 122.6 635.66" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="117" cy="659" r="19" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="118.33" y1="653.46" x2="120.46" y2="644.59" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="117" y="697" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Fine</text>
+<text x="117" y="711" font-family="Lato, sans-serif" font-size="10" font-weight="400" fill="#55585E" text-anchor="middle">+4 ct</text>
+<path d="M189.03 675.97 A24 24 0 1 1 222.97 675.97" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M189.03 675.97 A24 24 0 0 1 183.83 649.82" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="206" cy="659" r="19" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="200.73" y1="656.82" x2="192.31" y2="653.33" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="206" y="697" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Phase</text>
+<text x="206" y="711" font-family="Lato, sans-serif" font-size="10" font-weight="400" fill="#55585E" text-anchor="middle">90°</text>
+<path d="M278.03 675.97 A24 24 0 1 1 311.97 675.97" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M278.03 675.97 A24 24 0 0 1 305.9 637.62" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="295" cy="659" r="19" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="297.59" y1="653.92" x2="301.73" y2="645.8" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="295" y="697" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Level</text>
+<text x="295" y="711" font-family="Lato, sans-serif" font-size="10" font-weight="400" fill="#55585E" text-anchor="middle">60%</text>
+</svg>

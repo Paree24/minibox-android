@@ -16,7 +16,8 @@ int geti (const juce::var& a, const char* k, int def = 0) { return a.hasProperty
 double getd (const juce::var& a, const char* k, double def = 0) { return a.hasProperty (k) ? (double) a[k] : def; }
 bool getb (const juce::var& a, const char* k) { return a.hasProperty (k) && (bool) a[k]; }
 
-const char* kTypeIds[] = { "mono", "poly", "acid", "fm", "sampler", "drums", "drumsampler" };
+const char* kTypeIds[] = { "mono", "poly", "acid", "fm", "sampler", "drums", "drumsampler", "wavetable" };   // DeviceType order
+static_assert (sizeof (kTypeIds) / sizeof (kTypeIds[0]) == (size_t) DeviceType::Count);
 } // namespace
 
 namespace

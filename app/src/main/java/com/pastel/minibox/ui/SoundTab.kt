@@ -31,6 +31,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import com.pastel.minibox.state.App
 import com.pastel.minibox.state.Sound
 
@@ -58,7 +61,10 @@ fun SoundTab(openPresets: () -> Unit) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("+", color = C.faint, fontSize = 40.sp) }
         return
     }
-    if (tab >= ed.sections.size && tab != FX_TAB) tab = 0
+    // the Wavetable's macro band is a strip above the tabs, not a tab
+    val band = ed.sections.firstOrNull { it.band }
+    val sections = ed.sections.filter { !it.band }
+    if (tab >= sections.size && tab != FX_TAB) tab = 0
 
     Column(Modifier.fillMaxSize()) {
         // preset: ‹ name › and the browser
@@ -86,6 +92,23 @@ fun SoundTab(openPresets: () -> Unit) {
                     }
                 }
                 loadSample = { sl -> slice = sl; pick.launch(arrayOf("audio/*")) }
+            }
+            if (type == "wavetable") {
+                // Randomize: a tap, in the scope chosen with a long press (All, Oscillators, Filter & Env …)
+                Spacer(Modifier.width(8.dp))
+                var scope by remember { mutableStateOf(0) }
+                var scopeMenu by remember { mutableStateOf(false) }
+                Box {
+                    Box(Modifier.size(40.dp).clip(CircleShape).background(C.control)
+                        .pointerInput(Unit) { detectTapGestures(onTap = { Sound.randomize(scope) }, onLongPress = { scopeMenu = true }) },
+                        contentAlignment = Alignment.Center) { Dice(color) }
+                    androidx.compose.material3.DropdownMenu(scopeMenu, { scopeMenu = false }, containerColor = C.surface) {
+                        RANDOM_SCOPES.forEachIndexed { i, n ->
+                            androidx.compose.material3.DropdownMenuItem(text = { Text(n, color = if (i == scope) color else C.text, fontWeight = FontWeight.Bold) },
+                                onClick = { scope = i; scopeMenu = false; Sound.randomize(i) })
+                        }
+                    }
+                }
             }
             Spacer(Modifier.width(8.dp))
             Box(Modifier.size(40.dp).clip(CircleShape).background(C.control).clickable(onClick = openPresets), contentAlignment = Alignment.Center) {
@@ -124,10 +147,21 @@ fun SoundTab(openPresets: () -> Unit) {
             }
             Spacer(Modifier.height(4.dp))
         }
+        // the macro band (Wobble, Movement, Dirt, Bite, Width): always in reach, above the tabs
+        band?.let { b ->
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp).clip(RoundedCornerShape(16.dp)).background(C.surface)
+                .padding(vertical = 8.dp)) {
+                b.knobs.forEach { k ->
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        Knob(k.value, color, k.label, k.text, { Sound.set(k, it) }, size = 36.dp, default = k.default)
+                    }
+                }
+            }
+        }
         // one section per tab
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ed.sections.forEachIndexed { i, s ->
+            sections.forEachIndexed { i, s ->
                 Pill(s.title, on = i == tab, color = color, height = 34.dp) { Sound.tab.intValue = i }
             }
             Pill("Effects", on = tab == FX_TAB, color = color, height = 34.dp) { Sound.tab.intValue = FX_TAB }   // the 3 effect slots
@@ -136,18 +170,25 @@ fun SoundTab(openPresets: () -> Unit) {
             TrackFxPanel(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp).clip(RoundedCornerShape(16.dp))
                 .background(C.surface).padding(12.dp))
         } else {
-        val sec = ed.sections.getOrNull(tab)
+        val sec = sections.getOrNull(tab)
         Column(
             Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp).clip(RoundedCornerShape(16.dp))
                 .background(C.surface).padding(12.dp),
         ) {
             if (sec != null) {
+                // a wavetable: its menu (the tables by family) above the drawing
+                sec.menu?.let { m ->
+                    TableMenu(m, color)
+                    Spacer(Modifier.height(8.dp))
+                }
                 // the visual takes what the controls leave: nothing scrolls
-                Box(Modifier.weight(1f).fillMaxWidth()) { SectionVisual(sec.visual, color, Modifier.fillMaxSize()) }
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    if (sec.visual.kind == VK_MATRIX) MatrixPanel(sec.visual, color, Modifier.fillMaxSize())
+                    else SectionVisual(sec.visual, color, Modifier.fillMaxSize().then(wavetableDrag(sec.visual)))
+                }
                 sec.choice?.let { c ->
                     Spacer(Modifier.height(12.dp))
-                    if (c.options.size <= 5) Segmented(c.options, c.selected, color, { Sound.set(c.index, if (c.options.size > 1) it / (c.options.size - 1f) else 0f) },
-                        Modifier.fillMaxWidth())
+                    if (c.options.size <= 5) Segmented(c.options, c.selected, color, { Sound.choose(c, it) }, Modifier.fillMaxWidth())
                     else Pill(c.options.getOrElse(c.selected) { "" }, Modifier.fillMaxWidth(), caret = true, height = 34.dp) {
                         val next = (c.selected + 1) % c.options.size
                         Sound.set(c.index, next / (c.options.size - 1f))
@@ -157,7 +198,8 @@ fun SoundTab(openPresets: () -> Unit) {
                 // the section's switch (Reverse, Loop …) sits in the knob grid as one more cell: a full-width card
                 // took the room the visual (a waveform) needs
                 val cells = sec.knobs + listOfNotNull(sec.toggle)
-                for (row in cells.chunked(3)) {
+                val cols = if (cells.size > 6) 4 else 3   // a seven-knob card (Osc B) in two rows, the drawing keeps its room
+                for (row in cells.chunked(cols)) {
                     // bottoms aligned: the switch's name sits on the knobs' names
                     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.Bottom) {
                         row.forEach { cell ->
@@ -178,7 +220,7 @@ fun SoundTab(openPresets: () -> Unit) {
                                     val context = androidx.compose.ui.platform.LocalContext.current
                                     val tr = App.focusTrack.intValue
                                     Box {
-                                        Knob(k.value, color, k.label, k.text, { Sound.set(k.index, it) }, size = 46.dp, default = k.default, bipolar = k.bipolar,
+                                        Knob(k.value, color, k.label, k.text, { Sound.set(k, it) }, size = if (cols == 4) 40.dp else 46.dp, default = k.default, bipolar = k.bipolar,
                                             onLongPress = {
                                                 if (hasAutomation(tr, "param", k.index)) menu = true
                                                 else android.widget.Toast.makeText(context, "No automation on ${k.label}", android.widget.Toast.LENGTH_SHORT).show()
@@ -188,7 +230,7 @@ fun SoundTab(openPresets: () -> Unit) {
                                 }
                             }
                         }
-                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                        repeat(cols - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
@@ -212,6 +254,49 @@ fun SoundTab(openPresets: () -> Unit) {
 
 /** The Sound tab index of the track's effect slots (after the device's own sections). */
 const val FX_TAB = 99
+
+private val RANDOM_SCOPES = listOf("All", "Oscillators", "Filter & Env", "Modulation", "Dirt & Width")
+
+/** A die (the Randomize button). */
+@Composable
+private fun Dice(color: androidx.compose.ui.graphics.Color) {
+    androidx.compose.foundation.Canvas(Modifier.size(16.dp)) {
+        val s = size.width
+        drawRoundRect(color, cornerRadius = androidx.compose.ui.geometry.CornerRadius(s * 0.25f), style = androidx.compose.ui.graphics.drawscope.Stroke(1.8.dp.toPx()))
+        for ((dx, dy) in listOf(0.3f to 0.3f, 0.7f to 0.7f, 0.5f to 0.5f, 0.7f to 0.3f, 0.3f to 0.7f))
+            drawCircle(color, 1.6.dp.toPx(), androidx.compose.ui.geometry.Offset(s * dx, s * dy))
+    }
+}
+
+/** A wavetable's menu pill: the table's name; the menu lists the tables by family. */
+@Composable
+private fun TableMenu(m: com.pastel.minibox.state.Choice, color: androidx.compose.ui.graphics.Color) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        Pill(m.options.getOrElse(m.selected) { "" }, caret = true, height = 32.dp, color = color) { open = true }
+        androidx.compose.material3.DropdownMenu(open, { open = false }, containerColor = C.surface) {
+            m.options.forEachIndexed { i, n ->
+                val fam = m.families.getOrElse(i) { "" }
+                if (i == 0 || fam != m.families.getOrElse(i - 1) { "" })
+                    Text(fam.uppercase(), color = C.faint, fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 16.dp, top = 10.dp, bottom = 2.dp))
+                androidx.compose.material3.DropdownMenuItem(text = { Text(n, color = if (i == m.selected) color else C.text, fontWeight = FontWeight.Bold) },
+                    onClick = { open = false; Sound.set(m.index, i / (m.options.size - 1f)) })
+            }
+        }
+    }
+}
+
+/** Dragging across a wavetable's drawing scans it (its Position). */
+@Composable
+private fun wavetableDrag(v: com.pastel.minibox.state.Visual): Modifier {
+    val idx = v.extra?.optInt("posIndex", -1) ?: -1
+    if (v.kind != VK_WAVETABLE || idx < 0) return Modifier
+    return Modifier.pointerInput(idx) {
+        detectHorizontalDragGestures { change, _ ->
+            Sound.set(idx, ((change.position.x - 14.dp.toPx()) / (size.width - 28.dp.toPx())).coerceIn(0f, 1f))
+        }
+    }
+}
 
 /** The preset browser: families, the list (tap loads), and saving the current sound as a user preset. */
 @Composable

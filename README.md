@@ -9,8 +9,8 @@ groovebox on a phone: portrait only, pads first, with low-latency audio. It runs
 the desktop app's engine and devices unchanged (built straight from the
 pastel-minibox sources), with a touch interface of its own:
 
-- **Seven instruments:** Bassline, VA (DCO and VCO engines), Acid, FM, Sampler,
-  Drums and Drum Sampler, with the desktop's factory presets and kits.
+- **Eight instruments:** Bassline, VA (DCO and VCO engines), Acid, FM, Wavetable,
+  Sampler, Drums and Drum Sampler, with the desktop's factory presets and kits.
 - **Play:** square pads where the keyboard was: 16 (or 24 for synths) in-scale
   notes, diatonic chords or an arpeggiator, drum pads laid out for two thumbs,
   with note repeat. Eight macros per instrument.

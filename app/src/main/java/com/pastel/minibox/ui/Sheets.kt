@@ -156,8 +156,8 @@ fun RecordSheet() {
 
 private val DEVICES = listOf(
     Triple("mono", "Bassline", "Mono"), Triple("poly", "VA", "Poly · 6 voices"), Triple("acid", "Acid", "Bass line"),
-    Triple("fm", "FM", "6 operators"), Triple("sampler", "Sampler", "Chromatic"), Triple("drums", "Drums", "Drum synth"),
-    Triple("drumsampler", "Drum Sampler", "8 pads · slicer"), Triple("", "Empty", ""),
+    Triple("fm", "FM", "6 operators"), Triple("wavetable", "Wavetable", "Bass · 2 wavetables"), Triple("sampler", "Sampler", "Chromatic"),
+    Triple("drums", "Drums", "Drum synth"), Triple("drumsampler", "Drum Sampler", "8 pads · slicer"), Triple("", "Empty", ""),
 )
 
 /** Device picker (mockup 11): the track's device in the pattern being edited. */
@@ -168,9 +168,10 @@ fun DevicePickerSheet(track: Int, done: () -> Unit) {
     val color = C.track(track)
     Column {
         SheetTitle("Track ${track + 1}", "Pattern ${"ABCDEFGH"[fast.focusPattern]}")
-        for (row in 0 until 4) {
+        for (row in 0 until (DEVICES.size + 1) / 2) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 for (c in 0 until 2) {
+                    if (row * 2 + c >= DEVICES.size) { Spacer(Modifier.weight(1f)); continue }
                     val (id, name, sub) = DEVICES[row * 2 + c]
                     val on = rack[track].type == id
                     val shape = RoundedCornerShape(14.dp)

@@ -1,0 +1,209 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="412" height="915" viewBox="0 0 412 915">
+<rect x="0" y="0" width="412" height="915" fill="#141518"/>
+<text x="20" y="19" font-family="Lato, sans-serif" font-size="12" font-weight="700" fill="#A8A49E" text-anchor="start">9:41</text>
+<rect x="338" y="15" width="3" height="4" rx="1" fill="#A8A49E"/>
+<rect x="343" y="12.5" width="3" height="6.5" rx="1" fill="#A8A49E"/>
+<rect x="348" y="10" width="3" height="9" rx="1" fill="#A8A49E"/>
+<rect x="353" y="7.5" width="3" height="11.5" rx="1" fill="#A8A49E"/>
+<rect x="368" y="9" width="22" height="11" rx="3" fill="none" stroke="#A8A49E" stroke-width="1.2"/>
+<rect x="370" y="11" width="14" height="7" rx="1.5" fill="#A8A49E"/>
+<rect x="391" y="12.5" width="2" height="4" rx="1" fill="#A8A49E"/>
+<circle cx="36" cy="60" r="20" fill="#262930"/>
+<circle cx="36" cy="60" r="6" fill="#E88A8A"/>
+<circle cx="86" cy="60" r="20" fill="#262930"/>
+<circle cx="86" cy="60" r="23.5" fill="none" stroke="#2A2D34" stroke-width="2.5"/>
+<path d="M86 36.5 A23.5 23.5 0 0 1 99.81 79.01" fill="none" stroke="#B9A7F0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M81.68 53 L94.7 60 L81.68 67 Z" fill="#B9A7F0" stroke="#B9A7F0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="136" cy="60" r="20" fill="#262930"/>
+<rect x="130" y="54" width="12" height="12" rx="2" fill="#ECE8E3"/>
+<text x="172" y="62" font-family="Lato, sans-serif" font-size="20" font-weight="900" fill="#ECE8E3" text-anchor="start">124.0</text>
+<text x="172" y="78" font-family="Lato, sans-serif" font-size="10" font-weight="700" fill="#55585E" text-anchor="start">2.3.1</text>
+<text x="206" y="78" font-family="Lato, sans-serif" font-size="10" font-weight="700" fill="#55585E" text-anchor="start">· 4/4</text>
+<rect x="264" y="40" width="44" height="40" rx="10" fill="#B9A7F0" opacity="0.18"/>
+<rect x="264" y="40" width="44" height="40" rx="10" fill="none" stroke="#B9A7F0" stroke-width="1.5"/>
+<text x="286" y="61" font-family="Lato, sans-serif" font-size="16" font-weight="900" fill="#B9A7F0" text-anchor="middle">A</text>
+<circle cx="271.3" cy="72" r="1.5" fill="#9EB9F3"/>
+<circle cx="275.5" cy="72" r="1.5" fill="#8FD0C2"/>
+<circle cx="279.7" cy="72" r="1.5" fill="#E8B86A"/>
+<circle cx="283.9" cy="72" r="1.5" fill="#E9A3B8"/>
+<circle cx="288.1" cy="72" r="1.5" fill="#A8D58A"/>
+<circle cx="292.3" cy="72" r="1.5" fill="#F0A07C"/>
+<circle cx="296.5" cy="72" r="1.5" fill="#7FC6E8"/>
+<circle cx="300.7" cy="72" r="1.5" fill="#55585E"/>
+<rect x="312" y="40" width="36" height="40" rx="10" fill="#262930"/>
+<rect x="312" y="40" width="36" height="40" rx="10" fill="none" stroke="#B9A7F0" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="330" y="61" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#B9A7F0" text-anchor="middle">B</text>
+<circle cx="315.3" cy="72" r="1.5" fill="#9EB9F3"/>
+<circle cx="319.5" cy="72" r="1.5" fill="#8FD0C2"/>
+<circle cx="323.7" cy="72" r="1.5" fill="#E8B86A"/>
+<circle cx="327.9" cy="72" r="1.5" fill="#55585E"/>
+<circle cx="332.1" cy="72" r="1.5" fill="#A8D58A"/>
+<circle cx="336.3" cy="72" r="1.5" fill="#F0A07C"/>
+<circle cx="340.5" cy="72" r="1.5" fill="#55585E"/>
+<circle cx="344.7" cy="72" r="1.5" fill="#55585E"/>
+<circle cx="376" cy="60" r="20" fill="#262930"/>
+<circle cx="371" cy="60" r="1.8" fill="#A8A49E"/>
+<circle cx="376" cy="60" r="1.8" fill="#A8A49E"/>
+<circle cx="381" cy="60" r="1.8" fill="#A8A49E"/>
+<line x1="0" y1="92" x2="412" y2="92" stroke="#2A2D34" stroke-width="1" stroke-linecap="round"/>
+<circle cx="32" cy="120" r="16" fill="#262930"/>
+<circle cx="32" cy="120" r="15" fill="none" stroke="#9EB9F3" stroke-width="2" opacity="0.55"/>
+<text x="32" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#9EB9F3" text-anchor="middle">1</text>
+<rect x="53" y="102" width="121" height="36" rx="18" fill="#8FD0C2"/>
+<circle cx="71" cy="120" r="13" fill="#141518" opacity="0.22"/>
+<text x="71" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#141518" text-anchor="middle">2</text>
+<text x="91" y="125" font-family="Lato, sans-serif" font-size="14" font-weight="900" fill="#141518" text-anchor="start"></text>
+<path d="M152.5 118.25 L156 121.75 L159.5 118.25" fill="none" stroke="#141518" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="195" cy="120" r="16" fill="#262930"/>
+<circle cx="195" cy="120" r="15" fill="none" stroke="#E8B86A" stroke-width="2" opacity="0.55"/>
+<text x="195" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#E8B86A" text-anchor="middle">3</text>
+<circle cx="232" cy="120" r="16" fill="#262930"/>
+<circle cx="232" cy="120" r="15" fill="none" stroke="#E9A3B8" stroke-width="2" opacity="0.55"/>
+<text x="232" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#E9A3B8" text-anchor="middle">4</text>
+<circle cx="269" cy="120" r="16" fill="#262930"/>
+<circle cx="269" cy="120" r="15" fill="none" stroke="#A8D58A" stroke-width="2" opacity="0.55"/>
+<text x="269" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#A8D58A" text-anchor="middle">5</text>
+<circle cx="306" cy="120" r="16" fill="#262930"/>
+<circle cx="306" cy="120" r="15" fill="none" stroke="#F0A07C" stroke-width="2" opacity="0.55"/>
+<text x="306" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#F0A07C" text-anchor="middle">6</text>
+<circle cx="343" cy="120" r="16" fill="#262930"/>
+<circle cx="343" cy="120" r="15" fill="none" stroke="#7FC6E8" stroke-width="2" opacity="0.55"/>
+<text x="343" y="124.5" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#7FC6E8" text-anchor="middle">7</text>
+<circle cx="380" cy="120" r="16" fill="none" stroke="#55585E" stroke-width="1.5" stroke-dasharray="3 3"/>
+<line x1="375" y1="120" x2="385" y2="120" stroke="#55585E" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="380" y1="115" x2="380" y2="125" stroke="#55585E" stroke-width="1.6" stroke-linecap="round"/>
+<text x="89" y="124.5" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#141518" text-anchor="start">Wavetable</text>
+<rect x="0" y="843" width="412" height="72" fill="#20232A"/>
+<rect x="32.2" y="858" width="8" height="8" rx="2.5" fill="#55585E"/>
+<rect x="42.2" y="858" width="8" height="8" rx="2.5" fill="#55585E"/>
+<rect x="32.2" y="868" width="8" height="8" rx="2.5" fill="#55585E"/>
+<rect x="42.2" y="868" width="8" height="8" rx="2.5" fill="#55585E"/>
+<text x="41.2" y="899" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#55585E" text-anchor="middle">Play</text>
+<rect x="114.6" y="864.75" width="3.24" height="8.1" rx="1.5" fill="#55585E"/>
+<rect x="119.28" y="860.25" width="3.24" height="8.1" rx="1.5" fill="#55585E"/>
+<rect x="123.96" y="864.75" width="3.24" height="8.1" rx="1.5" fill="#55585E"/>
+<rect x="128.64" y="860.25" width="3.24" height="8.1" rx="1.5" fill="#55585E"/>
+<text x="123.6" y="899" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#55585E" text-anchor="middle">Seq</text>
+<rect x="178" y="852" width="56" height="30" rx="15" fill="#262930"/>
+<circle cx="206" cy="867" r="8" fill="none" stroke="#ECE8E3" stroke-width="2"/>
+<line x1="206" y1="867" x2="210" y2="862" stroke="#ECE8E3" stroke-width="2" stroke-linecap="round"/>
+<path d="M197.87 875.13 A11.5 11.5 0 1 1 214.13 875.13" fill="none" stroke="#ECE8E3" stroke-width="1.5" opacity="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="206" y="899" font-family="Lato, sans-serif" font-size="11" font-weight="900" fill="#ECE8E3" text-anchor="middle">Sound</text>
+<line x1="282.1" y1="858" x2="282.1" y2="876" stroke="#55585E" stroke-width="1.6" stroke-linecap="round"/>
+<rect x="280.12" y="868.35" width="3.96" height="2.7" rx="1" fill="#55585E"/>
+<line x1="288.4" y1="858" x2="288.4" y2="876" stroke="#55585E" stroke-width="1.6" stroke-linecap="round"/>
+<rect x="286.42" y="862.05" width="3.96" height="2.7" rx="1" fill="#55585E"/>
+<line x1="294.7" y1="858" x2="294.7" y2="876" stroke="#55585E" stroke-width="1.6" stroke-linecap="round"/>
+<rect x="292.72" y="866.55" width="3.96" height="2.7" rx="1" fill="#55585E"/>
+<text x="288.4" y="899" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#55585E" text-anchor="middle">Mix</text>
+<path d="M372.8 857 L364.8 868 L370.8 868 L368.8 877 L376.8 866 L370.8 866 Z" fill="#55585E"/>
+<text x="370.8" y="899" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#55585E" text-anchor="middle">Perform</text>
+<rect x="152" y="907" width="108" height="4" rx="2" fill="#55585E"/>
+<rect x="16" y="164" width="280" height="40" rx="20" fill="#262930"/>
+<path d="M38 180 L34 184 L38 188" fill="none" stroke="#A8A49E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M274 180 L278 184 L274 188" fill="none" stroke="#A8A49E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="132" y="189.5" font-family="Lato, sans-serif" font-size="14" font-weight="900" fill="#ECE8E3" text-anchor="middle">Foghorn Reese</text>
+<rect x="194" y="173" width="44" height="22" rx="11" fill="#141518"/>
+<text x="216" y="187.6" font-family="Lato, sans-serif" font-size="10" font-weight="700" fill="#8FD0C2" text-anchor="middle">Reese</text>
+<circle cx="326" cy="184" r="20" fill="#262930"/>
+<rect x="318.5" y="176.5" width="15" height="15" rx="4" fill="none" stroke="#8FD0C2" stroke-width="1.8"/>
+<circle cx="322.96" cy="180.96" r="1.6" fill="#8FD0C2"/>
+<circle cx="329.04" cy="187.04" r="1.6" fill="#8FD0C2"/>
+<circle cx="326" cy="184" r="1.6" fill="#8FD0C2"/>
+<circle cx="329.04" cy="180.96" r="1.6" fill="#8FD0C2"/>
+<circle cx="322.96" cy="187.04" r="1.6" fill="#8FD0C2"/>
+<circle cx="376" cy="184" r="20" fill="#262930"/>
+<circle cx="371" cy="184" r="1.8" fill="#A8A49E"/>
+<circle cx="376" cy="184" r="1.8" fill="#A8A49E"/>
+<circle cx="381" cy="184" r="1.8" fill="#A8A49E"/>
+<rect x="16" y="214" width="380" height="84" rx="16" fill="#20232A"/>
+<path d="M38.44 261.56 A22 22 0 1 1 69.56 261.56" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M38.44 261.56 A22 22 0 0 1 59.14 224.61" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="54" cy="246" r="17" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="55.19" y1="241.04" x2="57.1" y2="233.11" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="54" y="282" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Wobble</text>
+<path d="M114.44 261.56 A22 22 0 1 1 145.56 261.56" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M114.44 261.56 A22 22 0 0 1 120.01 226.4" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="130" cy="246" r="17" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="127.68" y1="241.46" x2="123.98" y2="234.19" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="130" y="282" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Movement</text>
+<path d="M190.44 261.56 A22 22 0 1 1 221.56 261.56" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M190.44 261.56 A22 22 0 0 1 217.79 227.42" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="206" cy="246" r="17" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="208.73" y1="241.69" x2="213.11" y2="234.8" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="206" y="282" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Dirt</text>
+<path d="M266.44 261.56 A22 22 0 1 1 297.56 261.56" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M266.44 261.56 A22 22 0 0 1 282 224" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="282" cy="246" r="17" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="282" y1="240.9" x2="282" y2="232.74" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="282" y="282" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Bite</text>
+<path d="M342.44 261.56 A22 22 0 1 1 373.56 261.56" fill="none" stroke="#2A2D34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M342.44 261.56 A22 22 0 1 1 375.8 233.07" fill="none" stroke="#8FD0C2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="358" cy="246" r="17" fill="#262930" stroke="#2E323A" stroke-width="1"/>
+<line x1="362.13" y1="243" x2="368.73" y2="238.21" stroke="#ECE8E3" stroke-width="2.4" stroke-linecap="round"/>
+<text x="358" y="282" font-family="Lato, sans-serif" font-size="11" font-weight="700" fill="#A8A49E" text-anchor="middle">Width</text>
+<rect x="-34" y="308" width="49.84" height="34" rx="17" fill="#262930"/>
+<text x="-9.08" y="329.68" font-family="Lato, sans-serif" font-size="13" font-weight="700" fill="#A8A49E" text-anchor="middle">Sub</text>
+<rect x="23.84" y="308" width="71.68" height="34" rx="17" fill="#262930"/>
+<text x="59.68" y="329.68" font-family="Lato, sans-serif" font-size="13" font-weight="700" fill="#A8A49E" text-anchor="middle">Filter</text>
+<rect x="103.52" y="308" width="49.84" height="34" rx="17" fill="#262930"/>
+<text x="128.44" y="329.68" font-family="Lato, sans-serif" font-size="13" font-weight="700" fill="#A8A49E" text-anchor="middle">Env</text>
+<rect x="161.36" y="308" width="49.84" height="34" rx="17" fill="#262930"/>
+<text x="186.28" y="329.68" font-family="Lato, sans-serif" font-size="13" font-weight="700" fill="#A8A49E" text-anchor="middle">LFO</text>
+<rect x="219.2" y="308" width="57.12" height="34" rx="17" fill="#262930"/>
+<text x="247.76" y="329.68" font-family="Lato, sans-serif" font-size="13" font-weight="700" fill="#A8A49E" text-anchor="middle">Dist</text>
+<rect x="284.32" y="308" width="71.68" height="34" rx="17" fill="#8FD0C2"/>
+<text x="320.16" y="329.68" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#141518" text-anchor="middle">Matrix</text>
+<rect x="364" y="308" width="71.68" height="34" rx="17" fill="#262930"/>
+<text x="399.84" y="329.68" font-family="Lato, sans-serif" font-size="13" font-weight="700" fill="#A8A49E" text-anchor="middle">Unison</text>
+<rect x="16" y="354" width="380" height="427" rx="16" fill="#20232A"/>
+<rect x="16" y="791" width="380" height="40" rx="14" fill="#262930"/>
+<rect x="32" y="803" width="7" height="7" rx="2" fill="#8FD0C2"/>
+<rect x="41" y="803" width="7" height="7" rx="2" fill="#8FD0C2"/>
+<rect x="32" y="812" width="7" height="7" rx="2" fill="#8FD0C2"/>
+<rect x="41" y="812" width="7" height="7" rx="2" fill="#8FD0C2"/>
+<text x="60" y="816" font-family="Lato, sans-serif" font-size="13" font-weight="900" fill="#A8A49E" text-anchor="start">Pads</text>
+<path d="M370 813 L374 809 L378 813" fill="none" stroke="#A8A49E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="28" y="368" width="356" height="42" rx="21" fill="#262930"/>
+<text x="44" y="385" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#ECE8E3" text-anchor="start">LFO 1</text>
+<text x="85.6" y="385" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#55585E" text-anchor="start">→</text>
+<text x="103.6" y="385" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#8FD0C2" text-anchor="start">Cutoff</text>
+<text x="370" y="385" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#A8A49E" text-anchor="end">+55%</text>
+<rect x="44" y="396" width="324" height="4" rx="2" fill="#2A2D34"/>
+<line x1="206" y1="393" x2="206" y2="403" stroke="#55585E" stroke-width="1.5" stroke-linecap="round"/>
+<rect x="206" y="396" width="89.1" height="4" rx="2" fill="#8FD0C2"/>
+<rect x="28" y="420" width="356" height="42" rx="21" fill="#262930"/>
+<text x="44" y="437" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#ECE8E3" text-anchor="start">Filter Env</text>
+<text x="119.2" y="437" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#55585E" text-anchor="start">→</text>
+<text x="137.2" y="437" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#8FD0C2" text-anchor="start">FM</text>
+<text x="370" y="437" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#A8A49E" text-anchor="end">+45%</text>
+<rect x="44" y="448" width="324" height="4" rx="2" fill="#2A2D34"/>
+<line x1="206" y1="445" x2="206" y2="455" stroke="#55585E" stroke-width="1.5" stroke-linecap="round"/>
+<rect x="206" y="448" width="72.9" height="4" rx="2" fill="#8FD0C2"/>
+<rect x="28" y="472" width="356" height="42" rx="21" fill="#262930"/>
+<text x="44" y="489" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#ECE8E3" text-anchor="start">LFO 2</text>
+<text x="85.6" y="489" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#55585E" text-anchor="start">→</text>
+<text x="103.6" y="489" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#8FD0C2" text-anchor="start">Position A</text>
+<text x="370" y="489" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#A8A49E" text-anchor="end">+70%</text>
+<rect x="44" y="500" width="324" height="4" rx="2" fill="#2A2D34"/>
+<line x1="206" y1="497" x2="206" y2="507" stroke="#55585E" stroke-width="1.5" stroke-linecap="round"/>
+<rect x="206" y="500" width="113.4" height="4" rx="2" fill="#8FD0C2"/>
+<rect x="28" y="524" width="356" height="42" rx="21" fill="#262930"/>
+<text x="44" y="541" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#ECE8E3" text-anchor="start">Velocity</text>
+<text x="105.76" y="541" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#55585E" text-anchor="start">→</text>
+<text x="123.76" y="541" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#8FD0C2" text-anchor="start">Distortion</text>
+<text x="370" y="541" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#A8A49E" text-anchor="end">+30%</text>
+<rect x="44" y="552" width="324" height="4" rx="2" fill="#2A2D34"/>
+<line x1="206" y1="549" x2="206" y2="559" stroke="#55585E" stroke-width="1.5" stroke-linecap="round"/>
+<rect x="206" y="552" width="48.6" height="4" rx="2" fill="#8FD0C2"/>
+<rect x="28" y="576" width="356" height="42" rx="21" fill="#262930"/>
+<text x="44" y="593" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#ECE8E3" text-anchor="start">Mod Wheel</text>
+<text x="112.48" y="593" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#55585E" text-anchor="start">→</text>
+<text x="130.48" y="593" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#8FD0C2" text-anchor="start">Position B</text>
+<text x="370" y="593" font-family="Lato, sans-serif" font-size="12" font-weight="900" fill="#A8A49E" text-anchor="end">−40%</text>
+<rect x="44" y="604" width="324" height="4" rx="2" fill="#2A2D34"/>
+<line x1="206" y1="601" x2="206" y2="611" stroke="#55585E" stroke-width="1.5" stroke-linecap="round"/>
+<rect x="141.2" y="604" width="64.8" height="4" rx="2" fill="#8FD0C2"/>
+<rect x="28" y="628" width="356" height="42" rx="21" fill="none" stroke="#55585E" stroke-width="1.2" stroke-dasharray="4 4"/>
+<text x="206" y="653" font-family="Lato, sans-serif" font-size="12" font-weight="700" fill="#55585E" text-anchor="middle">+ Add</text>
+</svg>
