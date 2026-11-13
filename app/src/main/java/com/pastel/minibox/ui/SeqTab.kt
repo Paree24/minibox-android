@@ -16,6 +16,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -107,6 +108,10 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit, openArp: () -> Unit = {}) {
     }
 
     Column(Modifier.fillMaxSize()) {
+        // the header: undo / redo keep their size; on a narrow phone the length pill drops the step resolution (it is
+        // in its menu) rather than pushing redo off the edge
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val narrow = !seq.drum && !roll && maxWidth < 400.dp
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (!seq.drum) {
                 val context = androidx.compose.ui.platform.LocalContext.current
@@ -117,26 +122,26 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit, openArp: () -> Unit = {}) {
                         if (r.optBoolean("ok")) view = 0
                         else android.widget.Toast.makeText(context, "Can't show as steps: " + r.optString("why"), android.widget.Toast.LENGTH_LONG).show()
                     } else view = it
-                }, Modifier.width(116.dp))
-                Spacer(Modifier.width(8.dp))
+                }, Modifier.width(96.dp))
+                Spacer(Modifier.width(6.dp))
             }
             // the bar in view: ‹ 2 / 4 › (the roll scrolls and zooms by itself)
             if (!roll) Row(Modifier.height(34.dp).clip(CircleShape).background(C.control), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(30.dp, 34.dp).clickable(enabled = bar > 0) { pickedBar = bar - 1 }, contentAlignment = Alignment.Center) {
+                Box(Modifier.size(26.dp, 34.dp).clickable(enabled = bar > 0) { pickedBar = bar - 1 }, contentAlignment = Alignment.Center) {
                     Text("‹", color = if (bar > 0) C.text else C.faint, fontSize = 16.sp, fontWeight = FontWeight.Black)
                 }
                 // 1/32 steps: "1a" and "1b" are the halves of bar 1
                 val half = !roll && barSteps > spb
                 Text(if (half) "${bar / 2 + 1}${"ab"[bar % 2]}/${seq.bars}" else "${bar + 1}/$pageCount", color = C.pattern, fontSize = 13.sp, fontWeight = FontWeight.Black)
-                Box(Modifier.size(30.dp, 34.dp).clickable(enabled = bar < pageCount - 1) { pickedBar = bar + 1 }, contentAlignment = Alignment.Center) {
+                Box(Modifier.size(26.dp, 34.dp).clickable(enabled = bar < pageCount - 1) { pickedBar = bar + 1 }, contentAlignment = Alignment.Center) {
                     Text("›", color = if (bar < pageCount - 1) C.text else C.faint, fontSize = 16.sp, fontWeight = FontWeight.Black)
                 }
             }
-            Spacer(Modifier.weight(1f))
             val lengths = listOf(1, 2, 4, 8, 16).filter { it <= seq.maxBars }
-            // the length and the step resolution, in one dropdown
-            Box {
-                Pill("${seq.bars} bar${if (seq.bars > 1) "s" else ""} · ${RES_NAMES[seq.stepRes.coerceIn(0, 2)]}", caret = true) { lengthMenu = true }
+            // the length and the step resolution, in one dropdown (it takes the room the others leave, at the right)
+            Box(Modifier.weight(1f).padding(start = 4.dp), contentAlignment = Alignment.CenterEnd) { Box {
+                val barsText = "${seq.bars} bar${if (seq.bars > 1) "s" else ""}"
+                Pill(if (narrow) barsText else "$barsText · ${RES_NAMES[seq.stepRes.coerceIn(0, 2)]}", caret = true, padding = 10.dp) { lengthMenu = true }
                 DropdownMenu(lengthMenu, { lengthMenu = false }, containerColor = C.surface) {
                     lengths.forEach { n ->
                         DropdownMenuItem(text = { Text(if (n == 1) "1 bar" else "$n bars", color = if (n == seq.bars) C.pattern else C.text, fontWeight = FontWeight.Bold) },
@@ -152,12 +157,13 @@ fun SeqTab(openStep: (step: Int, lane: Int) -> Unit, openArp: () -> Unit = {}) {
                     DropdownMenuItem(text = { Text("Clear this track", color = C.record, fontWeight = FontWeight.Bold) },
                         onClick = { lengthMenu = false; Seq.edit("clearTrack") })
                 }
-            }
+            } }
             // undo / redo every sequence edit (steps, drum cells, the piano roll, the length)
             Spacer(Modifier.width(6.dp))
             RoundIcon("↶", seq.canUndo) { Seq.edit("undo") }
             Spacer(Modifier.width(4.dp))
             RoundIcon("↷", seq.canRedo) { Seq.edit("redo") }
+        }
         }
         // the step editors: the steps, or their velocities (the roll has its own Velocity tab)
         if (!roll && seq.drum) {

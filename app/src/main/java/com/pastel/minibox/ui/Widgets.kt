@@ -167,7 +167,8 @@ fun Pill(text: String, modifier: Modifier = Modifier, on: Boolean = false, color
             .padding(horizontal = padding),
         contentAlignment = Alignment.Center,
     ) {
-        Text(if (caret) "$text  ▾" else text, color = if (on) C.bg else C.text, fontSize = 12.sp, fontWeight = FontWeight.Black, maxLines = 1)
+        Text(if (caret) "$text  ▾" else text, color = if (on) C.bg else C.text, fontSize = 12.sp, fontWeight = FontWeight.Black, maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
     }
 }
 
